@@ -1,0 +1,20 @@
+name: MineCord
+version: '1.0'
+main: com.example.minecord.MineCord
+api-version: '1.13'
+prefix: "\u00A7dMineCord\u00A7r"
+authors: [ You ]
+description: A plugin that connects Minecraft with Discord.
+commands:
+  discord:
+    description: Головна команда плагіна MineCord
+    usage: /discord [link]
+  minecord:
+    description: Альтернативна назва команди
+    usage: /minecord [reload]
+  map:
+    description: Посилання на веб-мапу сервера
+    usage: /map
+  togglerestart:
+    description: Вимкнути/увімкнути відображення попереджень про авторестарт для себе
+    usage: /togglerestart
