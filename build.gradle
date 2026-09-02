@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    // Використовуємо оновлений shadow plugin (Goooler fork) який підтримує Java 21
+    id 'io.github.goooler.shadow' version '8.1.8'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "spigotmc-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+    }
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+}
+
+dependencies {
+    // Використовуємо Paper API замість Spigot API (Paper містить метод getTPS())
+    compileOnly 'io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT'
+    
+    // Бібліотека JDA для роботи з Discord
+    implementation 'net.dv8tion:JDA:5.0.0-beta.21' 
+    
+
+}
+
+def targetJavaVersion = 21 // Використовуємо Java 21, що є стандартом для нових версій
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Налаштовуємо shadowJar для збірки
+shadowJar {
+    // DO NOT relocate net.dv8tion, it breaks JDA internally!
+    relocate 'com.fasterxml.jackson', 'com.example.minecord.libs.com.fasterxml.jackson'
+    relocate 'okhttp3', 'com.example.minecord.libs.okhttp3'
+    relocate 'okio', 'com.example.minecord.libs.okio'
+    relocate 'org.apache.commons.collections4', 'com.example.minecord.libs.org.apache.commons.collections4'
+    relocate 'gnu.trove', 'com.example.minecord.libs.gnu.trove'
+    relocate 'com.neovisionaries.ws.client', 'com.example.minecord.libs.com.neovisionaries.ws.client'
+}
