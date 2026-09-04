@@ -16,12 +16,13 @@ public class DiscordCommandListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        plugin.getLogger().info("[Discord] Користувач " + event.getUser().getName() + " використав команду: /" + event.getName());
-        
-        if (event.getName().equals("help")) {
-            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-            embed.setTitle("📚 Доступні команди бота MineCord:");
-            embed.setColor(0x5865F2); // Discord blurple
+        try {
+            plugin.getLogger().info("[Discord] Користувач " + event.getUser().getName() + " використав команду: /" + event.getName());
+            
+            if (event.getName().equals("help")) {
+                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                embed.setTitle("📚 Доступні команди бота MineCord:");
+                embed.setColor(0x5865F2); // Discord blurple
 
             String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
                               "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
@@ -196,6 +197,16 @@ public class DiscordCommandListener extends ListenerAdapter {
             embed.addField("RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
             
             event.replyEmbeds(embed.build()).queue();
+        }
+        } catch (Exception e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);
+            event.reply("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(
+                success -> {},
+                error -> {
+                    // Якщо deferReply вже було викликано, reply() видасть помилку, тому оновлюємо оригінальне повідомлення
+                    event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
+                }
+            );
         }
     }
 }
