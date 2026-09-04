@@ -9,6 +9,7 @@ import com.example.minecord.utils.AccountLinkManager;
 import com.example.minecord.utils.AutoRestartManager;
 import com.example.minecord.utils.OpenAIModerator;
 import com.example.minecord.utils.AntiSpamManager;
+import com.example.minecord.utils.PerformanceMonitor;
 
 public final class MineCord extends JavaPlugin {
 
@@ -17,6 +18,7 @@ public final class MineCord extends JavaPlugin {
     private AutoRestartManager autoRestartManager;
     private OpenAIModerator openAIModerator;
     private AntiSpamManager antiSpamManager;
+    private PerformanceMonitor performanceMonitor;
     private com.example.minecord.utils.TabManager tabManager;
 
     @Override
@@ -26,6 +28,7 @@ public final class MineCord extends JavaPlugin {
         // Ініціалізація AI модератора та анти-спаму
         this.openAIModerator = new OpenAIModerator(this);
         this.antiSpamManager = new AntiSpamManager();
+        this.performanceMonitor = new PerformanceMonitor(this);
         
         // Ініціалізація бази прив'язки акаунтів
         this.linkManager = new AccountLinkManager(this);
@@ -33,6 +36,9 @@ public final class MineCord extends JavaPlugin {
         // Ініціалізація авторестартів
         this.autoRestartManager = new AutoRestartManager(this);
         this.autoRestartManager.start();
+        
+        // Запуск моніторингу
+        this.performanceMonitor.start();
         
         // Ініціалізація TAB-листа
         this.tabManager = new com.example.minecord.utils.TabManager(this);

@@ -90,3 +90,20 @@ autorestart:
   # Команди, які виконуватимуться при досягненні 0 секунд
   commands:
     - "restart"
+
+# Технічні налаштування (для адміністраторів)
+technical:
+  error-catcher:
+    enabled: true
+    # API для завантаження великих логів помилок
+    paste-service: "https://paste.md-5.net/documents"
+  performance-monitor:
+    enabled: true
+    # Якщо TPS падає нижче цього значення - буде тривога
+    tps-threshold: 15.0
+    # Якщо використано більше відсотків RAM - буде тривога
+    ram-threshold-percent: 95.0
+    # Кулдаун між сповіщеннями (щоб не спамило щосекунди)
+    cooldown-minutes: 5
+    # Якщо true, плагін спробує запустити /spark profiler start автоматично (потрібен плагін Spark)
+    auto-spark: false
