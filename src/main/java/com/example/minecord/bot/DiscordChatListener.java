@@ -42,6 +42,42 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
+        // 1.5 Перевіряємо, чи це відповідь у гілці (тікеті)
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
+            net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel thread = event.getChannel().asThreadChannel();
+            String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
+            if (modChannelId != null && thread.getParentChannel().getId().equals(modChannelId)) {
+                thread.retrieveStartMessage().queue(startMsg -> {
+                    if (!startMsg.getEmbeds().isEmpty()) {
+                        net.dv8tion.jda.api.entities.MessageEmbed embed = startMsg.getEmbeds().get(0);
+                        if (embed.getFooter() != null && embed.getFooter().getText() != null && embed.getFooter().getText().startsWith("UUID: ")) {
+                            String uuidStr = embed.getFooter().getText().substring(6);
+                            try {
+                                java.util.UUID playerUuid = java.util.UUID.fromString(uuidStr);
+                                String authorName = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
+                                String text = event.getMessage().getContentDisplay();
+                                
+                                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                    org.bukkit.entity.Player p = plugin.getServer().getPlayer(playerUuid);
+                                    if (p != null && p.isOnline()) {
+                                        p.sendMessage(ChatColor.RED + "🎫 [Підтримка] " + ChatColor.YELLOW + authorName + ": " + ChatColor.WHITE + text);
+                                        p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
+                                    } else {
+                                        String discordId = plugin.getLinkManager().getDiscordId(playerUuid);
+                                        if (discordId != null) {
+                                            event.getJDA().openPrivateChannelById(discordId).queue(dm -> {
+                                                dm.sendMessage("🎫 **Відповідь на ваш тікет від " + authorName + ":**\n" + text).queue();
+                                            });
+                                        }
+                                    }
+                                });
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                });
+                return;
+            }
+        }
 
         // 2. Перевіряємо, чи це ІГРОВИЙ чат
         String targetChannelId = plugin.getConfig().getString("discord.chat-channel-id");
