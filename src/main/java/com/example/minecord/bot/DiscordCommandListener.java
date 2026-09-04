@@ -25,11 +25,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                 embed.setColor(0x5865F2); // Discord blurple
 
             String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
+                              "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
                               "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
                               "🔹 `/help` — Показує це повідомлення\n\n" +
                               "👑 **Команди адміністратора:**\n" +
+                              "🔸 `/stats` — Показати навантаження на сервер (TPS та RAM)\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
-                              "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера";
+                              "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
+                              "🔸 `/consolefilter <info>` — Увімкнути/вимкнути INFO логи в каналі консолі";
             embed.setDescription(commands);
 
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
