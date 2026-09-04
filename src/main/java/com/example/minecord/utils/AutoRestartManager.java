@@ -128,7 +128,7 @@ public class AutoRestartManager implements CommandExecutor {
         
         // В Discord відправляємо тільки фінальне повідомлення про рестарт (коли secondsLeft == 0)
         if (secondsLeft == 0 && plugin.getBotManager() != null) {
-            plugin.getBotManager().sendSystemEmbed("⏰ " + message, 0xFFA500, null);
+            plugin.getBotManager().sendSystemEmbed("⏰ Планове перезавантаження сервера", 0xFFA500, null);
         }
     }
 
