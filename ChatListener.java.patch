@@ -1,0 +1,12 @@
+﻿
+--- src/main/java/com/example/minecord/listeners/ChatListener.java
++++ src/main/java/com/example/minecord/listeners/ChatListener.java
+@@ -60,6 +60,7 @@
+                 
+                 String warnMsg = plugin.getConfig().getString("ai-moderator.warn-message", "§cВаше повідомлення видалено модератором!");
+                 event.getPlayer().sendMessage(warnMsg);
++                event.getPlayer().sendMessage("§7Твоє повідомлення: §c" + message);
+                 
+                 // Створюємо клікабельну кнопку
+                 net.md_5.bungee.api.chat.TextComponent appealBtn = new net.md_5.bungee.api.chat.TextComponent("§e§n[Натисніть тут, якщо повідомлення заблоковано помилково]");
+
