@@ -33,7 +33,7 @@ public class DiscordChatListener extends ListenerAdapter {
 
             // Це канал консолі! Читаємо текст як команду
             String command = event.getMessage().getContentRaw();
-            plugin.getLogger().info("Виконання команди з Discord: " + command);
+            plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
             
             // Виконуємо в головному потоці сервера
             plugin.getServer().getScheduler().runTask(plugin, () -> {
