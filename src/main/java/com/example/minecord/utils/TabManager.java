@@ -23,13 +23,19 @@ public class TabManager {
             String header = plugin.getConfig().getString("tablist.header", "§d§lKozloMine\n§7Ласкаво просимо!\n");
             header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
             
-            String footerTemplate = plugin.getConfig().getString("tablist.footer", "\n§7ТПС: %tps% §8| §7Аптайм: §e%uptime%");
-            String footer = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate)
+            String footerTemplate = plugin.getConfig().getString("tablist.footer", "\n§7ТПС: %tps% §8| §7Аптайм: §e%uptime% §8| §7Пінг: %ping%мс");
+            String baseFooter = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate)
                     .replace("%tps%", tpsStr)
                     .replace("%uptime%", uptimeStr);
 
             for (Player player : plugin.getServer().getOnlinePlayers()) {
-                player.setPlayerListHeaderFooter(header, footer);
+                int ping = player.getPing();
+                String pingColor = "§a";
+                if (ping > 80) pingColor = "§e";
+                if (ping > 150) pingColor = "§c";
+                
+                String playerFooter = baseFooter.replace("%ping%", pingColor + ping);
+                player.setPlayerListHeaderFooter(header, playerFooter);
             }
         }, 20L, 20L);
     }
