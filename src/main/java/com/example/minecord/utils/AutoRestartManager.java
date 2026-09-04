@@ -80,7 +80,7 @@ public class AutoRestartManager implements CommandExecutor {
                     // Відправка повідомлень в чат
                     if (plugin.getConfig().contains("autorestart.messages." + diffStr)) {
                         String msg = plugin.getConfig().getString("autorestart.messages." + diffStr);
-                        if (msg != null && !msg.isEmpty()) broadcast(msg);
+                        if (msg != null && !msg.isEmpty()) broadcast(msg, diff);
                     }
                     
                     // Відправка Title та Subtitle
@@ -116,7 +116,7 @@ public class AutoRestartManager implements CommandExecutor {
         taskId = -1;
     }
 
-    private void broadcast(String message) {
+    private void broadcast(String message, long secondsLeft) {
         // У Minecraft чаті використовуємо класичний жирний червоний текст
         String formattedMessage = ChatColor.RED + "" + ChatColor.BOLD + "[Увага] " + ChatColor.RESET + ChatColor.RED + message;
         
@@ -126,8 +126,8 @@ public class AutoRestartManager implements CommandExecutor {
             }
         }
         
-        // В Discord відправляємо гарну картку з емодзі
-        if (plugin.getBotManager() != null) {
+        // В Discord відправляємо тільки фінальне повідомлення про рестарт (коли secondsLeft == 0)
+        if (secondsLeft == 0 && plugin.getBotManager() != null) {
             plugin.getBotManager().sendSystemEmbed("⏰ " + message, 0xFFA500, null);
         }
     }
