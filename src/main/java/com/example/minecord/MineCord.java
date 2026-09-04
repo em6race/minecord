@@ -49,6 +49,12 @@ public final class MineCord extends JavaPlugin {
         if (getCommand("map") != null) {
             getCommand("map").setExecutor(cmd);
         }
+        if (getCommand("mail") != null) {
+            getCommand("mail").setExecutor(cmd);
+        }
+        if (getCommand("ticket") != null) {
+            getCommand("ticket").setExecutor(cmd);
+        }
 
         // Ініціалізація головного менеджера бота
         this.botManager = new BotManager(this);
