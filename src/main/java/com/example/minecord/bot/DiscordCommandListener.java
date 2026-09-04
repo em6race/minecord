@@ -34,28 +34,26 @@ public class DiscordCommandListener extends ListenerAdapter {
         else if (event.getName().equals("online")) {
             event.deferReply().queue();
 
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                int onlineCount = plugin.getServer().getOnlinePlayers().size();
-                int maxPlayers = plugin.getServer().getMaxPlayers();
+            int onlineCount = plugin.getServer().getOnlinePlayers().size();
+            int maxPlayers = plugin.getServer().getMaxPlayers();
 
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
 
-                if (onlineCount == 0) {
-                    embed.setTitle("🔴 Наразі на сервері немає гравців (0/" + maxPlayers + ")");
-                    embed.setColor(0xFF0000);
-                } else {
-                    embed.setTitle("🟢 Онлайн (" + onlineCount + "/" + maxPlayers + "):");
-                    embed.setColor(0x00FF00);
+            if (onlineCount == 0) {
+                embed.setTitle("🔴 Наразі на сервері немає гравців (0/" + maxPlayers + ")");
+                embed.setColor(0xFF0000);
+            } else {
+                embed.setTitle("🟢 Онлайн (" + onlineCount + "/" + maxPlayers + "):");
+                embed.setColor(0x00FF00);
 
-                    StringBuilder playersList = new StringBuilder();
-                    for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
-                        playersList.append("`").append(player.getName()).append("` ");
-                    }
-                    embed.setDescription(playersList.toString());
+                StringBuilder playersList = new StringBuilder();
+                for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
+                    playersList.append("`").append(player.getName()).append("` ");
                 }
+                embed.setDescription(playersList.toString());
+            }
 
-                event.getHook().sendMessageEmbeds(embed.build()).queue();
-            });
+            event.getHook().editOriginalEmbeds(embed.build()).queue();
         }
         else if (event.getName().equals("map")) {
             event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](http://kozlomine.minecraft.how:27257/)").setEphemeral(true).queue();
