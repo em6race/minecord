@@ -33,6 +33,12 @@ public class DiscordChatListener extends ListenerAdapter {
 
             // Це канал консолі! Читаємо текст як команду
             String command = event.getMessage().getContentRaw();
+            
+            // Якщо повідомлення починається з кирилиці, скоріш за все це випадковий чат, а не команда
+            if (command.matches("^[а-яА-ЯіІїЇєЄґҐ].*")) {
+                return;
+            }
+
             plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
             
             // Виконуємо в головному потоці сервера
