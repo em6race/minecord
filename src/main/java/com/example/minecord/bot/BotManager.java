@@ -71,7 +71,12 @@ public class BotManager {
                                         new SubcommandData("list", "Список авторестартів"),
                                         new SubcommandData("clear", "Очистити всі авторестарти"),
                                         new SubcommandData("toggle", "Призупинити/відновити всі авторестарти")
-                                )
+                                ),
+                        Commands.slash("consolefilter", "Фільтр логів консолі")
+                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                                .addOption(OptionType.BOOLEAN, "info", "Показувати INFO логи", true),
+                        Commands.slash("stats", "Статистика сервера (TPS, RAM)")
+                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                 ).queue();
 
                 // Ініціалізація Webhook для чату
@@ -132,6 +137,7 @@ public class BotManager {
 
     public JDA getJda() { return jda; }
     public WebhookManager getWebhookManager() { return webhookManager; }
+    public ConsoleManager getConsoleManager() { return consoleManager; }
 
     private String lastStatusText = "";
 

@@ -164,5 +164,38 @@ public class DiscordCommandListener extends ListenerAdapter {
                 }
             }
         }
+        else if (event.getName().equals("consolefilter")) {
+            boolean showInfo = event.getOption("info").getAsBoolean();
+            if (plugin.getBotManager().getConsoleManager() != null) {
+                plugin.getBotManager().getConsoleManager().setShowInfo(showInfo);
+                if (showInfo) {
+                    event.reply("✅ Фільтр оновлено: тепер INFO логи **показуються**.").queue();
+                } else {
+                    event.reply("✅ Фільтр оновлено: тепер INFO логи **приховані**.").queue();
+                }
+            } else {
+                event.reply("❌ Менеджер консолі не активний.").setEphemeral(true).queue();
+            }
+        }
+        else if (event.getName().equals("stats")) {
+            double currentTps = 20.0;
+            try {
+                currentTps = plugin.getServer().getTPS()[0];
+            } catch (Exception ignored) {}
+
+            Runtime runtime = Runtime.getRuntime();
+            long maxMemory = runtime.maxMemory();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            double ramPercent = ((double) usedMemory / maxMemory) * 100.0;
+            
+            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+            embed.setTitle("📊 Статистика сервера");
+            embed.setColor(0x00FF00);
+            embed.addField("TPS", String.format("%.2f", currentTps), true);
+            embed.addField("RAM (Використано)", String.format("%.2f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
+            embed.addField("RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
+            
+            event.replyEmbeds(embed.build()).queue();
+        }
     }
 }
