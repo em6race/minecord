@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 
 with open('en_us.json', 'r', encoding='utf-8') as f:
@@ -54,12 +54,11 @@ with open('src/main/java/com/example/minecord/utils/DeathTranslator.java', 'w', 
                 uk_str = uk_ua[key]
                 uk_str = uk_str.replace('"', '\\"')
                 
-                # We need to replace %1, %2 etc. with capture groups
-                # First, temporarily replace % placeholders with unique tokens
+                # First, temporarily replace placeholders with unique tokens
                 regex = en_str
-                regex = regex.replace('%1', '___1___')
-                regex = regex.replace('%2', '___2___')
-                regex = regex.replace('%3', '___3___')
+                regex = regex.replace('%1$s', '___1___')
+                regex = regex.replace('%2$s', '___2___')
+                regex = regex.replace('%3$s', '___3___')
                 regex = regex.replace('%s', '___1___')
                 
                 # Now escape everything else for Java Regex
@@ -71,10 +70,10 @@ with open('src/main/java/com/example/minecord/utils/DeathTranslator.java', 'w', 
                 regex = regex.replace('___3___', '(.*?)')
                 
                 replacement = uk_str
-                replacement = replacement.replace('%1', '')
-                replacement = replacement.replace('%2', '')
-                replacement = replacement.replace('%3', '')
-                replacement = replacement.replace('%s', '')
+                replacement = replacement.replace('%1$s', '$1')
+                replacement = replacement.replace('%2$s', '$2')
+                replacement = replacement.replace('%3$s', '$3')
+                replacement = replacement.replace('%s', '$1')
                 
                 o(f'        rules.add(new TranslationRule("^{regex}$", "{replacement}"));')
     
