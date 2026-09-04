@@ -146,8 +146,8 @@ public class PlayerEventListener implements Listener {
         String mapUrl = plugin.getConfig().getString("discord.map-url", "http://kozlomine.minecraft.how:27257/");
         if (!mapUrl.endsWith("/")) mapUrl += "/";
         
-        // Формат посилання для BlueMap
-        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        // Формат посилання для BlueMap (версія 4/5+ вимагає 10 параметрів)
+        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         
         net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
         net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent("§b§n[🗺️ Відкрити на мапі]");
