@@ -99,6 +99,78 @@ public class MineCordCommand implements CommandExecutor {
             return true;
         }
 
+        if (command.getName().equalsIgnoreCase("mail")) {
+            if (!(sender instanceof Player)) return true;
+            if (args.length < 3 || !args[0].equalsIgnoreCase("send")) {
+                sender.sendMessage(ChatColor.RED + "Використання: /mail send <гравець> <повідомлення>");
+                return true;
+            }
+            String targetName = args[1];
+            String message = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
+            
+            // Виконуємо асинхронно, бо getOfflinePlayer може лагати
+            org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(targetName);
+                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+                    sender.sendMessage(ChatColor.RED + "Гравця не знайдено на сервері.");
+                    return;
+                }
+                String discordId = plugin.getLinkManager().getDiscordId(target.getUniqueId());
+                if (discordId == null) {
+                    sender.sendMessage(ChatColor.RED + "Гравець не прив'язав свій Discord-акаунт.");
+                    return;
+                }
+                
+                if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
+                    plugin.getBotManager().getJda().openPrivateChannelById(discordId).queue(channel -> {
+                        net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                        embed.setTitle("📩 Новий лист у грі!");
+                        embed.setDescription("**Від:** " + sender.getName() + "\n**Повідомлення:** " + message);
+                        embed.setColor(0x00FF00);
+                        channel.sendMessageEmbeds(embed.build()).queue(
+                            success -> sender.sendMessage(ChatColor.GREEN + "Лист успішно надіслано в Discord гравцю " + targetName + "!"),
+                            error -> sender.sendMessage(ChatColor.RED + "Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
+                        );
+                    }, error -> sender.sendMessage(ChatColor.RED + "Не вдалося знайти користувача Discord."));
+                }
+            });
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("ticket")) {
+            if (!(sender instanceof Player)) return true;
+            if (args.length < 2 || !args[0].equalsIgnoreCase("create")) {
+                sender.sendMessage(ChatColor.RED + "Використання: /ticket create <повідомлення>");
+                return true;
+            }
+            String message = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+            
+            String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
+            if (modChannelId == null || modChannelId.isEmpty()) {
+                sender.sendMessage(ChatColor.RED + "Канал модераторів не налаштовано.");
+                return true;
+            }
+            
+            if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel modChannel = plugin.getBotManager().getJda().getTextChannelById(modChannelId);
+                if (modChannel != null) {
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    embed.setTitle("🎫 Новий тікет від " + sender.getName());
+                    embed.setDescription(message);
+                    embed.setFooter("UUID: " + ((Player)sender).getUniqueId().toString());
+                    embed.setColor(0xFF0000);
+                    
+                    modChannel.sendMessageEmbeds(embed.build()).queue(msg -> {
+                        msg.createThreadChannel("Тікет-" + sender.getName()).queue(thread -> {
+                            thread.sendMessage("Модератори скоро вам відповідять. (Щоб відповісти гравцю, пишіть повідомлення прямо сюди)").queue();
+                        });
+                        sender.sendMessage(ChatColor.GREEN + "Ваш тікет успішно створено! Відповідь від адміністрації прийде сюди.");
+                    });
+                }
+            }
+            return true;
+        }
+
         player.sendMessage(ChatColor.RED + "Використання: /discord link");
         return true;
     }

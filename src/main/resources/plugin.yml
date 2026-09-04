@@ -13,8 +13,14 @@ commands:
     description: Альтернативна назва команди
     usage: /minecord [reload]
   map:
-    description: Посилання на веб-мапу сервера
+    description: Показати карту сервера
     usage: /map
+  mail:
+    description: Відправити офлайн повідомлення гравцю
+    usage: /mail send <гравець> <повідомлення>
+  ticket:
+    description: Створити тікет для адміністрації
+    usage: /ticket create <повідомлення>
   togglerestart:
     description: Вимкнути/увімкнути відображення попереджень про авторестарт для себе
     usage: /togglerestart
