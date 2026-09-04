@@ -50,41 +50,34 @@ public class ChatListener implements Listener {
 
         if (plugin.getConfig().getBoolean("ai-moderator.enabled", true)) {
             String message = event.getMessage();
+            org.bukkit.entity.Player player = event.getPlayer();
 
-            // AsyncPlayerChatEvent вже викликається асинхронно від головного потоку,
-            // тому .join() блокує лише цей async-потік, а не сервер
-            boolean isToxic = false;
-            try {
-                isToxic = plugin.getOpenAIModerator().isMessageToxic(message).join();
-            } catch (Exception e) {
-                plugin.getLogger().warning("Помилка при перевірці чату: " + e.getMessage());
-            }
-
-            if (isToxic) {
-                event.setCancelled(true);
-
-                // Зберігаємо заблоковане повідомлення для можливої апеляції
-                plugin.getOpenAIModerator().setLastBlockedMessage(event.getPlayer().getUniqueId(), message);
-
-                String warnMsg = plugin.getConfig().getString("ai-moderator.warn-message", "§cВаше повідомлення видалено модератором!");
-                event.getPlayer().sendMessage(warnMsg);
-                event.getPlayer().sendMessage("§7Твоє повідомлення: §c" + message);
-
-                // Клікабельна кнопка апеляції
-                net.md_5.bungee.api.chat.TextComponent appealBtn = new net.md_5.bungee.api.chat.TextComponent("§e§n[Натисніть тут, якщо повідомлення заблоковано помилково]");
-                appealBtn.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/minecord appeal"));
-                appealBtn.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("Відправити адміністрації на перевірку")));
-                event.getPlayer().spigot().sendMessage(appealBtn);
-
-                if (plugin.getConfig().getBoolean("ai-moderator.kick-player", false)) {
-                    String kickMsg = plugin.getConfig().getString("ai-moderator.kick-message", "§cПорушення правил чату!");
-                    org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                        event.getPlayer().kickPlayer(kickMsg);
-                    });
+            // Запускаємо перевірку ШІ повністю в фоні, щоб не було інпут лагу
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    boolean isToxic = plugin.getOpenAIModerator().isMessageToxic(message).join();
+                    if (isToxic) {
+                        // Повідомляємо модераторів у Discord замість автоматичного муту
+                        if (plugin.getBotManager() != null) {
+                            String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
+                            if (modChannelId != null && !modChannelId.isEmpty()) {
+                                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(modChannelId);
+                                if (channel != null) {
+                                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                                    embed.setTitle("⚠️ Підозра на серйозне порушення чату");
+                                    embed.setColor(0xFF0000);
+                                    embed.addField("Гравець", player.getName(), true);
+                                    embed.addField("Повідомлення", message, false);
+                                    embed.setFooter("Автоматично виявлено AI-Модератором");
+                                    channel.sendMessageEmbeds(embed.build()).queue();
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Помилка при перевірці чату: " + e.getMessage());
                 }
-
-                return;
-            }
+            });
         }
 
         // Якщо все добре — готуємо повідомлення
