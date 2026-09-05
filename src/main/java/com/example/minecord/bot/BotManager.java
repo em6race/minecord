@@ -135,7 +135,11 @@ public class BotManager {
             webhookManager.close();
         }
         if (jda != null) {
-            jda.shutdown();
+            try {
+                jda.shutdown();
+            } catch (Throwable e) {
+                plugin.getLogger().warning("Помилка під час вимкнення JDA: " + e.getMessage());
+            }
         }
     }
 
