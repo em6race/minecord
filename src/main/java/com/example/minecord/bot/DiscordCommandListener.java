@@ -277,6 +277,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                     embed.setColor(0xFF0000); // Red
                     embed.setDescription("🔴 **Статус:** Офлайн");
                     java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+                    sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
                     embed.addField("🕒 Останній вхід", sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())), false);
                     embed.addField("📅 Перший вхід", sdf.format(new java.util.Date(offlinePlayer.getFirstPlayed())), false);
                 }
