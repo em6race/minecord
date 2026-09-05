@@ -72,9 +72,7 @@ public class BotManager {
                                         new SubcommandData("clear", "Очистити всі авторестарти"),
                                         new SubcommandData("toggle", "Призупинити/відновити всі авторестарти")
                                 ),
-                        Commands.slash("consolefilter", "Фільтр логів консолі")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                                .addOption(OptionType.BOOLEAN, "info", "Показувати INFO логи", true),
+
                         Commands.slash("stats", "Статистика сервера або гравця")
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця", false),
                         Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
