@@ -39,8 +39,6 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
         }
         else if (event.getName().equals("online")) {
-            event.deferReply().queue();
-
             int onlineCount = plugin.getServer().getOnlinePlayers().size();
             int maxPlayers = plugin.getServer().getMaxPlayers();
 
@@ -60,7 +58,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                 embed.setDescription(playersList.toString());
             }
 
-            event.getHook().editOriginalEmbeds(embed.build()).queue();
+            event.replyEmbeds(embed.build()).queue();
         }
         else if (event.getName().equals("map")) {
             event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](http://kozlomine.minecraft.how:27257/)").setEphemeral(true).queue();
