@@ -98,6 +98,7 @@ public class StatsCommand implements CommandExecutor {
         } else {
             viewer.sendMessage(ChatColor.RED + "Статус: Офлайн");
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
             viewer.sendMessage(ChatColor.WHITE + "Останній вхід: " + sdf.format(new java.util.Date(target.getLastPlayed())));
             viewer.sendMessage(ChatColor.WHITE + "Перший вхід: " + sdf.format(new java.util.Date(target.getFirstPlayed())));
         }
