@@ -323,6 +323,25 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) withered away while fighting (.*?)$", "$1 висушився під час битви з $2"));
         rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?)$", "$1 уражено черепом від $2"));
         rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?) using (.*?)$", "$1 уражено черепом від $2 за допомогою: $3"));
+        rules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 впав з висоти"));
+        rules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 сильно вдарився об землю"));
+        rules.add(new TranslationRule("^(.*?) drowned$", "$1 потонув"));
+        rules.add(new TranslationRule("^(.*?) drowned whilst trying to escape (.*?)$", "$1 потонув під час спроби втекти від $2"));
+        rules.add(new TranslationRule("^(.*?) experienced kinetic energy$", "$1 пізнав кінетичну енергію (розбився на елітрах)"));
+        rules.add(new TranslationRule("^(.*?) blew up$", "$1 вибухнув"));
+        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$1 був підірваний ($2)"));
+        rules.add(new TranslationRule("^(.*?) was killed by \\u005bIntentional Game Design\\u005d$", "$1 був убитий [Навмисним геймдизайном]"));
+        rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil$", "$1 був розчавлений ковадлом"));
+        rules.add(new TranslationRule("^(.*?) starved to death$", "$1 помер від голоду"));
+        rules.add(new TranslationRule("^(.*?) suffocated in a wall$", "$1 задихнувся в стіні"));
+        rules.add(new TranslationRule("^(.*?) was pricked to death$", "$1 заколовся до смерті (кактус)"));
+        rules.add(new TranslationRule("^(.*?) walked into fire whilst fighting (.*?)$", "$1 зайшов у вогонь під час битви з $2"));
+        rules.add(new TranslationRule("^(.*?) went up in flames$", "$1 згорів у вогні"));
+        rules.add(new TranslationRule("^(.*?) burned to death$", "$1 згорів живцем"));
+        rules.add(new TranslationRule("^(.*?) tried to swim in lava$", "$1 спробував поплавати в лаві"));
+        rules.add(new TranslationRule("^(.*?) tried to swim in lava to escape (.*?)$", "$1 спробував поплавати в лаві тікаючи від $2"));
+        rules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 був уражений блискавкою"));
+        rules.add(new TranslationRule("^(.*?) froze to death$", "$1 замерз на смерть"));
     }
     public static String translate(String message) {
         if (message == null) return null;
