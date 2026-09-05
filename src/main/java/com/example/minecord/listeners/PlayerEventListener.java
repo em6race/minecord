@@ -77,7 +77,7 @@ public class PlayerEventListener implements Listener {
                             String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.no-role", "§cУ вас немає ролі!");
                             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         // Якщо користувач вийшов з сервера, JDA кине виняток ErrorResponseException (Unknown Member)
                         String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
                         event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
@@ -104,76 +104,88 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+        try {
+            Player player = event.getPlayer();
 
-        if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
-            String welcomeMessage = ChatColor.GOLD + "🎉 Вітаємо нового гравця " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " на сервері!";
-            plugin.getServer().broadcastMessage(welcomeMessage);
-            
-            if (plugin.getBotManager() != null) {
-                plugin.getBotManager().sendSystemEmbed(player.getName() + " вперше приєднався до сервера! Бажаємо гарної гри!", 0xFFA500, player.getName());
+            if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
+                String welcomeMessage = ChatColor.GOLD + "🎉 Вітаємо нового гравця " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " на сервері!";
+                plugin.getServer().broadcastMessage(welcomeMessage);
+                
+                if (plugin.getBotManager() != null) {
+                    plugin.getBotManager().sendSystemEmbed(player.getName() + " вперше приєднався до сервера! Бажаємо гарної гри!", 0xFFA500, player.getName());
+                }
+            } else if (plugin.getConfig().getBoolean("events.join-leave", true)) {
+                if (plugin.getBotManager() != null) {
+                    plugin.getBotManager().sendSystemEmbed(player.getName() + " зайшов на сервер.", 0x00FF00, player.getName());
+                }
             }
-        } else if (plugin.getConfig().getBoolean("events.join-leave", true)) {
-            if (plugin.getBotManager() != null) {
-                plugin.getBotManager().sendSystemEmbed(player.getName() + " зайшов на сервер.", 0x00FF00, player.getName());
-            }
+        } catch (Throwable e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerJoin", e);
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (plugin.getConfig().getBoolean("events.join-leave", true)) {
-            if (plugin.getBotManager() != null) {
-                plugin.getBotManager().sendSystemEmbed(event.getPlayer().getName() + " вийшов із сервера.", 0xFF0000, event.getPlayer().getName());
+        try {
+            if (plugin.getConfig().getBoolean("events.join-leave", true)) {
+                if (plugin.getBotManager() != null) {
+                    plugin.getBotManager().sendSystemEmbed(event.getPlayer().getName() + " вийшов із сервера.", 0xFF0000, event.getPlayer().getName());
+                }
             }
+        } catch (Throwable e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerQuit", e);
         }
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        org.bukkit.entity.Player player = event.getEntity();
-        org.bukkit.Location loc = player.getLocation();
-        String worldName = loc.getWorld().getName();
-        
-        String dimension = "Верхній світ";
-        if (worldName.endsWith("_nether")) dimension = "Незер";
-        else if (worldName.endsWith("_the_end")) dimension = "Енд";
-        
-        // Відправляємо координати гравцю з клікабельним посиланням на мапу
-        String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
-        
-        String mapUrl = plugin.getConfig().getString("discord.map-url", "http://kozlomine.minecraft.how:27257/");
-        if (!mapUrl.endsWith("/")) mapUrl += "/";
-        
-        // Формат посилання для BlueMap (версія 4/5+ вимагає 10 параметрів)
-        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        
-        net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
-        net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent("§b§n[🗺️ Відкрити на мапі]");
-        linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
-        linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("Натисніть, щоб відкрити місце смерті в браузері")));
-        
-        msgComponent.addExtra(linkComponent);
-        player.spigot().sendMessage(msgComponent);
-        
-        // Записуємо в консоль сервера
-        plugin.getLogger().info(String.format("Гравець %s помер на координатах: X: %d, Y: %d, Z: %d (%s)", 
-                player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension));
+        try {
+            org.bukkit.entity.Player player = event.getEntity();
+            org.bukkit.Location loc = player.getLocation();
+            String worldName = loc.getWorld().getName();
+            
+            String dimension = "Верхній світ";
+            if (worldName.endsWith("_nether")) dimension = "Незер";
+            else if (worldName.endsWith("_the_end")) dimension = "Енд";
+            
+            // Відправляємо координати гравцю з клікабельним посиланням на мапу
+            String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
+                    loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
+            
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://kozlomine.minecraft.how:27257/");
+            if (!mapUrl.endsWith("/")) mapUrl += "/";
+            
+            // Формат посилання для BlueMap (версія 4/5+ вимагає 10 параметрів)
+            String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            
+            net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
+            net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent("§b§n[🗺️ Відкрити на мапі]");
+            linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
+            linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("Натисніть, щоб відкрити місце смерті в браузері")));
+            
+            msgComponent.addExtra(linkComponent);
+            player.spigot().sendMessage(msgComponent);
+            
+            // Записуємо в консоль сервера
+            plugin.getLogger().info(String.format("Гравець %s помер на координатах: X: %d, Y: %d, Z: %d (%s)", 
+                    player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension));
 
-        if (plugin.getConfig().getBoolean("events.death", true)) {
-            String deathMessage = event.getDeathMessage();
-            if (deathMessage != null) {
-                // Очищаємо повідомлення від кольорів Minecraft
-                String cleanMessage = ChatColor.stripColor(deathMessage);
-                
-                // Перекладаємо повідомлення на українську
-                String translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
-                
-                if (plugin.getBotManager() != null) {
-                    plugin.getBotManager().sendSystemEmbed("💀 " + translatedMessage, 0x000000, player.getName());
+            if (plugin.getConfig().getBoolean("events.death", true)) {
+                String deathMessage = event.getDeathMessage();
+                if (deathMessage != null) {
+                    // Очищаємо повідомлення від кольорів Minecraft
+                    String cleanMessage = ChatColor.stripColor(deathMessage);
+                    
+                    // Перекладаємо повідомлення на українську
+                    String translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
+                    
+                    if (plugin.getBotManager() != null) {
+                        plugin.getBotManager().sendSystemEmbed("💀 " + translatedMessage, 0x000000, player.getName());
+                    }
                 }
             }
+        } catch (Throwable e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerDeath", e);
         }
     }
 
