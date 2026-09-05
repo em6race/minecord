@@ -24,3 +24,6 @@ commands:
   togglerestart:
     description: Вимкнути/увімкнути відображення попереджень про авторестарт для себе
     usage: /togglerestart
+  stats:
+    description: Статистика гравця
+    usage: /stats [гравець]
