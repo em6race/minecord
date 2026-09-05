@@ -74,10 +74,10 @@ public class BotManager {
                                 ),
 
                         Commands.slash("stats", "Статистика сервера або гравця")
-                                .addOption(OptionType.STRING, "player", "Нікнейм гравця", false),
+                                .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true),
                         Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                                .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true)
+                                .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true, true)
                                 .addOption(OptionType.USER, "user", "Користувач Discord", true)
                 ).queue();
 
