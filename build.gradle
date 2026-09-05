@@ -30,7 +30,8 @@ dependencies {
     // Бібліотека JDA для роботи з Discord
     implementation 'net.dv8tion:JDA:5.0.0-beta.21' 
     
-
+    // Sentry для відлову помилок
+    implementation 'io.sentry:sentry:6.33.1'
 }
 
 def targetJavaVersion = 21 // Використовуємо Java 21, що є стандартом для нових версій

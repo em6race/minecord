@@ -63,6 +63,10 @@ public class ConsoleManager {
                         String title = record.getLevel().getName() + ": " + (msg != null ? msg : record.getThrown().getMessage());
                         if (title.length() > 200) title = title.substring(0, 197) + "...";
                         sendErrorEmbed(title, stackTrace);
+                        
+                        if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
+                            io.sentry.Sentry.captureException(record.getThrown());
+                        }
                     });
                 }
             }
