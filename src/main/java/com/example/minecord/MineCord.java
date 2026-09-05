@@ -25,6 +25,15 @@ public final class MineCord extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         
+        String sentryDsn = getConfig().getString("sentry.dsn");
+        if (getConfig().getBoolean("sentry.enabled", false) && sentryDsn != null && !sentryDsn.isEmpty()) {
+            io.sentry.Sentry.init(options -> {
+                options.setDsn(sentryDsn);
+                options.setTracesSampleRate(1.0);
+            });
+            getLogger().info("Sentry integration enabled!");
+        }
+        
         // Ініціалізація AI модератора та анти-спаму
         this.openAIModerator = new OpenAIModerator(this);
         this.antiSpamManager = new AntiSpamManager();
@@ -78,6 +87,9 @@ public final class MineCord extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (getConfig().getBoolean("sentry.enabled", false)) {
+            io.sentry.Sentry.close();
+        }
         if (botManager != null) {
             botManager.stop();
         }
