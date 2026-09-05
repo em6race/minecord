@@ -27,12 +27,13 @@ public class DiscordCommandListener extends ListenerAdapter {
             String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
                               "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
                               "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
-                              "🔹 `/help` — Показує це повідомлення\n\n" +
+                              "🔹 `/help` — Показує це повідомлення\n" +
+                              "🔹 `/stats [гравець]` — Показати статистику сервера або гравця\n\n" +
                               "👑 **Команди адміністратора:**\n" +
-                              "🔸 `/stats` — Показати навантаження на сервер (TPS та RAM)\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
-                              "🔸 `/consolefilter <info>` — Увімкнути/вимкнути INFO логи в каналі консолі";
+                              "🔸 `/consolefilter <info>` — Увімкнути/вимкнути INFO логи в каналі консолі\n" +
+                              "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord";
             embed.setDescription(commands);
 
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
@@ -182,24 +183,93 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
         }
         else if (event.getName().equals("stats")) {
-            double currentTps = 20.0;
-            try {
-                currentTps = plugin.getServer().getTPS()[0];
-            } catch (Exception ignored) {}
+            net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");
+            if (playerOpt == null) {
+                // Server stats
+                double currentTps = 20.0;
+                try {
+                    currentTps = plugin.getServer().getTPS()[0];
+                } catch (Exception ignored) {}
 
-            Runtime runtime = Runtime.getRuntime();
-            long maxMemory = runtime.maxMemory();
-            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-            double ramPercent = ((double) usedMemory / maxMemory) * 100.0;
+                Runtime runtime = Runtime.getRuntime();
+                long maxMemory = runtime.maxMemory();
+                long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+                double ramPercent = ((double) usedMemory / maxMemory) * 100.0;
+                
+                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                embed.setTitle("📊 Статистика сервера");
+                embed.setColor(0x00FF00);
+                embed.addField("TPS", String.format("%.2f", currentTps), true);
+                embed.addField("RAM (Використано)", String.format("%.2f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
+                embed.addField("RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
+                
+                event.replyEmbeds(embed.build()).queue();
+            } else {
+                // Player stats
+                String playerName = playerOpt.getAsString();
+                org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
+                
+                if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline()) {
+                    event.reply("❌ Гравця з ніком **" + playerName + "** не знайдено на сервері (або він ніколи не заходив).").setEphemeral(true).queue();
+                    return;
+                }
+                
+                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                embed.setTitle("📊 Статистика гравця " + offlinePlayer.getName());
+                
+                if (offlinePlayer.isOnline()) {
+                    org.bukkit.entity.Player p = offlinePlayer.getPlayer();
+                    embed.setColor(0x00FF00); // Green
+                    embed.setDescription("🟢 **Статус:** Онлайн");
+                    
+                    int ping = p.getPing();
+                    double health = p.getHealth();
+                    int food = p.getFoodLevel();
+                    int level = p.getLevel();
+                    
+                    int deaths = p.getStatistic(org.bukkit.Statistic.DEATHS);
+                    int mobKills = p.getStatistic(org.bukkit.Statistic.MOB_KILLS);
+                    int playerKills = p.getStatistic(org.bukkit.Statistic.PLAYER_KILLS);
+                    
+                    long playtimeTicks = p.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
+                    long playtimeHours = playtimeTicks / (20 * 60 * 60);
+                    long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
+                    
+                    embed.addField("📶 Пінг", ping + " ms", true);
+                    embed.addField("❤️ Здоров'я", String.format("%.1f/20", health), true);
+                    embed.addField("🍗 Ситість", food + "/20", true);
+                    
+                    embed.addField("🌟 Рівень", level + " lvl", true);
+                    embed.addField("☠️ Смертей", String.valueOf(deaths), true);
+                    embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
+                    
+                    embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
+                    
+                    org.bukkit.Location loc = p.getLocation();
+                    embed.addField("🗺️ Локація", loc.getWorld().getName() + " (" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")", false);
+                } else {
+                    embed.setColor(0xFF0000); // Red
+                    embed.setDescription("🔴 **Статус:** Офлайн");
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+                    embed.addField("🕒 Останній вхід", sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())), false);
+                    embed.addField("📅 Перший вхід", sdf.format(new java.util.Date(offlinePlayer.getFirstPlayed())), false);
+                }
+                
+                event.replyEmbeds(embed.build()).queue();
+            }
+        }
+        else if (event.getName().equals("linkadmin")) {
+            String playerName = event.getOption("player").getAsString();
+            net.dv8tion.jda.api.entities.User discordUser = event.getOption("user").getAsUser();
             
-            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-            embed.setTitle("📊 Статистика сервера");
-            embed.setColor(0x00FF00);
-            embed.addField("TPS", String.format("%.2f", currentTps), true);
-            embed.addField("RAM (Використано)", String.format("%.2f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
-            embed.addField("RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
+            org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
+            if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline()) {
+                event.reply("❌ Гравця **" + playerName + "** не знайдено на сервері.").setEphemeral(true).queue();
+                return;
+            }
             
-            event.replyEmbeds(embed.build()).queue();
+            plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
+            event.reply("✅ Акаунт Minecraft **" + offlinePlayer.getName() + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
         }
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);
