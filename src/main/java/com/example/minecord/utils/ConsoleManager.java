@@ -55,6 +55,15 @@ public class ConsoleManager {
                 if (msg != null && !msg.isEmpty()) {
                     synchronized (logBuffer) {
                         logBuffer.add("[" + record.getLevel().getName() + "] " + msg);
+                        if (record.getThrown() != null) {
+                            StringWriter sw = new StringWriter();
+                            record.getThrown().printStackTrace(new PrintWriter(sw));
+                            String[] lines = sw.toString().split("\n");
+                            for (int i = 0; i < Math.min(lines.length, 15); i++) {
+                                logBuffer.add(lines[i].replace("\r", ""));
+                            }
+                            if (lines.length > 15) logBuffer.add("... (" + (lines.length - 15) + " more lines)");
+                        }
                     }
                 }
                 
