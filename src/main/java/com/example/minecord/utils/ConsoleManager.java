@@ -62,7 +62,7 @@ public class ConsoleManager {
                     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                         String title = record.getLevel().getName() + ": " + (msg != null ? msg : record.getThrown().getMessage());
                         if (title.length() > 200) title = title.substring(0, 197) + "...";
-                        uploadError(title, stackTrace);
+                        sendErrorEmbed(title, stackTrace);
                     });
                 }
             }
@@ -109,42 +109,28 @@ public class ConsoleManager {
         }, 30L, 30L);
     }
 
-    private void uploadError(String title, String stackTrace) {
-        try {
-            String pasteUrlConfig = plugin.getConfig().getString("technical.error-catcher.paste-service", "https://paste.md-5.net/documents");
-            URL url = new URL(pasteUrlConfig);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("User-Agent", "MineCord/1.0");
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(stackTrace.getBytes(StandardCharsets.UTF_8));
-            }
-            if (conn.getResponseCode() == 200) {
-                try (Scanner s = new Scanner(conn.getInputStream()).useDelimiter("\\A")) {
-                    String response = s.hasNext() ? s.next() : "";
-                    Matcher m = Pattern.compile("\"key\":\"([^\"]+)\"").matcher(response);
-                    if (m.find()) {
-                        String baseUrl = pasteUrlConfig.replace("/documents", "");
-                        String finalUrl = baseUrl + "/" + m.group(1);
-                        sendErrorEmbed(title, finalUrl);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Silently fail to avoid console spam loops
-        }
-    }
-    
-    private void sendErrorEmbed(String title, String pasteUrl) {
+    private void sendErrorEmbed(String title, String stackTrace) {
         String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
         if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null && consoleChannelId != null) {
             TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
             if (channel != null) {
                 net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                embed.setTitle("⚠️ Виявлено помилку (Stacktrace)");
-                embed.setDescription("**" + title + "**\n\n[Переглянути повний лог помилки](" + pasteUrl + ")");
+                embed.setTitle("⚠️ Помилка Плагіну!");
                 embed.setColor(0xFF0000);
+                
+                if (title != null && !title.isEmpty()) {
+                    if (title.length() > 256) title = title.substring(0, 253) + "...";
+                    embed.addField("Опис", title, false);
+                }
+                
+                if (stackTrace != null && !stackTrace.isEmpty()) {
+                    String cleanTrace = org.bukkit.ChatColor.stripColor(stackTrace);
+                    if (cleanTrace.length() > 3900) {
+                        cleanTrace = cleanTrace.substring(0, 3900) + "\n... (зрізано)";
+                    }
+                    embed.setDescription("```java\n" + cleanTrace + "\n```");
+                }
+                
                 channel.sendMessageEmbeds(embed.build()).queue();
             }
         }
