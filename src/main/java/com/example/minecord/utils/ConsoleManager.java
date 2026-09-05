@@ -23,20 +23,9 @@ public class ConsoleManager {
     private final List<String> logBuffer = new ArrayList<>();
     private int taskId = -1;
     private Handler logHandler;
-    
-    private boolean showInfo = true;
-    private boolean showWarn = true;
 
     public ConsoleManager(MineCord plugin) {
         this.plugin = plugin;
-    }
-
-    public void setShowInfo(boolean showInfo) {
-        this.showInfo = showInfo;
-    }
-
-    public boolean isShowInfo() {
-        return showInfo;
     }
 
     public void start() {
@@ -48,8 +37,6 @@ public class ConsoleManager {
         logHandler = new Handler() {
             @Override
             public void publish(LogRecord record) {
-                if (record.getLevel().getName().equals("INFO") && !showInfo) return;
-                if (record.getLevel().getName().equals("WARNING") && !showWarn) return;
                 
                 String msg = record.getMessage();
                 if (msg != null && !msg.isEmpty()) {

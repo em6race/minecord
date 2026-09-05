@@ -167,19 +167,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                 }
             }
         }
-        else if (event.getName().equals("consolefilter")) {
-            boolean showInfo = event.getOption("info").getAsBoolean();
-            if (plugin.getBotManager().getConsoleManager() != null) {
-                plugin.getBotManager().getConsoleManager().setShowInfo(showInfo);
-                if (showInfo) {
-                    event.reply("✅ Фільтр оновлено: тепер INFO логи **показуються**.").queue();
-                } else {
-                    event.reply("✅ Фільтр оновлено: тепер INFO логи **приховані**.").queue();
-                }
-            } else {
-                event.reply("❌ Менеджер консолі не активний.").setEphemeral(true).queue();
-            }
-        }
+
         else if (event.getName().equals("stats")) {
             net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");
             if (playerOpt == null) {
