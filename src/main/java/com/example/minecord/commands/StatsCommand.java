@@ -48,8 +48,6 @@ public class StatsCommand implements CommandExecutor {
             Player p = target.getPlayer();
             viewer.sendMessage(ChatColor.GREEN + "Статус: Онлайн");
             viewer.sendMessage(ChatColor.WHITE + "Пінг: " + p.getPing() + " ms");
-            viewer.sendMessage(ChatColor.WHITE + "Здоров'я: " + String.format("%.1f/20", p.getHealth()));
-            viewer.sendMessage(ChatColor.WHITE + "Ситість: " + p.getFoodLevel() + "/20");
             viewer.sendMessage(ChatColor.WHITE + "Рівень: " + p.getLevel() + " lvl");
 
             int deaths = p.getStatistic(Statistic.DEATHS);

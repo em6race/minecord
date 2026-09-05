@@ -236,9 +236,6 @@ public class DiscordCommandListener extends ListenerAdapter {
                     long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
                     
                     embed.addField("📶 Пінг", ping + " ms", true);
-                    embed.addField("❤️ Здоров'я", String.format("%.1f/20", health), true);
-                    embed.addField("🍗 Ситість", food + "/20", true);
-                    
                     embed.addField("🌟 Рівень", level + " lvl", true);
                     embed.addField("☠️ Смертей", String.valueOf(deaths), true);
                     embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
@@ -276,9 +273,6 @@ public class DiscordCommandListener extends ListenerAdapter {
                     embed.addField("🧱 Поставлено блоків", String.valueOf(blocksPlaced), true);
                     embed.addField("🎒 Підібрано предметів", String.valueOf(itemsPickedUp), true);
                     embed.addField("🏃 Подолано відстані", distanceKm + " км (" + distanceBlocks + " блоків)", false);
-                    
-                    org.bukkit.Location loc = p.getLocation();
-                    embed.addField("🗺️ Локація", loc.getWorld().getName() + " (" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")", false);
                 } else {
                     embed.setColor(0xFF0000); // Red
                     embed.setDescription("🔴 **Статус:** Офлайн");
