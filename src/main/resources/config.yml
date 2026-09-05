@@ -25,7 +25,7 @@ whitelist:
 # Налаштування динамічного статусу бота в Discord
 status:
   enabled: true
-  update-interval-seconds: 15
+  update-interval-seconds: 5
   text: "Грає в Minecraft (%online%/%max%)"
 
 # Налаштування сповіщень про ігрові події
