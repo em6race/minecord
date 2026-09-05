@@ -194,27 +194,21 @@ public class BotManager {
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
-                TextChannel channel = jda.getTextChannelById(channelId.trim());
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId.trim());
                 if (channel != null) {
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                embed.setColor(color);
-                
-                if (playerName != null && !playerName.isEmpty()) {
-                    String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
-                    embed.setAuthor(text, null, avatarUrl);
-                } else {
-                    embed.setDescription(text);
-                }
-                try {
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    embed.setColor(color);
+                    
+                    if (playerName != null && !playerName.isEmpty()) {
+                        String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+                        embed.setAuthor(text, null, avatarUrl);
+                    } else {
+                        embed.setDescription(text);
+                    }
                     channel.sendMessageEmbeds(embed.build()).queue();
-                } catch (net.dv8tion.jda.api.exceptions.InsufficientPermissionException e) {
-                    plugin.getLogger().warning("Бот не має прав для відправки Embed повідомлень у канал " + channelId);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Помилка відправки системного повідомлення: " + e.getMessage());
                 }
-                }
-            } catch (NumberFormatException e) {
-                plugin.getLogger().warning("Невірний формат chat-channel-id: " + channelId);
+            } catch (Throwable e) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Не вдалося відправити Embed", e);
             }
         }
     }
@@ -225,25 +219,21 @@ public class BotManager {
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
-                TextChannel channel = jda.getTextChannelById(channelId.trim());
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId.trim());
                 if (channel != null) {
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                embed.setColor(color);
-                
-                if (playerName != null && !playerName.isEmpty()) {
-                    String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
-                    embed.setAuthor(text, null, avatarUrl);
-                } else {
-                    embed.setDescription(text);
-                }
-                
-                try {
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    embed.setColor(color);
+                    
+                    if (playerName != null && !playerName.isEmpty()) {
+                        String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+                        embed.setAuthor(text, null, avatarUrl);
+                    } else {
+                        embed.setDescription(text);
+                    }
                     channel.sendMessageEmbeds(embed.build()).complete();
-                } catch (Exception ignored) {
                 }
-                }
-            } catch (NumberFormatException e) {
-                plugin.getLogger().warning("Невірний формат chat-channel-id: " + channelId);
+            } catch (Throwable e) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Не вдалося відправити Embed синхронно", e);
             }
         }
     }
