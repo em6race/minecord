@@ -75,8 +75,12 @@ public class BotManager {
                         Commands.slash("consolefilter", "Фільтр логів консолі")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                                 .addOption(OptionType.BOOLEAN, "info", "Показувати INFO логи", true),
-                        Commands.slash("stats", "Статистика сервера (TPS, RAM)")
+                        Commands.slash("stats", "Статистика сервера або гравця")
+                                .addOption(OptionType.STRING, "player", "Нікнейм гравця", false),
+                        Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                                .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true)
+                                .addOption(OptionType.USER, "user", "Користувач Discord", true)
                 ).queue();
 
                 // Ініціалізація Webhook для чату
