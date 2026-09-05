@@ -1,6 +1,10 @@
 package com.example.minecord.bot;
 
 import com.example.minecord.MineCord;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
+import java.util.List;
+import java.util.ArrayList;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.entity.Player;
@@ -293,6 +297,24 @@ public class DiscordCommandListener extends ListenerAdapter {
                     event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
                 }
             );
+        }
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+        if (event.getName().equals("stats") || event.getName().equals("linkadmin")) {
+            if (event.getFocusedOption().getName().equals("player")) {
+                String partialName = event.getFocusedOption().getValue().toLowerCase();
+                
+                List<Choice> choices = new ArrayList<>();
+                for (org.bukkit.OfflinePlayer p : plugin.getServer().getOfflinePlayers()) {
+                    if (p.getName() != null && p.getName().toLowerCase().startsWith(partialName)) {
+                        choices.add(new Choice(p.getName(), p.getName()));
+                        if (choices.size() >= 25) break; // Discord allows max 25 choices
+                    }
+                }
+                event.replyChoices(choices).queue();
+            }
         }
     }
 }
