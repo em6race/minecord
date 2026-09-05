@@ -245,6 +245,38 @@ public class DiscordCommandListener extends ListenerAdapter {
                     
                     embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
                     
+                    int blocksBroken = 0;
+                    int blocksPlaced = 0;
+                    int itemsPickedUp = 0;
+                    for (org.bukkit.Material mat : org.bukkit.Material.values()) {
+                        if (mat.isBlock()) {
+                            try { blocksBroken += p.getStatistic(org.bukkit.Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
+                            try { blocksPlaced += p.getStatistic(org.bukkit.Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
+                        }
+                        if (mat.isItem()) {
+                            try { itemsPickedUp += p.getStatistic(org.bukkit.Statistic.PICKUP, mat); } catch (Exception ignored) {}
+                        }
+                    }
+                    
+                    long distanceCm = 0;
+                    org.bukkit.Statistic[] distStats = {
+                            org.bukkit.Statistic.WALK_ONE_CM, org.bukkit.Statistic.SPRINT_ONE_CM, org.bukkit.Statistic.SWIM_ONE_CM,
+                            org.bukkit.Statistic.FLY_ONE_CM, org.bukkit.Statistic.MINECART_ONE_CM, org.bukkit.Statistic.HORSE_ONE_CM,
+                            org.bukkit.Statistic.PIG_ONE_CM, org.bukkit.Statistic.BOAT_ONE_CM, org.bukkit.Statistic.AVIATE_ONE_CM,
+                            org.bukkit.Statistic.CLIMB_ONE_CM, org.bukkit.Statistic.FALL_ONE_CM, org.bukkit.Statistic.WALK_ON_WATER_ONE_CM,
+                            org.bukkit.Statistic.WALK_UNDER_WATER_ONE_CM, org.bukkit.Statistic.CROUCH_ONE_CM
+                    };
+                    for (org.bukkit.Statistic s : distStats) {
+                        try { distanceCm += p.getStatistic(s); } catch (Exception ignored) {}
+                    }
+                    long distanceBlocks = distanceCm / 100;
+                    long distanceKm = distanceBlocks / 1000;
+                    
+                    embed.addField("⛏️ Зламано блоків", String.valueOf(blocksBroken), true);
+                    embed.addField("🧱 Поставлено блоків", String.valueOf(blocksPlaced), true);
+                    embed.addField("🎒 Підібрано предметів", String.valueOf(itemsPickedUp), true);
+                    embed.addField("🏃 Подолано відстані", distanceKm + " км (" + distanceBlocks + " блоків)", false);
+                    
                     org.bukkit.Location loc = p.getLocation();
                     embed.addField("🗺️ Локація", loc.getWorld().getName() + " (" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")", false);
                 } else {

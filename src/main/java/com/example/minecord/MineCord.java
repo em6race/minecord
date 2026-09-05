@@ -61,6 +61,9 @@ public final class MineCord extends JavaPlugin {
         if (getCommand("ticket") != null) {
             getCommand("ticket").setExecutor(cmd);
         }
+        if (getCommand("stats") != null) {
+            getCommand("stats").setExecutor(new com.example.minecord.commands.StatsCommand(this));
+        }
 
         // Ініціалізація головного менеджера бота
         this.botManager = new BotManager(this);
