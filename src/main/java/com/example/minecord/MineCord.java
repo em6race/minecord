@@ -10,6 +10,7 @@ import com.example.minecord.utils.AutoRestartManager;
 import com.example.minecord.utils.OpenAIModerator;
 import com.example.minecord.utils.AntiSpamManager;
 import com.example.minecord.utils.PerformanceMonitor;
+import com.example.minecord.utils.AfkManager;
 
 public final class MineCord extends JavaPlugin {
 
@@ -20,6 +21,7 @@ public final class MineCord extends JavaPlugin {
     private AntiSpamManager antiSpamManager;
     private PerformanceMonitor performanceMonitor;
     private com.example.minecord.utils.TabManager tabManager;
+    private AfkManager afkManager;
 
     @Override
     public void onEnable() {
@@ -52,6 +54,10 @@ public final class MineCord extends JavaPlugin {
         // Ініціалізація TAB-листа
         this.tabManager = new com.example.minecord.utils.TabManager(this);
         this.tabManager.start();
+        
+        // Ініціалізація AFK менеджера
+        this.afkManager = new AfkManager(this);
+        this.afkManager.start();
         
         // Реєстрація команд
         MineCordCommand cmd = new MineCordCommand(this);
@@ -99,6 +105,9 @@ public final class MineCord extends JavaPlugin {
         if (tabManager != null) {
             tabManager.stop();
         }
+        if (afkManager != null) {
+            afkManager.stop();
+        }
     }
     
     public void reloadPlugin() {
@@ -113,6 +122,12 @@ public final class MineCord extends JavaPlugin {
             tabManager.stop();
             this.tabManager = new com.example.minecord.utils.TabManager(this);
             this.tabManager.start();
+        }
+        
+        if (afkManager != null) {
+            afkManager.stop();
+            this.afkManager = new AfkManager(this);
+            this.afkManager.start();
         }
         
         if (botManager != null) {
