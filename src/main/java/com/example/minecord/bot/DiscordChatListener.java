@@ -43,7 +43,13 @@ public class DiscordChatListener extends ListenerAdapter {
             
             // Виконуємо в головному потоці сервера
             plugin.getServer().getScheduler().runTask(plugin, () -> {
-                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+                boolean success = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+                if (success) {
+                    event.getMessage().addReaction(net.dv8tion.jda.api.entities.emoji.Emoji.fromUnicode("✅")).queue();
+                } else {
+                    event.getMessage().addReaction(net.dv8tion.jda.api.entities.emoji.Emoji.fromUnicode("❌")).queue();
+                    event.getMessage().reply("❌ Команда не знайдена або введена неправильно!").queue();
+                }
             });
             return;
         }
