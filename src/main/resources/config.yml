@@ -111,4 +111,4 @@ technical:
 
 sentry:
   enabled: false
-  dsn: " \n
+  dsn: ""
