@@ -81,36 +81,69 @@ public class ConsoleManager {
         Bukkit.getLogger().addHandler(logHandler);
         java.util.logging.Logger.getLogger("").addHandler(logHandler);
 
-        taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-            List<String> toSend;
-            synchronized (logBuffer) {
-                if (logBuffer.isEmpty()) return;
-                toSend = new ArrayList<>(logBuffer);
-                logBuffer.clear();
-            }
+        taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this::flushLogsAsync, 20L, 20L);
+    }
 
-            if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
-                TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
-                if (channel != null) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("```\n");
-                    for (String line : toSend) {
-                        String clean = org.bukkit.ChatColor.stripColor(line);
-                        if (sb.length() + clean.length() > 1900) {
-                            sb.append("```");
-                            channel.sendMessage(sb.toString()).queue();
-                            sb = new StringBuilder();
-                            sb.append("```\n");
-                        }
-                        sb.append(clean).append("\n");
-                    }
-                    if (sb.length() > 4) {
+    private void flushLogsAsync() {
+        String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
+        if (consoleChannelId == null || consoleChannelId.equals("000000000000000000")) return;
+        
+        List<String> toSend;
+        synchronized (logBuffer) {
+            if (logBuffer.isEmpty()) return;
+            toSend = new ArrayList<>(logBuffer);
+            logBuffer.clear();
+        }
+
+        if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
+            TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
+            if (channel != null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("```\n");
+                for (String line : toSend) {
+                    String clean = org.bukkit.ChatColor.stripColor(line);
+                    if (sb.length() + clean.length() > 1900) {
                         sb.append("```");
                         channel.sendMessage(sb.toString()).queue();
+                        sb = new StringBuilder("```\n");
                     }
+                    sb.append(clean).append("\n");
                 }
+                sb.append("```");
+                channel.sendMessage(sb.toString()).queue();
             }
-        }, 30L, 30L);
+        }
+    }
+
+    private void flushLogsSync() {
+        String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
+        if (consoleChannelId == null || consoleChannelId.equals("000000000000000000")) return;
+        
+        List<String> toSend;
+        synchronized (logBuffer) {
+            if (logBuffer.isEmpty()) return;
+            toSend = new ArrayList<>(logBuffer);
+            logBuffer.clear();
+        }
+
+        if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
+            TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
+            if (channel != null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("```\n");
+                for (String line : toSend) {
+                    String clean = org.bukkit.ChatColor.stripColor(line);
+                    if (sb.length() + clean.length() > 1900) {
+                        sb.append("```");
+                        channel.sendMessage(sb.toString()).complete(); // Use complete() for sync
+                        sb = new StringBuilder("```\n");
+                    }
+                    sb.append(clean).append("\n");
+                }
+                sb.append("```");
+                channel.sendMessage(sb.toString()).complete(); // Use complete() for sync
+            }
+        }
     }
 
     private void sendErrorEmbed(String title, String stackTrace) {
@@ -144,6 +177,9 @@ public class ConsoleManager {
         if (taskId != -1) {
             Bukkit.getScheduler().cancelTask(taskId);
         }
+        try {
+            flushLogsSync();
+        } catch (Exception e) {}
         if (logHandler != null) {
             Bukkit.getLogger().removeHandler(logHandler);
             java.util.logging.Logger.getLogger("").removeHandler(logHandler);
