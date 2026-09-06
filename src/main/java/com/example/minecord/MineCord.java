@@ -91,11 +91,6 @@ public final class MineCord extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         
-        // Підтримка PlaceholderAPI
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new MineCordExpansion(this).register();
-        }
-        
         getLogger().info("MineCord (Модульна версія) успішно завантажено!");
     }
 
