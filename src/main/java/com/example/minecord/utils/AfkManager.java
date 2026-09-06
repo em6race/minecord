@@ -102,12 +102,18 @@ public class AfkManager implements Listener {
             player.addPassenger(display);
             data.display = display;
             
+            // Оновлюємо нік в табі
+            player.setPlayerListName(ChatColor.GRAY + "[АФК] " + ChatColor.RESET + player.getName());
+            
             player.sendMessage(ChatColor.GRAY + "Ви перейшли в режим АФК.");
         } else {
             if (data.display != null && data.display.isValid()) {
                 data.display.remove();
                 data.display = null;
             }
+            // Повертаємо нік в табі
+            player.setPlayerListName(player.getName());
+            
             player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");
         }
     }
