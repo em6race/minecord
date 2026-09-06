@@ -11,6 +11,7 @@ import com.example.minecord.utils.OpenAIModerator;
 import com.example.minecord.utils.AntiSpamManager;
 import com.example.minecord.utils.PerformanceMonitor;
 import com.example.minecord.utils.AfkManager;
+import com.example.minecord.utils.SleepManager;
 
 public final class MineCord extends JavaPlugin {
 
@@ -22,6 +23,7 @@ public final class MineCord extends JavaPlugin {
     private PerformanceMonitor performanceMonitor;
     private com.example.minecord.utils.TabManager tabManager;
     private AfkManager afkManager;
+    private SleepManager sleepManager;
 
     @Override
     public void onEnable() {
@@ -41,8 +43,9 @@ public final class MineCord extends JavaPlugin {
         this.antiSpamManager = new AntiSpamManager();
         this.performanceMonitor = new PerformanceMonitor(this);
         
-        // Ініціалізація бази прив'язки акаунтів
-        this.linkManager = new AccountLinkManager(this);
+        linkManager = new AccountLinkManager(this);
+        botManager = new BotManager(this);
+        botManager.start();
         
         // Ініціалізація авторестартів
         this.autoRestartManager = new AutoRestartManager(this);
@@ -59,6 +62,10 @@ public final class MineCord extends JavaPlugin {
         this.afkManager = new AfkManager(this);
         this.afkManager.start();
         
+        // Ініціалізація менеджера сну
+        this.sleepManager = new SleepManager(this);
+        this.sleepManager.start();
+
         // Реєстрація команд
         MineCordCommand cmd = new MineCordCommand(this);
         if (getCommand("discord") != null) {
@@ -80,13 +87,14 @@ public final class MineCord extends JavaPlugin {
             getCommand("stats").setExecutor(new com.example.minecord.commands.StatsCommand(this));
         }
 
-        // Ініціалізація головного менеджера бота
-        this.botManager = new BotManager(this);
-        this.botManager.start();
-
-        // Реєстрація слухачів подій Minecraft
+        // Реєстрація слухачів
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        
+        // Підтримка PlaceholderAPI
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new MineCordExpansion(this).register();
+        }
         
         getLogger().info("MineCord (Модульна версія) успішно завантажено!");
     }
@@ -108,6 +116,9 @@ public final class MineCord extends JavaPlugin {
         if (afkManager != null) {
             afkManager.stop();
         }
+        if (sleepManager != null) {
+            sleepManager.stop();
+        }
     }
     
     public void reloadPlugin() {
@@ -128,6 +139,12 @@ public final class MineCord extends JavaPlugin {
             afkManager.stop();
             this.afkManager = new AfkManager(this);
             this.afkManager.start();
+        }
+        
+        if (sleepManager != null) {
+            sleepManager.stop();
+            this.sleepManager = new SleepManager(this);
+            this.sleepManager.start();
         }
         
         if (botManager != null) {
@@ -158,5 +175,13 @@ public final class MineCord extends JavaPlugin {
 
     public AntiSpamManager getAntiSpamManager() {
         return antiSpamManager;
+    }
+
+    public PerformanceMonitor getPerformanceMonitor() {
+        return performanceMonitor;
+    }
+
+    public AfkManager getAfkManager() {
+        return afkManager;
     }
 }
