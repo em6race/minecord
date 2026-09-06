@@ -103,12 +103,13 @@ public class BotManager {
                 }
 
                 // Відправка повідомлення про запуск
-                String startMsg = plugin.getConfig().getString("events.server-start");
+                String startMsg = plugin.getConfig().getString("events.server-start", "✅ **Сервер успішно запущено! Можна заходити!**");
                 if (startMsg != null && !startMsg.isEmpty()) {
                     sendSystemEmbed(startMsg, 0x00FF00, null);
                 }
             } catch (Exception e) {
                 plugin.getLogger().severe("Помилка бота: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
@@ -116,13 +117,18 @@ public class BotManager {
     public void stop() {
         if (statusTaskId != -1) {
             Bukkit.getScheduler().cancelTask(statusTaskId);
+            statusTaskId = -1;
         }
         
         // Відправка повідомлення про вимкнення (синхронно, щоб встигло дійти)
         if (jda != null) {
-            String stopMsg = plugin.getConfig().getString("events.server-stop");
-            if (stopMsg != null && !stopMsg.isEmpty()) {
-                sendSystemEmbedSync(stopMsg, 0xFF0000, null);
+            try {
+                String stopMsg = plugin.getConfig().getString("events.server-stop", "🛑 **Сервер вимкнено!**");
+                if (stopMsg != null && !stopMsg.isEmpty()) {
+                    sendSystemEmbedSync(stopMsg, 0xFF0000, null);
+                }
+            } catch (Throwable e) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to send stop embed", e);
             }
         }
 

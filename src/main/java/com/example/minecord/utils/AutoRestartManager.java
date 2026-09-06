@@ -127,8 +127,14 @@ public class AutoRestartManager implements CommandExecutor {
         }
         
         // В Discord відправляємо тільки фінальне повідомлення про рестарт (коли secondsLeft == 0)
-        if (secondsLeft == 0 && plugin.getBotManager() != null) {
-            plugin.getBotManager().sendSystemEmbed("⏰ Планове перезавантаження сервера", 0xFFA500, null);
+        if (plugin.getBotManager() != null) {
+            if (secondsLeft == 300) {
+                plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 5 хвилин!", 0xFFA500, null);
+            } else if (secondsLeft == 60) {
+                plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 1 хвилину!", 0xFFA500, null);
+            } else if (secondsLeft == 0) {
+                plugin.getBotManager().sendSystemEmbedSync("⏱ Планове перезавантаження сервера почалося!", 0xFFA500, null);
+            }
         }
     }
 
