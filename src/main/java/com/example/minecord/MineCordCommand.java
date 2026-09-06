@@ -32,6 +32,13 @@ public class MineCordCommand implements CommandExecutor {
             return true;
         }
 
+        if (args.length > 0 && args[0].equalsIgnoreCase("testsentry")) {
+            if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                sender.sendMessage(ChatColor.RED + "Тестуємо Sentry! Зараз виникне штучна помилка...");
+                throw new RuntimeException("Test Exception for Sentry from MineCord!");
+            }
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                 sender.sendMessage(ChatColor.YELLOW + "Перезавантаження конфігурації та бота MineCord...");
