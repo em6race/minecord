@@ -135,6 +135,11 @@ public class AfkManager implements Listener {
         }
     }
 
+    public boolean isAfk(Player player) {
+        AfkData data = afkDataMap.get(player.getUniqueId());
+        return data != null && data.isAfk;
+    }
+
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
         Bukkit.getScheduler().runTask(plugin, () -> updateActivity(event.getPlayer()));

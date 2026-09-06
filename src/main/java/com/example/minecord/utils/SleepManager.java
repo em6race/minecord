@@ -59,12 +59,7 @@ public class SleepManager implements Listener {
         
         long sleepingCount = activePlayers.stream().filter(Player::isSleeping).count();
         
-        int required;
-        if (totalActive <= 2) {
-            required = totalActive; // 1->1, 2->2
-        } else {
-            required = (int) Math.ceil(totalActive / 2.0); // 3->2, 4->2, 5->3, 6->3
-        }
+        int required = (int) Math.ceil(totalActive / 2.0);
         
         if (sleepingCount >= required) {
             world.setTime(0);
