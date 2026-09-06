@@ -222,7 +222,7 @@ public class BotManager {
     }
 
     // Синхронна відправка, щоб гарантовано доставити повідомлення перед вимкненням
-    private void sendSystemEmbedSync(String text, int color, String playerName) {
+    public void sendSystemEmbedSync(String text, int color, String playerName) {
         if (jda == null) return;
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
