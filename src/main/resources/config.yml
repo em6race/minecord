@@ -112,10 +112,3 @@ technical:
 sentry:
   enabled: false
   dsn: ""
-
-# Налаштування для хостингів на базі Pterodactyl (напр. Plugged.host)
-# Дозволяє коректно виконувати команди рестарту зсередини гри через API панелі
-pterodactyl:
-  panel-url: "https://pt3.plugged.host" # URL вашої панелі (без / на кінці)
-  api-key: "" # Вставте сюди Client API ключ з вашого профілю
-  server-id: "" # ID вашого сервера (це 8 символів з URL вашої панелі: /server/XXXXXXXX)
