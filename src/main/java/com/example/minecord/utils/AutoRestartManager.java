@@ -23,7 +23,7 @@ public class AutoRestartManager implements CommandExecutor {
     private int lastAnnouncedSecond = -1;
     private boolean isPaused = false; // Змінна для паузи авторестартів
     private final Set<UUID> ignoredPlayers = new HashSet<>(); // Гравці, які вимкнули сповіщення
-
+    private boolean smartRestartPending = false;
     public AutoRestartManager(MineCord plugin) {
         this.plugin = plugin;
         loadTimes();
@@ -46,6 +46,16 @@ public class AutoRestartManager implements CommandExecutor {
 
     public void start() {
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
+                smartRestartPending = false;
+                List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
+                if (commands.isEmpty()) commands.add("restart"); // fallback
+                for (String cmd : commands) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                }
+                return;
+            }
+
             java.time.ZonedDateTime nowZoned = java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Kyiv"));
             LocalTime now = nowZoned.toLocalTime();
             String currentDay = nowZoned.getDayOfWeek().name();
@@ -169,6 +179,11 @@ public class AutoRestartManager implements CommandExecutor {
 
     public boolean isPaused() {
         return isPaused;
+    }
+
+    public boolean toggleSmartRestart() {
+        smartRestartPending = !smartRestartPending;
+        return smartRestartPending;
     }
 
     public void addTime(String time) {

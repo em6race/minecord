@@ -171,6 +171,18 @@ public class DiscordCommandListener extends ListenerAdapter {
                 }
             }
         }
+        else if (event.getName().equals("smartrestart")) {
+            boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
+            if (isPending) {
+                if (plugin.getServer().getOnlinePlayers().isEmpty()) {
+                    event.reply("✅ На сервері немає гравців. Рестарт почнеться за мить!").queue();
+                } else {
+                    event.reply("⏳ Розумний рестарт **додано в чергу**. Він спрацює автоматично, коли на сервері буде 0 онлайну.").queue();
+                }
+            } else {
+                event.reply("❌ Розумний рестарт **СКАСОВАНО**.").queue();
+            }
+        }
 
         else if (event.getName().equals("stats")) {
             net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");

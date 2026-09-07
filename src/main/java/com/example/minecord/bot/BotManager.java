@@ -73,6 +73,8 @@ public class BotManager {
                                         new SubcommandData("toggle", "Призупинити/відновити всі авторестарти")
                                 ),
 
+                        Commands.slash("smartrestart", "Поставити одноразовий рестарт у чергу (коли онлайн = 0)")
+                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)),
                         Commands.slash("stats", "Статистика сервера або гравця")
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true),
                         Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
