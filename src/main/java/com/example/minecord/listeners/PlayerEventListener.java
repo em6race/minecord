@@ -217,7 +217,7 @@ public class PlayerEventListener implements Listener {
         // Якщо це невідоме технічне досягнення, воно залишиться як ключ (напр. story/deflect_arrow).
         // Але ми маємо переклад для всіх основних.
         if (plugin.getBotManager() != null) {
-            plugin.getBotManager().sendSystemEmbed("🏆 **" + event.getPlayer().getName() + "** виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
+            plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
         }
     }
 }

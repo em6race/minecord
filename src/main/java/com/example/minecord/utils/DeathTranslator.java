@@ -342,6 +342,13 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) tried to swim in lava to escape (.*?)$", "$1 спробував поплавати в лаві тікаючи від $2"));
         rules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 був уражений блискавкою"));
         rules.add(new TranslationRule("^(.*?) froze to death$", "$1 замерз на смерть"));
+        rules.add(new TranslationRule("^(.*?) was doomed to fall$", "$1 був приречений впасти"));
+        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?)$", "$1 був приречений впасти від руки $2"));
+        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?) using (.*?)$", "$1 був приречений впасти від руки $2 за допомогою: $3"));
+        rules.add(new TranslationRule("^(.*?) fell from a high place and fell out of the world$", "$1 впав з висоти і випав зі світу"));
+        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?)$", "$1 впав занадто далеко і був добитий $2"));
+        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?) using (.*?)$", "$1 впав занадто далеко і був добитий $2 за допомогою: $3"));
+        rules.add(new TranslationRule("^(.*?) fell while climbing$", "$1 зірвався, піднімаючись"));
     }
     public static String translate(String message) {
         if (message == null) return null;
