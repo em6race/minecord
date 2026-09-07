@@ -48,7 +48,11 @@ public class AutoRestartManager implements CommandExecutor {
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
                 smartRestartPending = false;
-                com.example.minecord.utils.PterodactylAPI.restartServer(plugin);
+                List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
+                if (commands.isEmpty()) commands.add("restart");
+                for (String cmd : commands) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                }
                 return;
             }
 
@@ -101,7 +105,11 @@ public class AutoRestartManager implements CommandExecutor {
                     // Виконання команд при досягненні 0
                     if (diff == 0) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            com.example.minecord.utils.PterodactylAPI.restartServer(plugin);
+                            List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
+                            if (commands.isEmpty()) commands.add("restart");
+                            for (String cmd : commands) {
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                            }
                         });
                     }
                 } catch (Exception e) {
