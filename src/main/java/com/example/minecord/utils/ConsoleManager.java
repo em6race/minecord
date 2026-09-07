@@ -65,7 +65,11 @@ public class ConsoleManager {
                         sendErrorEmbed(title, stackTrace);
                         
                         if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
-                            io.sentry.Sentry.captureException(record.getThrown());
+                            try {
+                                io.sentry.Sentry.captureException(record.getThrown());
+                            } catch (Throwable ignored) {
+                                // Sentry бібліотека недоступна або ClassLoader конфлікт — ігноруємо
+                            }
                         }
                     });
                 }
