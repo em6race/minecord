@@ -45,3 +45,17 @@ jobs:
         FILENAME=$(basename "$JAR_FILE")
         echo "Uploading $FILENAME to server..."
         curl -k -T "$JAR_FILE" sftp://$FTP_SERVER:$FTP_PORT/plugins/$FILENAME --user "$FTP_USERNAME:$FTP_PASSWORD"
+
+    - name: Restart Server via Pterodactyl API
+      env:
+        PTERODACTYL_URL: ${{ secrets.PTERODACTYL_URL }}
+        PTERODACTYL_KEY: ${{ secrets.PTERODACTYL_KEY }}
+        PTERODACTYL_SERVER_ID: ${{ secrets.PTERODACTYL_SERVER_ID }}
+      run: |
+        echo "Sending restart signal to panel..."
+        curl -s -X POST "$PTERODACTYL_URL/api/client/servers/$PTERODACTYL_SERVER_ID/power" \
+          -H "Authorization: Bearer $PTERODACTYL_KEY" \
+          -H "Accept: application/json" \
+          -H "Content-Type: application/json" \
+          -d '{"signal": "restart"}'
+        echo "Restart signal sent!"
