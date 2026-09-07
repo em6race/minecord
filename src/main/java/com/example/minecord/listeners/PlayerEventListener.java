@@ -201,18 +201,23 @@ public class PlayerEventListener implements Listener {
         // бо вони не є повноцінними досягненнями
         if (advKey.endsWith("/root")) return;
 
-        // В Bukkit складно дістати точну назву здобутку для всіх мов, тому перевіряємо чи це справжнє досягнення
+        // Спроба отримати назву здобутку (безпечно)
+        String fallbackTitle = advKey;
         try {
             Object display = event.getAdvancement().getDisplay();
             if (display != null) {
-                String title = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
-                String translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, title);
-                if (plugin.getBotManager() != null) {
-                    plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
-                }
+                fallbackTitle = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
             }
-        } catch (Exception ignored) {
-            // У старих версіях Bukkit getDisplay може не бути
+        } catch (Throwable ignored) {
+            // В Paper API getDisplay() може кидати UnsupportedOperationException
+        }
+
+        String translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
+        
+        // Якщо це невідоме технічне досягнення, воно залишиться як ключ (напр. story/deflect_arrow).
+        // Але ми маємо переклад для всіх основних.
+        if (plugin.getBotManager() != null) {
+            plugin.getBotManager().sendSystemEmbed("🏆 **" + event.getPlayer().getName() + "** виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
         }
     }
 }
