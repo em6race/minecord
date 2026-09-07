@@ -15,154 +15,103 @@ public class DeathTranslator {
     private static final List<TranslationRule> rules = new ArrayList<>();
     private static final List<TranslationRule> mobRules = new ArrayList<>();
     static {
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Acacia Boat") + "\\b", "Акацієвий човен"));
+        // --- mob/entity name translations (entity.minecraft.*) from uk_ua.json ---
+        // Multi-word names first to avoid partial matches
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Acacia Boat with Chest") + "\\b", "Акацієвий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Allay") + "\\b", "Збирик"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Acacia Boat") + "\\b", "Акацієвий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Area Effect Cloud") + "\\b", "Хмара з ефектом"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Armadillo") + "\\b", "Броненосець"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Armor Stand") + "\\b", "Стійка для обладунків"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Arrow") + "\\b", "Стріла"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Axolotl") + "\\b", "Аксолотль"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bamboo Raft with Chest") + "\\b", "Бамбуковий пліт зі скринею"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bamboo Raft") + "\\b", "Бамбуковий пліт"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bat") + "\\b", "Кажан"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bee") + "\\b", "Бджола"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Birch Boat") + "\\b", "Березовий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Birch Boat with Chest") + "\\b", "Березовий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Blaze") + "\\b", "Пломінь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Birch Boat") + "\\b", "Березовий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Block Display") + "\\b", "Блоковий дисплей"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Boat") + "\\b", "Човен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bogged") + "\\b", "Болотяник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Breeze") + "\\b", "Вітрень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wind Charge") + "\\b", "Заряд вітру"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Camel") + "\\b", "Верблюд"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Camel Husk") + "\\b", "Верблюд-висушень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cat") + "\\b", "Кіт"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cave Spider") + "\\b", "Печерний павук"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cherry Boat") + "\\b", "Вишневий човен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cherry Boat with Chest") + "\\b", "Вишневий човен зі скринею"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Boat with Chest") + "\\b", "Човен зі скринею"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with Chest") + "\\b", "Вагонетка зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Chicken") + "\\b", "Курка"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cod") + "\\b", "Тріска"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with Command Block") + "\\b", "Вагонетка з командним блоком"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cherry Boat with Chest") + "\\b", "Вишневий човен зі скринею"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cherry Boat") + "\\b", "Вишневий човен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cave Spider") + "\\b", "Печерний павук"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Copper Golem") + "\\b", "Мідний ґолем"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cow") + "\\b", "Корова"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creaking") + "\\b", "Скрипень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creaking") + "\\b", "Скрипень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creeper") + "\\b", "Кріпер"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dark Oak Boat") + "\\b", "Темно-дубовий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dark Oak Boat with Chest") + "\\b", "Темно-дубовий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dolphin") + "\\b", "Дельфін"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Donkey") + "\\b", "Віслюк"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dark Oak Boat") + "\\b", "Темно-дубовий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dragon Fireball") + "\\b", "Вогняна куля дракона"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Drowned") + "\\b", "Потопельник"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Thrown Egg") + "\\b", "Кинуте яйце"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Elder Guardian") + "\\b", "Стародавній вартовий"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("End Crystal") + "\\b", "Кристал Енду"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ender Dragon") + "\\b", "Дракон Енду"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Thrown Ender Pearl") + "\\b", "Кинута перлина Енду"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Enderman") + "\\b", "Ендермен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Endermite") + "\\b", "Ендермайт"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Evoker") + "\\b", "Заклинач"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Evoker Fangs") + "\\b", "Ікла заклинача"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Thrown Bottle o' Enchanting") + "\\b", "Кинута пляшка чарів"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Experience Orb") + "\\b", "Сфера досвіду"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Eye of Ender") + "\\b", "Око Енду"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Falling Block") + "\\b", "Падучий блок"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Falling %s") + "\\b", "%s, що падає"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fireball") + "\\b", "Вогняна куля"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Firework Rocket") + "\\b", "Феєрверкова ракета"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fishing Bobber") + "\\b", "Поплавець"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fox") + "\\b", "Лисиця"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Frog") + "\\b", "Жаба"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with Furnace") + "\\b", "Вагонетка з піччю"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ghast") + "\\b", "Ґаст"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Giant") + "\\b", "Велетень"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Glow Item Frame") + "\\b", "Сяйна рамка для предметів"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Glow Squid") + "\\b", "Сяйний кальмар"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Goat") + "\\b", "Коза"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Guardian") + "\\b", "Вартовий"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Happy Ghast") + "\\b", "Щасливий ґаст"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Hoglin") + "\\b", "Гоґлін"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with Hopper") + "\\b", "Вагонетка з лійкою"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Horse") + "\\b", "Кінь"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Husk") + "\\b", "Висушень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Illusioner") + "\\b", "Ілюзіонин"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Interaction") + "\\b", "Взаємодія"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Iron Golem") + "\\b", "Залізний ґолем"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Item") + "\\b", "Предмет"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Item Display") + "\\b", "Предметний дисплей"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Item Frame") + "\\b", "Рамка для предметів"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Jungle Boat") + "\\b", "Тропічний човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Jungle Boat with Chest") + "\\b", "Тропічний човен зі скринею"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Jungle Boat") + "\\b", "Тропічний човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("The Killer Bunny") + "\\b", "Кролик-убивця"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Leash Knot") + "\\b", "Вузол повідця"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Lightning Bolt") + "\\b", "Блискавка"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Lingering Potion") + "\\b", "Осідальне зілля"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Llama") + "\\b", "Лама"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Llama Spit") + "\\b", "Плювок лами"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Magma Cube") + "\\b", "Магмокуб"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mangrove Boat") + "\\b", "Мангровий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mangrove Boat with Chest") + "\\b", "Мангровий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mannequin") + "\\b", "Манекен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("NPC") + "\\b", "NPC"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Marker") + "\\b", "Маркер"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart") + "\\b", "Вагонетка"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mooshroom") + "\\b", "Мушрум"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mule") + "\\b", "Мул"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Nautilus") + "\\b", "Навтилус"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Oak Boat") + "\\b", "Дубовий човен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Oak Boat with Chest") + "\\b", "Дубовий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ocelot") + "\\b", "Оцелот"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ominous Item Spawner") + "\\b", "Зловісний породжувач предметів"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Painting") + "\\b", "Картина"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pale Oak Boat") + "\\b", "Блідо-дубовий човен"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pale Oak Boat with Chest") + "\\b", "Блідо-дубовий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Panda") + "\\b", "Панда"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Parched") + "\\b", "Засушень"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Parrot") + "\\b", "Папуга"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Phantom") + "\\b", "Фантом"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pig") + "\\b", "Свиня"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin") + "\\b", "Піґлін"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin Brute") + "\\b", "Брутальний піґлін"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pillager") + "\\b", "Розбійник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Player") + "\\b", "Гравець"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Polar Bear") + "\\b", "Білий ведмідь"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Potion") + "\\b", "Зілля"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pufferfish") + "\\b", "Скелезуб"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Rabbit") + "\\b", "Кролик"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ravager") + "\\b", "Спустошувач"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Salmon") + "\\b", "Лосось"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sheep") + "\\b", "Вівця"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker") + "\\b", "Шалкер"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker Bullet") + "\\b", "Куля шалкера"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Silverfish") + "\\b", "Лусківниця"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton") + "\\b", "Скелет"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton Horse") + "\\b", "Кінь-скелет"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Slime") + "\\b", "Слимак"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Small Fireball") + "\\b", "Мала вогняна куля"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sniffer") + "\\b", "Нюхач"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Snow Golem") + "\\b", "Сніговий ґолем"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Snowball") + "\\b", "Сніжка"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mangrove Boat") + "\\b", "Мангровий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with Monster Spawner") + "\\b", "Вагонетка з породжувачем монстрів"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Oak Boat with Chest") + "\\b", "Дубовий човен зі скринею"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Oak Boat") + "\\b", "Дубовий човен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ominous Item Spawner") + "\\b", "Зловісний породжувач предметів"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pale Oak Boat with Chest") + "\\b", "Блідо-дубовий човен зі скринею"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pale Oak Boat") + "\\b", "Блідо-дубовий човен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin Brute") + "\\b", "Брутальний піґлін"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Polar Bear") + "\\b", "Білий ведмідь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker Bullet") + "\\b", "Куля шалкера"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton Horse") + "\\b", "Кінь-скелет"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Small Fireball") + "\\b", "Мала вогняна куля"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Snow Golem") + "\\b", "Сніговий ґолем"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spectral Arrow") + "\\b", "Спектральна стріла"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spider") + "\\b", "Павук"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Splash Potion") + "\\b", "Вибухове зілля"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spruce Boat") + "\\b", "Смерековий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spruce Boat with Chest") + "\\b", "Смерековий човен зі скринею"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Squid") + "\\b", "Кальмар"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Stray") + "\\b", "Примара"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Strider") + "\\b", "Блукач"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spruce Boat") + "\\b", "Смерековий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sulfur Cube") + "\\b", "Сіркокуб"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Contains: %s") + "\\b", "Уміст: %s"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Tadpole") + "\\b", "Пуголовок"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Text Display") + "\\b", "Текстовий дисплей"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Primed TNT") + "\\b", "Підпалений динаміт"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart with TNT") + "\\b", "Вагонетка з динамітом"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Trader Llama") + "\\b", "Лама крамаря"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Trident") + "\\b", "Тризубець"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Tropical Fish") + "\\b", "Тропічна риба"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wandering Trader") + "\\b", "Мандрівний крамар"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wind Charge") + "\\b", "Заряд вітру"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither Skeleton") + "\\b", "Візер-скелет"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither Skull") + "\\b", "Череп візера"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Horse") + "\\b", "Зомбокінь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Nautilus") + "\\b", "Зомбонавтилус"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Villager") + "\\b", "Зомбоселянин"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombified Piglin") + "\\b", "Зомбований піґлін"));
+        // Villager professions (before generic Villager)
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Armorer") + "\\b", "Латник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Butcher") + "\\b", "М'ясник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cartographer") + "\\b", "Картограф"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cleric") + "\\b", "Церковник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Farmer") + "\\b", "Фермер"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fisherman") + "\\b", "Рибалка"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fletcher") + "\\b", "Лучник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Leatherworker") + "\\b", "Чинбар"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Librarian") + "\\b", "Бібліотекар"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mason") + "\\b", "Каменяр"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Nitwit") + "\\b", "Нездара"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shepherd") + "\\b", "Вівчар"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Toolsmith") + "\\b", "Коваль"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Weaponsmith") + "\\b", "Зброяр"));
+        // Tropical fish predefined names
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Anemone") + "\\b", "Амфіпріон"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Black Tang") + "\\b", "Зебрасома чорна"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Blue Tang") + "\\b", "Блакитний хірург"));
@@ -185,6 +134,7 @@ public class DeathTranslator {
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Triggerfish") + "\\b", "Спиноріг"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Yellowtail Parrotfish") + "\\b", "Жовтохвоста риба-папуга"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Yellow Tang") + "\\b", "Зебрасома жовта"));
+        // Tropical fish type names (entity.minecraft.tropical_fish.type.*)
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Betty") + "\\b", "Бійцівка"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Blockfish") + "\\b", "Блокунь"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Brinely") + "\\b", "Красунька"));
@@ -197,158 +147,299 @@ public class DeathTranslator {
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spotty") + "\\b", "Плямистка"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Stripey") + "\\b", "Полосатка"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sunstreak") + "\\b", "Сонцехвістка"));
+        // Single-word entities
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Allay") + "\\b", "Збирик"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Armadillo") + "\\b", "Броненосець"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Arrow") + "\\b", "Стріла"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Axolotl") + "\\b", "Аксолотль"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bat") + "\\b", "Кажан"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bee") + "\\b", "Бджола"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Blaze") + "\\b", "Пломінь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Boat") + "\\b", "Човен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Bogged") + "\\b", "Болотяник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Breeze") + "\\b", "Вітрень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Camel Husk") + "\\b", "Верблюд-висушень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Camel") + "\\b", "Верблюд"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cat") + "\\b", "Кіт"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Chicken") + "\\b", "Курка"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cod") + "\\b", "Тріска"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cow") + "\\b", "Корова"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creaking") + "\\b", "Скрипень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creeper") + "\\b", "Кріпер"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dolphin") + "\\b", "Дельфін"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Donkey") + "\\b", "Віслюк"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Drowned") + "\\b", "Потопельник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Enderman") + "\\b", "Ендермен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Endermite") + "\\b", "Ендермайт"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Evoker") + "\\b", "Заклинач"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fireball") + "\\b", "Вогняна куля"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fox") + "\\b", "Лисиця"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Frog") + "\\b", "Жаба"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ghast") + "\\b", "Ґаст"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Giant") + "\\b", "Велетень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Goat") + "\\b", "Коза"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Guardian") + "\\b", "Вартовий"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Hoglin") + "\\b", "Гоґлін"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Horse") + "\\b", "Кінь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Husk") + "\\b", "Висушень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Illusioner") + "\\b", "Ілюзіонин"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Interaction") + "\\b", "Взаємодія"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Item") + "\\b", "Предмет"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Llama") + "\\b", "Лама"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mannequin") + "\\b", "Манекен"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Marker") + "\\b", "Маркер"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Minecart") + "\\b", "Вагонетка"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mooshroom") + "\\b", "Мушрум"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mule") + "\\b", "Мул"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Nautilus") + "\\b", "Навтилус"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ocelot") + "\\b", "Оцелот"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Painting") + "\\b", "Картина"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Panda") + "\\b", "Панда"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Parched") + "\\b", "Засушень"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Parrot") + "\\b", "Папуга"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Phantom") + "\\b", "Фантом"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pig") + "\\b", "Свиня"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin") + "\\b", "Піґлін"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pillager") + "\\b", "Розбійник"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Player") + "\\b", "Гравець"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Potion") + "\\b", "Зілля"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pufferfish") + "\\b", "Скелезуб"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Rabbit") + "\\b", "Кролик"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Ravager") + "\\b", "Спустошувач"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Salmon") + "\\b", "Лосось"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sheep") + "\\b", "Вівця"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker") + "\\b", "Шалкер"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Silverfish") + "\\b", "Лусківниця"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton") + "\\b", "Скелет"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Slime") + "\\b", "Слимак"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Sniffer") + "\\b", "Нюхач"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Snowball") + "\\b", "Сніжка"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Spider") + "\\b", "Павук"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Squid") + "\\b", "Кальмар"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Stray") + "\\b", "Примара"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Strider") + "\\b", "Блукач"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Tadpole") + "\\b", "Пуголовок"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Trident") + "\\b", "Тризубець"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Turtle") + "\\b", "Черепаха"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Vex") + "\\b", "Бісик"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Villager") + "\\b", "Селянин"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Armorer") + "\\b", "Латник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Butcher") + "\\b", "М’ясник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cartographer") + "\\b", "Картограф"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cleric") + "\\b", "Церковник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Farmer") + "\\b", "Фермер"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fisherman") + "\\b", "Рибалка"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Fletcher") + "\\b", "Лучник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Leatherworker") + "\\b", "Чинбар"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Librarian") + "\\b", "Бібліотекар"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Mason") + "\\b", "Каменяр"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Nitwit") + "\\b", "Нездара"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Villager") + "\\b", "Селянин"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shepherd") + "\\b", "Вівчар"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Toolsmith") + "\\b", "Коваль"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Weaponsmith") + "\\b", "Зброяр"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Vindicator") + "\\b", "Поборник"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wandering Trader") + "\\b", "Мандрівний крамар"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Warden") + "\\b", "Боронитель"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wind Charge") + "\\b", "Заряд вітру"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Witch") + "\\b", "Відьма"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither") + "\\b", "Візер"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither Skeleton") + "\\b", "Візер-скелет"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither Skull") + "\\b", "Череп візера"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Wolf") + "\\b", "Вовк"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zoglin") + "\\b", "Зоґлін"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie") + "\\b", "Зомбі"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Horse") + "\\b", "Зомбокінь"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Nautilus") + "\\b", "Зомбонавтилус"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Villager") + "\\b", "Зомбоселянин"));
-        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombified Piglin") + "\\b", "Зомбований піґлін"));
+
+        // --- death message rules from uk_ua.json ---
+        // death.attack.anvil
         rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil$", "$1 розчавлено падучим ковадлом"));
+        // death.attack.anvil.player
         rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil while fighting (.*?)$", "$1 розчавлено падучим ковадлом під час битви з $2"));
-        rules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$1 був застрелений $2"));
-        rules.add(new TranslationRule("^(.*?) was shot by (.*?) using (.*?)$", "$1 був застрелений $2 за допомогою: $3"));
+        // death.attack.arrow
+        rules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$2 застрелив $1"));
+        // death.attack.arrow.item
+        rules.add(new TranslationRule("^(.*?) was shot by (.*?) using (.*?)$", "$2 застрелив $1 за допомогою: $3"));
+        // death.attack.badRespawnPoint.link
         rules.add(new TranslationRule("^Intentional Game Design$", "навмисної властивости гри"));
+        // death.attack.badRespawnPoint.message
         rules.add(new TranslationRule("^(.*?) was killed by (.*?)$", "$1 загинув унаслідок $2"));
+        // death.attack.cactus
         rules.add(new TranslationRule("^(.*?) was pricked to death$", "$1 заколовся до смерти"));
+        // death.attack.cactus.player
         rules.add(new TranslationRule("^(.*?) walked into a cactus while trying to escape (.*?)$", "$1 врізався в кактус під час спроби втекти від $2"));
+        // death.attack.cramming
         rules.add(new TranslationRule("^(.*?) was squished too much$", "$1 розплющено у відбивну"));
-        rules.add(new TranslationRule("^(.*?) was squashed by (.*?)$", "$1 був розчавлений $2"));
+        // death.attack.cramming.player
+        rules.add(new TranslationRule("^(.*?) was squashed by (.*?)$", "$2 розчавив $1"));
+        // death.attack.dragonBreath
         rules.add(new TranslationRule("^(.*?) was roasted in dragon's breath$", "$1 був підсмажений диханням дракона"));
-        rules.add(new TranslationRule("^(.*?) was roasted in dragon's breath by (.*?)$", "$1 був підсмажений диханням дракона від $2"));
+        // death.attack.dragonBreath.player
+        rules.add(new TranslationRule("^(.*?) was roasted in dragon's breath by (.*?)$", "$2 підсмажив $1 диханням дракона"));
+        // death.attack.drown
         rules.add(new TranslationRule("^(.*?) drowned$", "$1 потонув"));
+        // death.attack.drown.player
         rules.add(new TranslationRule("^(.*?) drowned while trying to escape (.*?)$", "$1 потонув під час спроби втекти від $2"));
+        // death.attack.dryout
         rules.add(new TranslationRule("^(.*?) died from dehydration$", "$1 сконав від зневоднення"));
+        // death.attack.dryout.player
         rules.add(new TranslationRule("^(.*?) died from dehydration while trying to escape (.*?)$", "$1 сконав від зневоднення під час спроби втекти від $2"));
+        // death.attack.even_more_magic
         rules.add(new TranslationRule("^(.*?) was killed by even more magic$", "$1 убито ще більшою магією"));
+        // death.attack.explosion
         rules.add(new TranslationRule("^(.*?) blew up$", "$1 вибухнув"));
-        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$1 був підірваний $2"));
-        rules.add(new TranslationRule("^(.*?) was blown up by (.*?) using (.*?)$", "$1 був підірваний $2 за допомогою: $3"));
+        // death.attack.explosion.player
+        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$2 підірвав $1"));
+        // death.attack.explosion.player.item
+        rules.add(new TranslationRule("^(.*?) was blown up by (.*?) using (.*?)$", "$2 підірвав $1 за допомогою: $3"));
+        // death.attack.fall
         rules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 занадто сильно вдарився об землю"));
+        // death.attack.fall.player
         rules.add(new TranslationRule("^(.*?) hit the ground too hard while trying to escape (.*?)$", "$1 занадто сильно вдарився об землю під час спроби втекти від $2"));
+        // death.attack.fallingBlock
         rules.add(new TranslationRule("^(.*?) was squashed by a falling block$", "$1 розчавлено падучим блоком"));
+        // death.attack.fallingBlock.player
         rules.add(new TranslationRule("^(.*?) was squashed by a falling block while fighting (.*?)$", "$1 розчавлено падучим блоком під час битви з $2"));
+        // death.attack.fallingStalactite
         rules.add(new TranslationRule("^(.*?) was skewered by a falling stalactite$", "$1 проткнуто падучим сталактитом"));
+        // death.attack.fallingStalactite.player
         rules.add(new TranslationRule("^(.*?) was skewered by a falling stalactite while fighting (.*?)$", "$1 проткнуто падучим сталактитом під час битви з $2"));
-        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?)$", "$1 був убитий вогняною кулею від $2"));
-        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?) using (.*?)$", "$1 був убитий вогняною кулею від $2 за допомогою: $3"));
+        // death.attack.fireball
+        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?)$", "$2 убив $1 вогняною кулею"));
+        // death.attack.fireball.item
+        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?) using (.*?)$", "$2 убив $1 вогняною кулею за допомогою: $3"));
+        // death.attack.fireworks
         rules.add(new TranslationRule("^(.*?) went off with a bang$", "$1 з тріском розлетівся"));
-        rules.add(new TranslationRule("^(.*?) went off with a bang due to a firework fired from (.*?) by (.*?)$", "$1 з тріском розлетівся через феєрверк $2, запущений із $3"));
+        // death.attack.fireworks.item  (%3$s fired from, %2$s by)
+        rules.add(new TranslationRule("^(.*?) went off with a bang due to a firework fired from (.*?) by (.*?)$", "$1 з тріском розлетівся через феєрверк $3, запущений із $2"));
+        // death.attack.fireworks.player
         rules.add(new TranslationRule("^(.*?) went off with a bang while fighting (.*?)$", "$1 з тріском розлетівся під час битви з $2"));
+        // death.attack.flyIntoWall
         rules.add(new TranslationRule("^(.*?) experienced kinetic energy$", "$1 випробував кінетичну енергію"));
+        // death.attack.flyIntoWall.player
         rules.add(new TranslationRule("^(.*?) experienced kinetic energy while trying to escape (.*?)$", "$1 випробував кінетичну енергію під час спроби втекти від $2"));
+        // death.attack.freeze
         rules.add(new TranslationRule("^(.*?) froze to death$", "$1 замерз до смерти"));
-        rules.add(new TranslationRule("^(.*?) was frozen to death by (.*?)$", "$1 був заморожений $2 до смерти"));
+        // death.attack.freeze.player
+        rules.add(new TranslationRule("^(.*?) was frozen to death by (.*?)$", "$2 заморозив $1 до смерти"));
+        // death.attack.generic
         rules.add(new TranslationRule("^(.*?) died$", "$1 загинув"));
+        // death.attack.generic.player
         rules.add(new TranslationRule("^(.*?) died because of (.*?)$", "$1 загинув через $2"));
+        // death.attack.genericKill
         rules.add(new TranslationRule("^(.*?) was killed$", "$1 був убитий"));
+        // death.attack.genericKill.player
         rules.add(new TranslationRule("^(.*?) was killed while fighting (.*?)$", "$1 убито під час битви з $2"));
+        // death.attack.hotFloor
         rules.add(new TranslationRule("^(.*?) discovered the floor was lava$", "$1 помітив, що підлога — це лава"));
+        // death.attack.hotFloor.player
         rules.add(new TranslationRule("^(.*?) walked into the danger zone due to (.*?)$", "$1 увійшов у небезпечну зону через $2"));
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using magic$", "$1 був убитий $2 за допомогою магії"));
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using (.*?)$", "$1 був убитий $2 за допомогою: $3"));
+        // death.attack.indirectMagic
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using magic$", "$2 убив $1 за допомогою магії"));
+        // death.attack.indirectMagic.item
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using (.*?)$", "$2 убив $1 за допомогою: $3"));
+        // death.attack.inFire
         rules.add(new TranslationRule("^(.*?) went up in flames$", "$1 згорів"));
+        // death.attack.inFire.player
         rules.add(new TranslationRule("^(.*?) walked into fire while fighting (.*?)$", "$1 пішов у вогонь під час битви з $2"));
+        // death.attack.inWall
         rules.add(new TranslationRule("^(.*?) suffocated in a wall$", "$1 задихнувся в стіні"));
+        // death.attack.inWall.player
         rules.add(new TranslationRule("^(.*?) suffocated in a wall while fighting (.*?)$", "$1 задихнувся в стіні під час битви з $2"));
+        // death.attack.lava
         rules.add(new TranslationRule("^(.*?) tried to swim in lava$", "$1 спробував поплавати в лаві"));
+        // death.attack.lava.player
         rules.add(new TranslationRule("^(.*?) tried to swim in lava to escape (.*?)$", "$1 спробував поплавати в лаві, утікаючи від $2"));
+        // death.attack.lightningBolt
         rules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 уразила блискавка"));
+        // death.attack.lightningBolt.player
         rules.add(new TranslationRule("^(.*?) was struck by lightning while fighting (.*?)$", "$1 уразила блискавка під час битви з $2"));
-        rules.add(new TranslationRule("^(.*?) was smashed by (.*?)$", "$1 був розтрощений $2"));
-        rules.add(new TranslationRule("^(.*?) was smashed by (.*?) with (.*?)$", "$1 був розтрощений $2 за допомогою: $3"));
+        // death.attack.mace_smash
+        rules.add(new TranslationRule("^(.*?) was smashed by (.*?)$", "$2 розтрощив $1"));
+        // death.attack.mace_smash.item
+        rules.add(new TranslationRule("^(.*?) was smashed by (.*?) with (.*?)$", "$2 розтрощив $1 за допомогою: $3"));
+        // death.attack.magic
         rules.add(new TranslationRule("^(.*?) was killed by magic$", "$1 убито магією"));
+        // death.attack.magic.player
         rules.add(new TranslationRule("^(.*?) was killed by magic while trying to escape (.*?)$", "$1 убито магією під час спроби втекти від $2"));
+        // death.attack.message_too_long  (%s no index)
         rules.add(new TranslationRule("^Actually, the message was too long to deliver fully\\. Sorry! Here's a stripped version: (.*?)$", "Насправді повідомлення було надто довгим, щоб доставити його повністю. Вибачте! Ось обрізана версія: $1"));
-        rules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$1 був убитий $2"));
-        rules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$1 був убитий $2 за допомогою: $3"));
+        // death.attack.mob / death.attack.player  (same EN pattern)
+        rules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$2 убив $1"));
+        // death.attack.mob.item / death.attack.player.item
+        rules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$2 убив $1 за допомогою: $3"));
+        // death.attack.onFire
         rules.add(new TranslationRule("^(.*?) burned to death$", "$1 згорів живцем"));
+        // death.attack.onFire.item
         rules.add(new TranslationRule("^(.*?) was burned to a crisp while fighting (.*?) wielding (.*?)$", "$1 згорів дотла під час битви з $2 з: $3"));
+        // death.attack.onFire.player
         rules.add(new TranslationRule("^(.*?) was burned to a crisp while fighting (.*?)$", "$1 згорів дотла під час битви з $2"));
+        // death.attack.outOfWorld
         rules.add(new TranslationRule("^(.*?) fell out of the world$", "$1 випав зі світу"));
+        // death.attack.outOfWorld.player
         rules.add(new TranslationRule("^(.*?) didn't want to live in the same world as (.*?)$", "$1 не захотів жити в тому самому світі, що й $2"));
+        // death.attack.outsideBorder
         rules.add(new TranslationRule("^(.*?) left the confines of this world$", "$1 вийшов за межі цього світу"));
+        // death.attack.outsideBorder.player
         rules.add(new TranslationRule("^(.*?) left the confines of this world while fighting (.*?)$", "$1 вийшов за межі цього світу під час битви з $2"));
-        rules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$1 був убитий $2"));
-        rules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$1 був убитий $2 за допомогою: $3"));
+        // death.attack.sonic_boom
         rules.add(new TranslationRule("^(.*?) was obliterated by a sonically-charged shriek$", "$1 знищено потужною звуковою хвилею"));
+        // death.attack.sonic_boom.item
         rules.add(new TranslationRule("^(.*?) was obliterated by a sonically-charged shriek while trying to escape (.*?) wielding (.*?)$", "$1 знищено потужною звуковою хвилею під час спроби втекти від $2 з: $3"));
+        // death.attack.sonic_boom.player
         rules.add(new TranslationRule("^(.*?) was obliterated by a sonically-charged shriek while trying to escape (.*?)$", "$1 знищено потужною звуковою хвилею під час спроби втекти від $2"));
-        rules.add(new TranslationRule("^(.*?) was speared by (.*?)$", "$1 був проштрикнутий $2"));
-        rules.add(new TranslationRule("^(.*?) was speared by (.*?) using (.*?)$", "$1 був проштрикнутий $2 за допомогою: $3"));
+        // death.attack.spear
+        rules.add(new TranslationRule("^(.*?) was speared by (.*?)$", "$2 проштрикнув $1"));
+        // death.attack.spear.item
+        rules.add(new TranslationRule("^(.*?) was speared by (.*?) using (.*?)$", "$2 проштрикнув $1 за допомогою: $3"));
+        // death.attack.stalagmite
         rules.add(new TranslationRule("^(.*?) was impaled on a stalagmite$", "$1 проткнуто сталагмітом"));
+        // death.attack.stalagmite.player
         rules.add(new TranslationRule("^(.*?) was impaled on a stalagmite while fighting (.*?)$", "$1 проткнуто сталагмітом під час битви з $2"));
+        // death.attack.starve
         rules.add(new TranslationRule("^(.*?) starved to death$", "$1 помер від голоду"));
+        // death.attack.starve.player
         rules.add(new TranslationRule("^(.*?) starved to death while fighting (.*?)$", "$1 помер від голоду під час битви з $2"));
+        // death.attack.sting
         rules.add(new TranslationRule("^(.*?) was stung to death$", "$1 зажалено до смерти"));
-        rules.add(new TranslationRule("^(.*?) was stung to death by (.*?) using (.*?)$", "$1 був зажалений $2 до смерти за допомогою: $3"));
-        rules.add(new TranslationRule("^(.*?) was stung to death by (.*?)$", "$1 був зажалений $2 до смерти"));
-        rules.add(new TranslationRule("^(.*?) died because not just the floor is lava$", "$1 загинув, бо не лише підлога виявилася лавою"));
-        rules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava$", "$2 довів $1, що не лише підлога — це лава"));
+        // death.attack.sting.item
+        rules.add(new TranslationRule("^(.*?) was stung to death by (.*?) using (.*?)$", "$2 зажалив $1 до смерти за допомогою: $3"));
+        // death.attack.sting.player
+        rules.add(new TranslationRule("^(.*?) was stung to death by (.*?)$", "$2 зажалив $1 до смерти"));
+        // death.attack.sulfurCubeHot
+        rules.add(new TranslationRule("^(.*?) died because not just the floor is lava$", "$1 загинув, бо не лише підлога є лавою"));
+        // death.attack.sulfurCubeHot.player
+        rules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava$", "$1 показав $2, що не лише підлога є лавою"));
+        // death.attack.sweetBerryBush
         rules.add(new TranslationRule("^(.*?) was poked to death by a sweet berry bush$", "$1 заколовся до смерти кущем солодких ягід"));
+        // death.attack.sweetBerryBush.player
         rules.add(new TranslationRule("^(.*?) was poked to death by a sweet berry bush while trying to escape (.*?)$", "$1 заколовся до смерти кущем солодких ягід під час спроби втекти від $2"));
+        // death.attack.thorns
         rules.add(new TranslationRule("^(.*?) was killed while trying to hurt (.*?)$", "$1 убито під час спроби нашкодити $2"));
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) while trying to hurt (.*?)$", "$1 був убитий $2, коли намагався нашкодити $3"));
-        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?)$", "$1 був забитий $2 до смерти"));
-        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?) using (.*?)$", "$1 був забитий $2 до смерти за допомогою: $3"));
-        rules.add(new TranslationRule("^(.*?) was impaled by (.*?)$", "$1 був проткнутий $2"));
-        rules.add(new TranslationRule("^(.*?) was impaled by (.*?) with (.*?)$", "$1 був проткнутий $2 за допомогою: $3"));
+        // death.attack.thorns.item
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) while trying to hurt (.*?)$", "$2 убив $1 під час спроби нашкодити $3"));
+        // death.attack.thrown
+        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?)$", "$2 забив $1 до смерти"));
+        // death.attack.thrown.item
+        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?) using (.*?)$", "$2 забив $1 до смерти за допомогою: $3"));
+        // death.attack.trident
+        rules.add(new TranslationRule("^(.*?) was impaled by (.*?)$", "$2 проткнув $1"));
+        // death.attack.trident.item
+        rules.add(new TranslationRule("^(.*?) was impaled by (.*?) with (.*?)$", "$2 проткнув $1 за допомогою: $3"));
+        // death.attack.wither
         rules.add(new TranslationRule("^(.*?) withered away$", "$1 висушився"));
+        // death.attack.wither.player
         rules.add(new TranslationRule("^(.*?) withered away while fighting (.*?)$", "$1 висушився під час битви з $2"));
+        // death.attack.witherSkull
         rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?)$", "$1 уражено черепом від $2"));
+        // death.attack.witherSkull.item
         rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?) using (.*?)$", "$1 уражено черепом від $2 за допомогою: $3"));
-        rules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 впав з висоти"));
-        rules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 сильно вдарився об землю"));
-        rules.add(new TranslationRule("^(.*?) drowned$", "$1 потонув"));
-        rules.add(new TranslationRule("^(.*?) drowned whilst trying to escape (.*?)$", "$1 потонув під час спроби втекти від $2"));
-        rules.add(new TranslationRule("^(.*?) experienced kinetic energy$", "$1 пізнав кінетичну енергію (розбився на елітрах)"));
-        rules.add(new TranslationRule("^(.*?) blew up$", "$1 вибухнув"));
-        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$1 був підірваний ($2)"));
-        rules.add(new TranslationRule("^(.*?) was killed by \\u005bIntentional Game Design\\u005d$", "$1 був убитий [Навмисним геймдизайном]"));
-        rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil$", "$1 був розчавлений ковадлом"));
-        rules.add(new TranslationRule("^(.*?) starved to death$", "$1 помер від голоду"));
-        rules.add(new TranslationRule("^(.*?) suffocated in a wall$", "$1 задихнувся в стіні"));
-        rules.add(new TranslationRule("^(.*?) was pricked to death$", "$1 заколовся до смерті (кактус)"));
-        rules.add(new TranslationRule("^(.*?) walked into fire whilst fighting (.*?)$", "$1 зайшов у вогонь під час битви з $2"));
-        rules.add(new TranslationRule("^(.*?) went up in flames$", "$1 згорів у вогні"));
-        rules.add(new TranslationRule("^(.*?) burned to death$", "$1 згорів живцем"));
-        rules.add(new TranslationRule("^(.*?) tried to swim in lava$", "$1 спробував поплавати в лаві"));
-        rules.add(new TranslationRule("^(.*?) tried to swim in lava to escape (.*?)$", "$1 спробував поплавати в лаві тікаючи від $2"));
-        rules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 був уражений блискавкою"));
-        rules.add(new TranslationRule("^(.*?) froze to death$", "$1 замерз на смерть"));
-        rules.add(new TranslationRule("^(.*?) was doomed to fall$", "$1 був приречений впасти"));
-        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?)$", "$1 був приречений впасти від руки $2"));
-        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?) using (.*?)$", "$1 був приречений впасти від руки $2 за допомогою: $3"));
-        rules.add(new TranslationRule("^(.*?) fell from a high place and fell out of the world$", "$1 впав з висоти і випав зі світу"));
-        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?)$", "$1 впав занадто далеко і був добитий $2"));
-        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?) using (.*?)$", "$1 впав занадто далеко і був добитий $2 за допомогою: $3"));
-        rules.add(new TranslationRule("^(.*?) fell while climbing$", "$1 зірвався, піднімаючись"));
+        // death.fell.accident.generic
+        rules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 упав із високого місця"));
+        // death.fell.accident.ladder
+        rules.add(new TranslationRule("^(.*?) fell off a ladder$", "$1 зірвався з драбини"));
+        // death.fell.accident.other_climbable
+        rules.add(new TranslationRule("^(.*?) fell while climbing$", "$1 зірвався з висоти"));
+        // death.fell.accident.scaffolding
+        rules.add(new TranslationRule("^(.*?) fell off scaffolding$", "$1 зірвався з риштування"));
+        // death.fell.accident.twisting_vines
+        rules.add(new TranslationRule("^(.*?) fell off some twisting vines$", "$1 упав із кручених ліз"));
+        // death.fell.accident.vines
+        rules.add(new TranslationRule("^(.*?) fell off some vines$", "$1 упав із ліз"));
+        // death.fell.accident.weeping_vines
+        rules.add(new TranslationRule("^(.*?) fell off some weeping vines$", "$1 упав із плакучих ліз"));
+        // death.fell.assist
+        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?)$", "$2 прирік $1 на падіння"));
+        // death.fell.assist.item
+        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?) using (.*?)$", "$2 прирік $1 на падіння за допомогою: $3"));
+        // death.fell.finish
+        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?)$", "$1 упав занадто високо та був добитий $2"));
+        // death.fell.finish.item
+        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?) using (.*?)$", "$1 упав занадто високо та був добитий $2 за допомогою: $3"));
+        // death.fell.killer
+        rules.add(new TranslationRule("^(.*?) was doomed to fall$", "$1 приречено на падіння"));
+        // death.fell.accident.from_high_place_and_out_of_world (not in lang but kept as fallback)
+        rules.add(new TranslationRule("^(.*?) fell from a high place and fell out of the world$", "$1 упав із висоти і випав зі світу"));
     }
     public static String translate(String message) {
         if (message == null) return null;
