@@ -102,15 +102,25 @@ public class ConsoleManager {
                 sb.append("```\n");
                 for (String line : toSend) {
                     String clean = org.bukkit.ChatColor.stripColor(line);
-                    if (sb.length() + clean.length() > 1900) {
-                        sb.append("```");
-                        channel.sendMessage(sb.toString()).queue();
-                        sb = new StringBuilder("```\n");
+                    if (clean.isEmpty()) clean = " ";
+                    int i = 0;
+                    while (i < clean.length()) {
+                        int end = Math.min(i + 1900, clean.length());
+                        String part = clean.substring(i, end);
+                        if (sb.length() + part.length() > 1900) {
+                            sb.append("```");
+                            channel.sendMessage(sb.toString()).queue();
+                            sb = new StringBuilder("```\n");
+                        }
+                        sb.append(part);
+                        i = end;
                     }
-                    sb.append(clean).append("\n");
+                    sb.append("\n");
                 }
-                sb.append("```");
-                channel.sendMessage(sb.toString()).queue();
+                if (sb.length() > 4) {
+                    sb.append("```");
+                    channel.sendMessage(sb.toString()).queue();
+                }
             }
         }
     }
@@ -133,15 +143,25 @@ public class ConsoleManager {
                 sb.append("```\n");
                 for (String line : toSend) {
                     String clean = org.bukkit.ChatColor.stripColor(line);
-                    if (sb.length() + clean.length() > 1900) {
-                        sb.append("```");
-                        channel.sendMessage(sb.toString()).complete(); // Use complete() for sync
-                        sb = new StringBuilder("```\n");
+                    if (clean.isEmpty()) clean = " ";
+                    int i = 0;
+                    while (i < clean.length()) {
+                        int end = Math.min(i + 1900, clean.length());
+                        String part = clean.substring(i, end);
+                        if (sb.length() + part.length() > 1900) {
+                            sb.append("```");
+                            channel.sendMessage(sb.toString()).complete();
+                            sb = new StringBuilder("```\n");
+                        }
+                        sb.append(part);
+                        i = end;
                     }
-                    sb.append(clean).append("\n");
+                    sb.append("\n");
                 }
-                sb.append("```");
-                channel.sendMessage(sb.toString()).complete(); // Use complete() for sync
+                if (sb.length() > 4) {
+                    sb.append("```");
+                    channel.sendMessage(sb.toString()).complete();
+                }
             }
         }
     }
