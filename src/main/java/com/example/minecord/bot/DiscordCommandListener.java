@@ -171,7 +171,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                 }
             }
         }
-        else if (event.getName().equals("smartrestart")) {
+        else if (event.getName().equals("queuerestart")) {
             boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
             if (isPending) {
                 if (plugin.getServer().getOnlinePlayers().isEmpty()) {
