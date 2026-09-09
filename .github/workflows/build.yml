@@ -1,4 +1,4 @@
-﻿name: Build MineCord Plugin
+name: Build MineCord Plugin
 
 on:
   push:
@@ -33,3 +33,16 @@ jobs:
       with:
         name: MineCord-Plugin
         path: build/libs/*-all.jar
+
+    - name: Deploy to Server via SFTP
+      env:
+        FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        FTP_PORT: ${{ secrets.FTP_PORT }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      run: |
+        JAR_FILE=$(find build/libs -name "*-all.jar" | head -n 1)
+        FILENAME=$(basename "$JAR_FILE")
+        echo "Uploading $FILENAME to server..."
+        curl -k -T "$JAR_FILE" sftp://$FTP_SERVER:$FTP_PORT/plugins/$FILENAME --user "$FTP_USERNAME:$FTP_PASSWORD"
+
