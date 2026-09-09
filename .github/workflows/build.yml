@@ -36,6 +36,7 @@ jobs:
         path: build/libs/*-all.jar
 
     - name: Deploy to Server via SFTP
+      continue-on-error: true
       env:
         FTP_SERVER: ${{ secrets.FTP_SERVER }}
         FTP_PORT: ${{ secrets.FTP_PORT }}
