@@ -43,6 +43,12 @@ jobs:
       run: |
         JAR_FILE=$(find build/libs -name "*-all.jar" | head -n 1)
         FILENAME=$(basename "$JAR_FILE")
-        echo "Uploading $FILENAME to server..."
-        curl -k -T "$JAR_FILE" sftp://$FTP_SERVER:$FTP_PORT/plugins/$FILENAME --user "$FTP_USERNAME:$FTP_PASSWORD"
+        
+        # Очищаємо адресу від sftp://, зайвих слешів та портів, якщо користувач вставив їх випадково
+        CLEAN_SERVER=$(echo "$FTP_SERVER" | sed -e 's|^sftp://||' -e 's|/.*$||' -e 's|:[0-9]*$||' | tr -d '[:space:]')
+        CLEAN_PORT=$(echo "$FTP_PORT" | tr -dc '0-9')
+        if [ -z "$CLEAN_PORT" ]; then CLEAN_PORT=2022; fi
+
+        echo "Uploading $FILENAME to $CLEAN_SERVER:$CLEAN_PORT..."
+        curl -k --connect-timeout 20 -T "$JAR_FILE" sftp://$CLEAN_SERVER:$CLEAN_PORT/plugins/$FILENAME --user "$FTP_USERNAME:$FTP_PASSWORD"
 
