@@ -48,7 +48,7 @@ public class ChatListener implements Listener {
         // 3. Якщо повідомлення вже скасовано іншим плагіном — не відправляємо в Discord
         if (alreadyCancelled) return;
 
-        if (plugin.getConfig().getBoolean("ai-moderator.enabled", true)) {
+        if (plugin.getConfig().getBoolean("ai-moderator.enabled", false)) {
             String message = event.getMessage();
             org.bukkit.entity.Player player = event.getPlayer();
 

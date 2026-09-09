@@ -45,7 +45,7 @@ maintenance:
 
 # Модератор чату
 ai-moderator:
-  enabled: true
+  enabled: false
   api-key: "YOUR_OPENROUTER_API_KEY"
   kick-player: false # Виганяти гравця з сервера?
   appeal-channel-id: "000000000000000000"

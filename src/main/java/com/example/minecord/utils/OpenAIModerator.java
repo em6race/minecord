@@ -41,8 +41,8 @@ public class OpenAIModerator {
      */
     public CompletableFuture<Boolean> isMessageToxic(String message) {
         return CompletableFuture.supplyAsync(() -> {
-            if (apiKey == null || apiKey.isEmpty()) {
-                return false; // Якщо ключ не вказано, пропускаємо всі повідомлення
+            if (apiKey == null || apiKey.isEmpty() || apiKey.equalsIgnoreCase("YOUR_OPENROUTER_API_KEY")) {
+                return false; // Якщо ключ не вказано або стоїть плейсхолдер, пропускаємо всі повідомлення
             }
 
             try {
