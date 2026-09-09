@@ -37,6 +37,7 @@ events:
   join-leave: true
   first-join: true
   death: true
+  night-skip: true
 
 # Режим технічних робіт (Maintenance)
 maintenance:
