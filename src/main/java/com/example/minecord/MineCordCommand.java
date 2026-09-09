@@ -18,16 +18,17 @@ public class MineCordCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("map")) {
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
             sender.sendMessage(ChatColor.YELLOW + "Веб-мапа сервера:");
             
             // Створюємо клікабельне посилання для зручності
             if (sender instanceof Player) {
                 net.md_5.bungee.api.chat.TextComponent link = new net.md_5.bungee.api.chat.TextComponent("§a§lНатисніть тут, щоб відкрити мапу");
-                link.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, "http://kozlomine.minecraft.how:27257/"));
+                link.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, mapUrl));
                 link.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("§7Перейти на сайт мапи")));
                 ((Player) sender).spigot().sendMessage(link);
             } else {
-                sender.sendMessage(ChatColor.AQUA + "http://kozlomine.minecraft.how:27257/");
+                sender.sendMessage(ChatColor.AQUA + mapUrl);
             }
             return true;
         }

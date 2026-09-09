@@ -152,7 +152,7 @@ public class PlayerEventListener implements Listener {
             String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
                     loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
             
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://kozlomine.minecraft.how:27257/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
             if (!mapUrl.endsWith("/")) mapUrl += "/";
             
             // Формат посилання для BlueMap (версія 4/5+ вимагає 10 параметрів)

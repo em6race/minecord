@@ -65,7 +65,8 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.replyEmbeds(embed.build()).queue();
         }
         else if (event.getName().equals("map")) {
-            event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](http://kozlomine.minecraft.how:27257/)").setEphemeral(true).queue();
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
+            event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](" + mapUrl + ")").setEphemeral(true).queue();
         }
         else if (event.getName().equals("link")) {
             String code = event.getOption("code").getAsString();
