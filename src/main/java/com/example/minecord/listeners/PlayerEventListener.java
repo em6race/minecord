@@ -112,6 +112,7 @@ public class PlayerEventListener implements Listener {
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().addPlayer(player.getName(), player.getUniqueId());
                 plugin.getPlayerCacheManager().updatePlayerXp(player.getUniqueId(), player.getLevel(), player.getTotalExperience());
+                plugin.getPlayerCacheManager().updatePlayerAdvancements(player);
             }
 
             if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
@@ -172,6 +173,7 @@ public class PlayerEventListener implements Listener {
         try {
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().updatePlayerXp(event.getPlayer().getUniqueId(), event.getPlayer().getLevel(), event.getPlayer().getTotalExperience());
+                plugin.getPlayerCacheManager().updatePlayerAdvancements(event.getPlayer());
             }
 
             if (plugin.getConfig().getBoolean("events.join-leave", true)) {
@@ -256,8 +258,6 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler
     public void onPlayerAdvancement(org.bukkit.event.player.PlayerAdvancementDoneEvent event) {
-        if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
-        
         // Ignore recipe/technical advancements
         String advKey = event.getAdvancement().getKey().getKey();
         if (advKey.startsWith("recipes/")) return;
@@ -265,6 +265,12 @@ public class PlayerEventListener implements Listener {
         // Ignore root advancements (category milestones like "Minecraft", "Nether", "Adventure")
         // because they are not real player achievements
         if (advKey.endsWith("/root")) return;
+
+        if (plugin.getPlayerCacheManager() != null) {
+            plugin.getPlayerCacheManager().incrementAdvancements(event.getPlayer().getUniqueId());
+        }
+
+        if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
 
         // Safely attempt to get advancement title
         String fallbackTitle = advKey;

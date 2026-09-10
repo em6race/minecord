@@ -234,7 +234,6 @@ public class DiscordCommandListener extends ListenerAdapter {
         }
 
         else if (event.getName().equals("stats")) {
-            event.deferReply().queue();
             net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");
 
             String resolvedPlayerName = null;
@@ -245,24 +244,15 @@ public class DiscordCommandListener extends ListenerAdapter {
             } else {
                 java.util.UUID linkedUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
                 if (linkedUuid == null) {
-                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                    embed.setTitle("🔗 Прив'яжіть свій акаунт Minecraft");
-                    embed.setColor(0x5865F2);
-                    embed.setDescription("Щоб переглядати **власну статистику** без введення нікнейма, прив'яжіть свій Minecraft акаунт до Discord.\n");
-                    embed.addField("🎮 Спосіб 1: Самостійно через гру",
-                            "1. Зайдіть на сервер у Minecraft та введіть: `/discord link`\n" +
-                            "2. Отримайте 4-значний код\n" +
-                            "3. Введіть тут команду: `/link code: <ваш_код>`", false);
-                    embed.addField("👑 Спосіб 2: Через адміністратора",
-                            "Зверніться до адміністратора, щоб він прив'язав ваш акаунт командою `/linkadmin`.", false);
-                    embed.addField("💡 Статистика іншого гравця",
-                            "Ви також можете переглянути статистику будь-якого гравця за ніком:\n`/stats player: <нікнейм>`\n\n*Для інформації про стан сервера використовуйте:* `/serverinfo`", false);
-                    embed.setFooter("MineCord • Статистика гравців");
-                    event.getHook().sendMessageEmbeds(embed.build()).queue();
+                    event.replyEmbeds(createLinkGuideEmbed("Щоб переглядати **власну статистику** без введення нікнейма, прив'яжіть свій Minecraft акаунт до Discord."))
+                            .setEphemeral(true)
+                            .queue();
                     return;
                 }
                 resolvedUuid = linkedUuid;
             }
+
+            event.deferReply().queue();
 
             final String targetName = resolvedPlayerName;
             final java.util.UUID targetUuid = resolvedUuid;
@@ -345,14 +335,12 @@ public class DiscordCommandListener extends ListenerAdapter {
                     long playtimeHours = playtimeTicks / (20 * 60 * 60);
                     long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
 
-                    String levelDisplay = playerLevel + " lvl";
-                    if (playerTotalExp > 0) {
-                        levelDisplay += " (" + String.format(java.util.Locale.US, "%,d", playerTotalExp) + " XP)";
+                    int completedAdv = 0;
+                    int totalAdv = 110;
+                    if (plugin.getPlayerCacheManager() != null) {
+                        completedAdv = plugin.getPlayerCacheManager().getPlayerAdvancements(offlinePlayer);
+                        totalAdv = plugin.getPlayerCacheManager().getTotalAdvancements();
                     }
-                    embed.addField("🌟 Рівень", levelDisplay, true);
-                    embed.addField("☠️ Смертей", String.valueOf(deaths), true);
-                    embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
-                    embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
 
                     int blocksBroken = 0;
                     int blocksPlaced = 0;
@@ -396,6 +384,15 @@ public class DiscordCommandListener extends ListenerAdapter {
                     long distanceBlocks = distanceCm / 100;
                     long distanceKm = distanceBlocks / 1000;
 
+                    String levelDisplay = playerLevel + " lvl";
+                    if (playerTotalExp > 0) {
+                        levelDisplay += " (" + String.format(java.util.Locale.US, "%,d", playerTotalExp) + " XP)";
+                    }
+                    embed.addField("🌟 Рівень", levelDisplay, true);
+                    embed.addField("🏆 Досягнення", completedAdv + " / " + totalAdv, true);
+                    embed.addField("☠️ Смертей", String.valueOf(deaths), true);
+                    embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
+                    embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
                     embed.addField("⛏️ Зламано блоків", String.valueOf(blocksBroken), true);
                     embed.addField("🧱 Поставлено блоків", String.valueOf(blocksPlaced), true);
                     embed.addField("🎒 Підібрано предметів", String.valueOf(itemsPickedUp), true);
@@ -547,5 +544,26 @@ public class DiscordCommandListener extends ListenerAdapter {
         }
         event.reply("❌ Ця команда доступна лише адміністраторам сервера.").setEphemeral(true).queue();
         return false;
+    }
+
+    public static net.dv8tion.jda.api.entities.MessageEmbed createLinkGuideEmbed(String description) {
+        net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+        embed.setTitle("🔗 Прив'яжіть свій акаунт Minecraft");
+        embed.setColor(0x5865F2);
+        if (description != null && !description.isEmpty()) {
+            embed.setDescription(description + "\n");
+        } else {
+            embed.setDescription("Щоб виконати цю дію, необхідно прив'язати свій Minecraft акаунт до Discord.\n");
+        }
+        embed.addField("🎮 Спосіб 1: Самостійно через гру",
+                "1. Зайдіть на сервер у Minecraft та введіть: `/discord link`\n" +
+                "2. Отримайте 4-значний код\n" +
+                "3. Введіть тут команду: `/link code: <ваш_код>`", false);
+        embed.addField("👑 Спосіб 2: Через адміністратора",
+                "Зверніться до адміністратора, щоб він прив'язав ваш акаунт командою `/linkadmin`.", false);
+        embed.addField("💡 Статистика іншого гравця",
+                "Ви також можете переглянути статистику будь-якого гравця за ніком:\n`/stats player: <нікнейм>`\n\n*Для інформації про стан сервера використовуйте:* `/serverinfo`", false);
+        embed.setFooter("MineCord • Прив'язка акаунта");
+        return embed.build();
     }
 }
