@@ -17,8 +17,8 @@ commands:
     description: Показати карту сервера
     usage: /map
   mail:
-    description: Відправити офлайн повідомлення гравцю
-    usage: /mail send <гравець> <повідомлення>
+    description: Відправити офлайн-повідомлення гравцю в Discord
+    usage: /mail <гравець> <повідомлення>
   ticket:
     description: Створити тікет для адміністрації
     usage: /ticket create <повідомлення>
