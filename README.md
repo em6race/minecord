@@ -1,6 +1,12 @@
 # MineCord 🎮💬
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Lines_of_Code-5.3k-blue?style=flat-square&logo=java&logoColor=white" alt="Lines of Code">
+  <img src="https://img.shields.io/badge/Platform-Paper%20%2F%20Purpur%2026.2%2B-orange?style=flat-square&logo=minecraft&logoColor=white" alt="Platform">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
+</p>
+
+<p align="center">
   <b>Advanced Minecraft & Discord Integration Plugin (Paper / Purpur 26.2+)</b><br>
   <a href="#-українська">🇺🇦 Українська версія</a> • <a href="#-english">🇬🇧 English version</a>
 </p>
