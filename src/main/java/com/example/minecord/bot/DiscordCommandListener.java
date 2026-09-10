@@ -386,12 +386,11 @@ public class DiscordCommandListener extends ListenerAdapter {
                     }
 
                     event.getHook().sendMessageEmbeds(embed.build()).queue();
-                    } catch (Throwable t) {
-                        plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка обробки /stats: " + t.getMessage(), t);
-                        event.getHook().sendMessage("❌ Не вдалося отримати статистику гравця. Перевірте консоль.").setEphemeral(true).queue();
-                    }
-                });
-            }
+                } catch (Throwable t) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка обробки /stats: " + t.getMessage(), t);
+                    event.getHook().sendMessage("❌ Не вдалося отримати статистику гравця. Перевірте консоль.").setEphemeral(true).queue();
+                }
+            });
         }
         else if (event.getName().equals("linkadmin")) {
             event.deferReply(true).queue();
