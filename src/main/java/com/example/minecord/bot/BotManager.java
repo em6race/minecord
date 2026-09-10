@@ -46,6 +46,11 @@ public class BotManager {
                 jda.awaitReady();
                 plugin.logPink("Бот підключений як " + jda.getSelfUser().getName());
 
+                // Pre-load shutdown classes to avoid NoClassDefFoundError when jar is hot-swapped on disk
+                try {
+                    Class.forName("net.dv8tion.jda.api.events.session.ShutdownEvent");
+                } catch (Throwable ignored) {}
+
                 // Register slash commands
                 jda.updateCommands().addCommands(
                         Commands.slash("help", "Показує список всіх доступних команд бота"),
@@ -153,7 +158,12 @@ public class BotManager {
             try {
                 jda.shutdown();
             } catch (Throwable e) {
-                plugin.getLogger().warning("Помилка під час вимкнення JDA: " + e.getMessage());
+                try {
+                    jda.shutdownNow();
+                } catch (Throwable ignored) {}
+                if (!(e instanceof NoClassDefFoundError)) {
+                    plugin.getLogger().warning("Помилка під час вимкнення JDA: " + e.getMessage());
+                }
             }
         }
     }
