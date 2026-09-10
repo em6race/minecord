@@ -27,6 +27,7 @@ public final class MineCord extends JavaPlugin {
     private SleepManager sleepManager;
     private BlueMapManager blueMapManager;
     private com.example.minecord.utils.LeaderboardManager leaderboardManager;
+    private com.example.minecord.utils.PlayerCacheManager playerCacheManager;
 
     @Override
     public void onEnable() {
@@ -47,6 +48,8 @@ public final class MineCord extends JavaPlugin {
         this.performanceMonitor = new PerformanceMonitor(this);
         
         linkManager = new AccountLinkManager(this);
+        this.playerCacheManager = new com.example.minecord.utils.PlayerCacheManager(this);
+        this.playerCacheManager.init();
         botManager = new BotManager(this);
         botManager.start();
         
@@ -225,6 +228,10 @@ public final class MineCord extends JavaPlugin {
         
         // Reload AI moderator
         this.openAIModerator = new OpenAIModerator(this);
+
+        if (playerCacheManager != null) {
+            playerCacheManager.refreshCache();
+        }
     }
 
     public BotManager getBotManager() {
@@ -261,5 +268,9 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.LeaderboardManager getLeaderboardManager() {
         return leaderboardManager;
+    }
+
+    public com.example.minecord.utils.PlayerCacheManager getPlayerCacheManager() {
+        return playerCacheManager;
     }
 }
