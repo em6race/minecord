@@ -132,7 +132,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(ChatColor.YELLOW + "/sharecoords <опис>" + ChatColor.WHITE + " - Поділитися координатами з мапою");
             player.sendMessage(ChatColor.YELLOW + "/report <гравець> <причина>" + ChatColor.WHITE + " - Скарга на порушника");
             player.sendMessage(ChatColor.YELLOW + "/map" + ChatColor.WHITE + " - Посилання на веб-мапу");
-            player.sendMessage(ChatColor.YELLOW + "/mail <гравець> <текст>" + ChatColor.WHITE + " - Надіслати офлайн-повідомлення в Discord");
+            player.sendMessage(ChatColor.YELLOW + "/mail <гравець> <текст>" + ChatColor.WHITE + " - Надіслати листа в Discord (потрібна прив'язка /discord link)");
             player.sendMessage(ChatColor.YELLOW + "/ticket create <текст>" + ChatColor.WHITE + " - Зв'язок з адміністрацією");
             player.sendMessage(ChatColor.YELLOW + "/togglerestart" + ChatColor.WHITE + " - Увімкнути/вимкнути сповіщення авторестарту");
             return true;
@@ -159,7 +159,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
 
             if (args.length >= 1 && args[0].equalsIgnoreCase("read")) {
                 sender.sendMessage(ChatColor.YELLOW + "📩 Окремої скриньки в грі немає — листи надходять напряму в приватні повідомлення Discord прив'язаного гравця!");
-                sender.sendMessage(ChatColor.GRAY + "Щоб надіслати листа: " + ChatColor.WHITE + "/mail <гравець> <повідомлення>");
+                sender.sendMessage(ChatColor.GRAY + "Щоб надіслати листа: " + ChatColor.WHITE + "/mail <гравець> <повідомлення>" + ChatColor.GRAY + " (потрібна прив'язка /discord link)");
                 return true;
             }
 
@@ -169,6 +169,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             if (args.length >= 1 && args[0].equalsIgnoreCase("send")) {
                 if (args.length < 3) {
                     sender.sendMessage(ChatColor.RED + "Використання: /mail <гравець> <повідомлення>");
+                    sender.sendMessage(ChatColor.GRAY + "💡 Отримувач повинен прив'язати свій Discord через /discord link.");
                     return true;
                 }
                 targetName = args[1];
@@ -176,6 +177,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             } else {
                 if (args.length < 2) {
                     sender.sendMessage(ChatColor.RED + "Використання: /mail <гравець> <повідомлення>");
+                    sender.sendMessage(ChatColor.GRAY + "💡 Отримувач повинен прив'язати свій Discord через /discord link.");
                     return true;
                 }
                 targetName = args[0];
@@ -194,7 +196,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 }
                 String discordId = plugin.getLinkManager().getDiscordId(target.getUniqueId());
                 if (discordId == null) {
-                    sender.sendMessage(ChatColor.RED + "❌ Гравець " + finalTargetName + " ще не прив'язав свій Discord-акаунт.");
+                    sender.sendMessage(ChatColor.RED + "❌ Гравець " + finalTargetName + " ще не прив'язав свій Discord-акаунт (/discord link).");
                     return;
                 }
                 
@@ -204,6 +206,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                         embed.setTitle("📩 Новий лист із сервера Minecraft!");
                         embed.setDescription("**Від:** " + sender.getName() + "\n**Повідомлення:** " + finalMessage);
                         embed.setColor(0x5865F2);
+                        embed.setFooter("MineCord • Відповісти на сервері: /mail " + sender.getName() + " <текст>");
                         channel.sendMessageEmbeds(embed.build()).queue(
                             success -> sender.sendMessage(ChatColor.GREEN + "✅ Лист успішно надіслано в Discord гравцю " + finalTargetName + "!"),
                             error -> sender.sendMessage(ChatColor.RED + "❌ Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
