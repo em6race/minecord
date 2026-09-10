@@ -18,6 +18,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,28 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
     }
 
+    private Integer parseCoord(String raw, int current) {
+        if (raw == null) return null;
+        String s = raw.trim().replace(",", "").replace(";", "");
+        if (s.isEmpty()) return null;
+
+        if (s.equals("~")) {
+            return current;
+        }
+        if (s.startsWith("~")) {
+            try {
+                return current + Integer.parseInt(s.substring(1));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -37,17 +60,59 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // Mandatory comment check as requested by user
+        Location loc = player.getLocation();
+        int currentX = loc.getBlockX();
+        int currentY = loc.getBlockY();
+        int currentZ = loc.getBlockZ();
+
+        int targetX = currentX;
+        int targetY = currentY;
+        int targetZ = currentZ;
+        String comment;
+
         if (args.length == 0) {
-            player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати назву або опис місця!");
-            player.sendMessage(ChatColor.GRAY + "Використання: " + ChatColor.YELLOW + "/sharecoords <опис> " + 
-                    ChatColor.GRAY + "(наприклад: " + ChatColor.WHITE + "/sharecoords База в горах" + ChatColor.GRAY + " або " + 
-                    ChatColor.WHITE + "/sharecoords Портал у Незер" + ChatColor.GRAY + ")");
+            sendUsageHelp(player);
             return true;
         }
 
-        String comment = String.join(" ", args);
-        Location loc = player.getLocation();
+        // Check if user entered manual coordinates
+        // Case 1: 3 coordinates: X Y Z (e.g. /sharecoords 100 64 -200 База)
+        Integer c0 = parseCoord(args[0], currentX);
+        Integer c1 = args.length > 1 ? parseCoord(args[1], currentY) : null;
+        Integer c2 = args.length > 2 ? parseCoord(args[2], currentZ) : null;
+
+        if (c0 != null && c1 != null && c2 != null) {
+            // User provided 3 coordinates
+            if (args.length == 3) {
+                player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати опис місця до цих координат!");
+                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1 + " " + c2 + " База в горах");
+                return true;
+            }
+            targetX = c0;
+            targetY = c1;
+            targetZ = c2;
+            comment = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+        } else if (c0 != null && c1 != null && c2 == null && args.length >= 2) {
+            // Case 2: 2 coordinates: X Z (e.g. /sharecoords 100 -200 База)
+            if (args.length == 2) {
+                player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати опис місця до цих координат!");
+                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1 + " База в горах");
+                return true;
+            }
+            targetX = c0;
+            targetY = currentY;
+            targetZ = c1;
+            comment = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+        } else {
+            // Case 3: Automatic player coordinates, entire argument line is the comment
+            comment = String.join(" ", args);
+        }
+
+        if (comment.trim().isEmpty()) {
+            sendUsageHelp(player);
+            return true;
+        }
+
         String worldName = loc.getWorld() != null ? loc.getWorld().getName() : "world";
 
         final String dimension;
@@ -63,13 +128,13 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         if (!mapUrl.endsWith("/")) mapUrl += "/";
 
         // BlueMap URL format
-        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", 
-                mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", 
+                mapUrl, worldName, targetX, targetY, targetZ);
 
         // In-game broadcast components
         String header = ChatColor.GOLD + "📍 Гравець " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " поділився координатами: " + ChatColor.WHITE + comment;
         String coordsPart = String.format("§7Координати: §eX: %d, Y: %d, Z: %d §7(%s) ", 
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
+                targetX, targetY, targetZ, dimension);
 
         TextComponent line2 = new TextComponent(coordsPart);
         TextComponent linkComp = new TextComponent("§b§n[🗺️ Відкрити на мапі]");
@@ -84,11 +149,24 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         }
 
         // Send to Discord
+        final int finalX = targetX;
+        final int finalY = targetY;
+        final int finalZ = targetZ;
+        final String finalComment = comment;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            sendCoordsToDiscord(player, comment, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension, fullUrl);
+            sendCoordsToDiscord(player, finalComment, finalX, finalY, finalZ, dimension, fullUrl);
         });
 
         return true;
+    }
+
+    private void sendUsageHelp(Player player) {
+        player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати назву або опис місця!");
+        player.sendMessage(ChatColor.GRAY + "Способи використання:");
+        player.sendMessage(ChatColor.YELLOW + "  • /sharecoords <опис> " + ChatColor.GRAY + "— поділитися поточною позицією");
+        player.sendMessage(ChatColor.YELLOW + "  • /sharecoords <X> <Y> <Z> <опис> " + ChatColor.GRAY + "— вказати точні координати");
+        player.sendMessage(ChatColor.YELLOW + "  • /sharecoords <X> <Z> <опис> " + ChatColor.GRAY + "— вказати X та Z координати");
+        player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.WHITE + "/sharecoords Моя база" + ChatColor.GRAY + " або " + ChatColor.WHITE + "/sharecoords 120 64 -350 База");
     }
 
     private void sendCoordsToDiscord(Player player, String comment, int x, int y, int z, String dimension, String mapUrl) {
@@ -116,9 +194,57 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player player)) return Collections.emptyList();
+
+        Location loc = player.getLocation();
         if (args.length == 1) {
-            return Arrays.asList("База", "Дім", "Портал", "Спавн", "Шахта", "Скарбниця");
+            List<String> suggestions = new ArrayList<>(Arrays.asList(
+                    String.valueOf(loc.getBlockX()),
+                    "~",
+                    "База", "Дім", "Портал", "Спавн", "Шахта", "Скарбниця"
+            ));
+            return filter(suggestions, args[0]);
+        } else if (args.length == 2) {
+            Integer c0 = parseCoord(args[0], loc.getBlockX());
+            if (c0 != null) {
+                List<String> suggestions = new ArrayList<>(Arrays.asList(
+                        String.valueOf(loc.getBlockY()),
+                        String.valueOf(loc.getBlockZ()),
+                        "~"
+                ));
+                return filter(suggestions, args[1]);
+            }
+        } else if (args.length == 3) {
+            Integer c0 = parseCoord(args[0], loc.getBlockX());
+            Integer c1 = parseCoord(args[1], loc.getBlockY());
+            if (c0 != null && c1 != null) {
+                List<String> suggestions = new ArrayList<>(Arrays.asList(
+                        String.valueOf(loc.getBlockZ()),
+                        "~",
+                        "База", "Дім", "Портал", "Спавн", "Шахта"
+                ));
+                return filter(suggestions, args[2]);
+            }
+        } else if (args.length == 4) {
+            Integer c0 = parseCoord(args[0], loc.getBlockX());
+            Integer c1 = parseCoord(args[1], loc.getBlockY());
+            Integer c2 = parseCoord(args[2], loc.getBlockZ());
+            if (c0 != null && c1 != null && c2 != null) {
+                List<String> suggestions = Arrays.asList("База", "Дім", "Портал", "Шахта", "Скарбниця", "Спавн");
+                return filter(suggestions, args[3]);
+            }
         }
         return Collections.emptyList();
+    }
+
+    private List<String> filter(List<String> list, String prefix) {
+        String lower = prefix.toLowerCase();
+        List<String> result = new ArrayList<>();
+        for (String s : list) {
+            if (s.toLowerCase().startsWith(lower)) {
+                result.add(s);
+            }
+        }
+        return result;
     }
 }

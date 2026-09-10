@@ -193,7 +193,7 @@ public class PlayerEventListener implements Listener {
             if (!mapUrl.endsWith("/")) mapUrl += "/";
             
             // Link format for BlueMap (version 4/5+ requires 10 parameters)
-            String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             
             net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
             net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent("§b§n[🗺️ Відкрити на мапі]");

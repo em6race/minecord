@@ -76,16 +76,43 @@ def getGitMessage = { ->
     }
 }
 
+def getGitStats = { ->
+    try {
+        def proc = ["git", "show", "--shortstat", "--format=", "HEAD"].execute()
+        proc.waitFor()
+        def text = proc.text.trim()
+        def files = "0"
+        def ins = "0"
+        def del = "0"
+        def mFiles = text =~ /(\d+)\s+file/
+        if (mFiles.find()) files = mFiles.group(1)
+        def mIns = text =~ /(\d+)\s+insertion/
+        if (mIns.find()) ins = mIns.group(1)
+        def mDel = text =~ /(\d+)\s+deletion/
+        if (mDel.find()) del = mDel.group(1)
+        return [files: files, insertions: ins, deletions: del]
+    } catch (Exception e) {
+        return [files: "0", insertions: "0", deletions: "0"]
+    }
+}
+
 processResources {
     def gitHash = getGitHash()
     def gitMsg = getGitMessage()
+    def gitStats = getGitStats()
     inputs.property "gitHash", gitHash
     inputs.property "gitMsg", gitMsg
+    inputs.property "gitFiles", gitStats.files
+    inputs.property "gitInsertions", gitStats.insertions
+    inputs.property "gitDeletions", gitStats.deletions
     filesMatching("git.properties") {
         expand(
             'gitHash': gitHash,
             'gitMsg': gitMsg,
-            'buildTime': new Date().format("dd.MM.yyyy HH:mm:ss")
+            'buildTime': new Date().format("dd.MM.yyyy HH:mm:ss"),
+            'gitFiles': gitStats.files,
+            'gitInsertions': gitStats.insertions,
+            'gitDeletions': gitStats.deletions
         )
     }
 }

@@ -38,7 +38,7 @@ public final class MineCord extends JavaPlugin {
                 options.setDsn(sentryDsn);
                 options.setTracesSampleRate(1.0);
             });
-            getLogger().info("Sentry integration enabled!");
+            logPink("Sentry integration enabled!");
         }
         
         // Initialize AI moderator, anti-spam, and performance monitor
@@ -124,14 +124,31 @@ public final class MineCord extends JavaPlugin {
         
         // Soft-dependency check
         if (com.example.minecord.utils.SkinHelper.isSkinsRestorerAvailable()) {
-            getLogger().info("Плагін SkinsRestorer знайдено — увімкнено підтримку кастомних скінів для Discord.");
+            logPink("Плагін SkinsRestorer знайдено — увімкнено підтримку кастомних скінів для Discord.");
         } else {
-            getLogger().info("Плагін SkinsRestorer не знайдено — інтеграцію скінів вимкнено (використовується нативний профіль Paper).");
+            logPink("Плагін SkinsRestorer не знайдено — інтеграцію скінів вимкнено (використовується нативний профіль Paper).");
         }
 
-        getLogger().info("📦 Збірка плагіна: коміт " + com.example.minecord.utils.GitVersion.getCommitHash() + " (" + com.example.minecord.utils.GitVersion.getBuildTime() + ")");
-        getLogger().info("📝 Зміни: " + com.example.minecord.utils.GitVersion.getCommitMessage());
-        getLogger().info("MineCord (Модульна версія) успішно завантажено!");
+        logPink("📦 Збірка плагіна: коміт " + com.example.minecord.utils.GitVersion.getCommitHash() + " (" + com.example.minecord.utils.GitVersion.getBuildTime() + ")");
+        logPink("📝 Зміни: " + com.example.minecord.utils.GitVersion.getCommitMessage());
+        
+        String ins = com.example.minecord.utils.GitVersion.getDiffInsertions();
+        String del = com.example.minecord.utils.GitVersion.getDiffDeletions();
+        String files = com.example.minecord.utils.GitVersion.getDiffFiles();
+        if (!ins.equals("0") || !del.equals("0") || !files.equals("0")) {
+            getServer().getConsoleSender().sendMessage(
+                    org.bukkit.ChatColor.LIGHT_PURPLE + "[MineCord] " +
+                    org.bukkit.ChatColor.LIGHT_PURPLE + "📊 Диф коду: " +
+                    org.bukkit.ChatColor.GREEN + "+" + ins + " " +
+                    org.bukkit.ChatColor.RED + "-" + del + " " +
+                    org.bukkit.ChatColor.GRAY + "(" + files + " " + (files.equals("1") ? "файл" : "файлів") + ")"
+            );
+        }
+        logPink("MineCord (Модульна версія) успішно завантажено!");
+    }
+
+    public void logPink(String message) {
+        getServer().getConsoleSender().sendMessage(org.bukkit.ChatColor.LIGHT_PURPLE + "[MineCord] " + message);
     }
 
     @Override

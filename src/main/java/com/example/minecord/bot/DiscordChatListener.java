@@ -3,7 +3,10 @@ package com.example.minecord.bot;
 import com.example.minecord.MineCord;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import java.util.List;
+import java.util.ArrayList;
 import org.bukkit.ChatColor;
+import org.bukkit.command.ConsoleCommandSender;
 import org.jetbrains.annotations.NotNull;
 
 public class DiscordChatListener extends ListenerAdapter {
@@ -31,7 +34,10 @@ public class DiscordChatListener extends ListenerAdapter {
             }
 
             // In console channel: read text as server command
-            String command = event.getMessage().getContentRaw();
+            String command = event.getMessage().getContentRaw().trim();
+            if (command.startsWith("/")) {
+                command = command.substring(1).trim();
+            }
             
             // If message starts with Cyrillic characters, treat as chat and ignore
             if (command.matches("^[а-яА-ЯіІїЇєЄґҐ].*")) {
@@ -41,12 +47,54 @@ public class DiscordChatListener extends ListenerAdapter {
             plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
             
             // Execute on the main server thread
+            final String finalCommand = command;
             plugin.getServer().getScheduler().runTask(plugin, () -> {
-                boolean success = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+                List<String> outputLines = new ArrayList<>();
+                ConsoleCommandSender wrappedSender = createWrappedConsoleSender(
+                        plugin.getServer().getConsoleSender(),
+                        line -> {
+                            if (line != null) {
+                                String clean = ChatColor.stripColor(line);
+                                if (!clean.trim().isEmpty()) {
+                                    outputLines.add(clean);
+                                }
+                            }
+                        }
+                );
+
+                boolean success = plugin.getServer().dispatchCommand(wrappedSender, finalCommand);
                 if (success) {
                     event.getMessage().addReaction(net.dv8tion.jda.api.entities.emoji.Emoji.fromUnicode("✅")).queue();
                 } else {
                     event.getMessage().addReaction(net.dv8tion.jda.api.entities.emoji.Emoji.fromUnicode("❌")).queue();
+                }
+
+                if (!outputLines.isEmpty()) {
+                    StringBuilder sb = new StringBuilder("```\n");
+                    int messagesSent = 0;
+                    for (String line : outputLines) {
+                        int i = 0;
+                        while (i < line.length()) {
+                            int end = Math.min(i + 1900, line.length());
+                            String part = line.substring(i, end);
+                            if (sb.length() + part.length() + 5 > 1950) {
+                                sb.append("```");
+                                if (messagesSent < 5) {
+                                    event.getMessage().reply(sb.toString()).queue();
+                                    messagesSent++;
+                                }
+                                sb = new StringBuilder("```\n");
+                            }
+                            sb.append(part);
+                            i = end;
+                        }
+                        sb.append("\n");
+                    }
+                    if (sb.length() > 4 && messagesSent < 5) {
+                        sb.append("```");
+                        event.getMessage().reply(sb.toString()).queue();
+                    }
+                } else if (!success) {
                     event.getMessage().reply("❌ Команда не знайдена або введена неправильно!").queue();
                 }
             });
@@ -152,5 +200,47 @@ public class DiscordChatListener extends ListenerAdapter {
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             plugin.getServer().broadcastMessage(finalMessage);
         });
+    }
+
+    private ConsoleCommandSender createWrappedConsoleSender(
+            ConsoleCommandSender realConsole,
+            java.util.function.Consumer<String> lineConsumer) {
+        return (ConsoleCommandSender) java.lang.reflect.Proxy.newProxyInstance(
+                realConsole.getClass().getClassLoader(),
+                new Class<?>[]{ ConsoleCommandSender.class },
+                (proxy, method, methodArgs) -> {
+                    String name = method.getName();
+                    if (name.equals("sendMessage") || name.equals("sendRawMessage")) {
+                        if (methodArgs != null && methodArgs.length > 0) {
+                            for (Object arg : methodArgs) {
+                                if (arg instanceof String s) {
+                                    lineConsumer.accept(s);
+                                } else if (arg instanceof String[] arr) {
+                                    for (String s : arr) lineConsumer.accept(s);
+                                } else if (arg instanceof net.md_5.bungee.api.chat.BaseComponent[] arr) {
+                                    lineConsumer.accept(net.md_5.bungee.api.chat.TextComponent.toPlainText(arr));
+                                } else if (arg instanceof net.md_5.bungee.api.chat.BaseComponent comp) {
+                                    lineConsumer.accept(comp.toPlainText());
+                                } else if (arg != null && !(arg instanceof java.util.UUID)) {
+                                    try {
+                                        if (arg instanceof net.kyori.adventure.text.Component comp) {
+                                            lineConsumer.accept(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(comp));
+                                        } else {
+                                            lineConsumer.accept(arg.toString());
+                                        }
+                                    } catch (Throwable t) {
+                                        lineConsumer.accept(arg.toString());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    try {
+                        return method.invoke(realConsole, methodArgs);
+                    } catch (java.lang.reflect.InvocationTargetException ite) {
+                        throw ite.getCause();
+                    }
+                }
+        );
     }
 }
