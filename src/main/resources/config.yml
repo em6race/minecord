@@ -94,6 +94,16 @@ autorestart:
   commands:
     - "restart"
 
+# Періодичне оновлення веб-карти (BlueMap)
+bluemap:
+  auto-reload:
+    # Чи ввімкнено автоматичне оновлення карти
+    enabled: true
+    # Інтервал у годинах (наприклад, кожні 2 години)
+    interval-hours: 2
+    # Консольна команда для перезавантаження BlueMap
+    command: "bluemap reload"
+
 # Технічні налаштування (для адміністраторів)
 technical:
   error-catcher:

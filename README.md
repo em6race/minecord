@@ -1,7 +1,7 @@
 # MineCord 🎮💬
 
 <p align="center">
-  <b>Advanced Minecraft & Discord Integration Plugin (Paper / Purpur 1.20+)</b><br>
+  <b>Advanced Minecraft & Discord Integration Plugin (Paper / Purpur 26.2+)</b><br>
   <a href="#-українська">🇺🇦 Українська версія</a> • <a href="#-english">🇬🇧 English version</a>
 </p>
 
@@ -9,7 +9,7 @@
 
 # 🇺🇦 Українська
 
-**MineCord** — багатофункціональний серверний плагін для Minecraft (Paper / Purpur 1.20+), який забезпечує безшовну двосторонню інтеграцію сервера з Discord, автоматизує адміністрування, покращує взаємодію гравців та розширює стандартні ігрові механіки.
+**MineCord** — багатофункціональний серверний плагін для Minecraft (Paper / Purpur 26.2+), який забезпечує безшовну двосторонню інтеграцію сервера з Discord, автоматизує адміністрування, покращує взаємодію гравців та розширює стандартні ігрові механіки.
 
 ## 🚀 Основний функціонал
 
@@ -48,7 +48,7 @@
   * Чат-сповіщення з зворотним відліком.
   * Спливаючі титри на екрані (Titles & Subtitles) перед рестартом.
   * Можливість для окремих гравців приховати набридливі повідомлення командою `/togglerestart`.
-* **Відкладений рестарт (`/queuerestart`)**: Можливість запланувати рестарт, який безпечно виконається, коли на сервері не залишиться гравців або після закінчення тайм-ауту.
+* **Відкладений розумний рестарт (`/queuerestart`)**: Одноразовий рестарт, який ставиться в чергу через Discord і спрацьовує автоматично, щойно на сервері буде 0 онлайну (всі гравці вийдуть). Працює як перемикач: не зберігається в конфіг, виконується лише 1 раз, а повторне введення команди скасовує чергу.
 
 ### 6. 🎫 Система тікетів та підтримки
 * **Тікети прямо з гри**: Гравці можуть надіслати запит чи скаргу адміністрації командою `/ticket create <текст>`.
@@ -71,6 +71,7 @@
 * **Стильний TabList**: Інформативний таб із відображенням пінгів, онлайну, TPS та привітання сервера.
 * **Команда статистики**: Перегляд ігрового часу, смертей та досягнень (`/stats`).
 * **Режим технічних робіт (`/maintenance`)**: Швидке закриття сервера на обслуговування з персоналізованим повідомленням про причину робіт.
+* **Автооновлення BlueMap**: Періодичне виконання `/bluemap reload` (за замовчуванням кожні 2 години) для автоматичної актуалізації веб-карти.
 * **Sentry Error Tracking**: Вбудоване логування винятків для миттєвого виявлення та налагодження помилок.
 
 ---
@@ -98,7 +99,7 @@
 | `/map` | Посилання на інтерактивну веб-карту |
 | `/link <code>` | Прив'язати свій Discord-акаунт до ігрового профілю за кодом |
 | `/maintenance <on/off>` | Керування режимом технічних робіт (доступно адміністраторам) |
-| `/queuerestart [хвилини]` | Запланувати відкладений безпечний рестарт сервера |
+| `/queuerestart` | Додати або скасувати одноразовий рестарт у чергу (коли онлайн = 0) |
 
 ---
 
@@ -106,7 +107,7 @@
 
 # 🇬🇧 English
 
-**MineCord** is a feature-rich, high-performance Minecraft server plugin for Paper / Purpur (1.20+) that provides seamless two-way Discord integration, automates server administration, enhances player communication, and extends core gameplay mechanics.
+**MineCord** is a feature-rich, high-performance Minecraft server plugin for Paper / Purpur (26.2+) that provides seamless two-way Discord integration, automates server administration, enhances player communication, and extends core gameplay mechanics.
 
 ## 🚀 Key Features
 
@@ -145,7 +146,7 @@
   * Countdown notices in chat.
   * On-screen Titles & Subtitles before rebooting.
   * Players can toggle countdown visibility for themselves via `/togglerestart`.
-* **Queued Restarts (`/queuerestart`)**: Queue an unattended restart that executes safely once the server is empty or after a maximum timeout.
+* **Queued Restarts (`/queuerestart`)**: Queue a one-time restart via Discord that triggers automatically once the server is empty (0 online players). Operates as a toggle: does not persist across reboots, executes strictly once, and typing the command again cancels the queued restart.
 
 ### 6. 🎫 In-Game Ticket Support System
 * **Tickets from Minecraft**: Players can submit reports or help requests using `/ticket create <message>`.
@@ -168,6 +169,7 @@
 * **Custom TabList**: Clean header and footer showing online count, TPS, ping, and server branding.
 * **Stats Command**: Inspect player playtime, death count, and achievements (`/stats`).
 * **Maintenance Mode (`/maintenance`)**: Close the server to non-staff players with a custom kick screen.
+* **BlueMap Auto-Reload**: Periodic execution of `/bluemap reload` (by default every 2 hours) to keep web maps constantly refreshed.
 * **Sentry Error Tracking**: Built-in exception capture for instant diagnostics.
 
 ---
@@ -195,7 +197,7 @@
 | `/map` | Post the server web map link |
 | `/link <code>` | Link Discord account to Minecraft player profile |
 | `/maintenance <on/off>` | Toggle maintenance mode (Admin only) |
-| `/queuerestart [minutes]` | Schedule an empty-server deferred restart |
+| `/queuerestart` | Toggle/queue a one-time restart when online reaches 0 |
 
 ---
 
@@ -214,7 +216,7 @@
 ---
 
 ## 🛠️ Requirements / Вимоги
-* **Server Software**: Paper, Purpur, or compatible forks (1.20.1 – 1.21+).
+* **Server Software**: Paper, Purpur, or compatible forks (26.2+).
 * **Java Runtime**: Java 21 or newer (fully supports Java 25).
 * **Build System**: Gradle 8.x + ShadowJar.
 
