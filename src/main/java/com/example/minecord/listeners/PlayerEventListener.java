@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -109,8 +110,8 @@ public class PlayerEventListener implements Listener {
             Player player = event.getPlayer();
 
             if (plugin.getPlayerCacheManager() != null) {
-                plugin.getPlayerCacheManager().addPlayer(player.getName());
-                plugin.getPlayerCacheManager().updatePlayerLevel(player.getUniqueId(), player.getLevel());
+                plugin.getPlayerCacheManager().addPlayer(player.getName(), player.getUniqueId());
+                plugin.getPlayerCacheManager().updatePlayerXp(player.getUniqueId(), player.getLevel(), player.getTotalExperience());
             }
 
             if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
@@ -170,7 +171,7 @@ public class PlayerEventListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         try {
             if (plugin.getPlayerCacheManager() != null) {
-                plugin.getPlayerCacheManager().updatePlayerLevel(event.getPlayer().getUniqueId(), event.getPlayer().getLevel());
+                plugin.getPlayerCacheManager().updatePlayerXp(event.getPlayer().getUniqueId(), event.getPlayer().getLevel(), event.getPlayer().getTotalExperience());
             }
 
             if (plugin.getConfig().getBoolean("events.join-leave", true)) {
@@ -181,6 +182,19 @@ public class PlayerEventListener implements Listener {
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerQuit", e);
         }
+    }
+
+    @EventHandler
+    public void onPlayerLevelChange(PlayerLevelChangeEvent event) {
+        try {
+            if (plugin.getPlayerCacheManager() != null) {
+                plugin.getPlayerCacheManager().updatePlayerXp(
+                        event.getPlayer().getUniqueId(),
+                        event.getNewLevel(),
+                        event.getPlayer().getTotalExperience()
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     @EventHandler
