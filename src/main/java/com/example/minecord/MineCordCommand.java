@@ -45,6 +45,28 @@ public class MineCordCommand implements CommandExecutor {
             }
         }
 
+        if (command.getName().equalsIgnoreCase("unmute") || (args.length > 0 && args[0].equalsIgnoreCase("unmute"))) {
+            if (!sender.hasPermission("minecord.admin") && !sender.isOp()) {
+                sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
+                return true;
+            }
+            String targetName = command.getName().equalsIgnoreCase("unmute") ? (args.length > 0 ? args[0] : null) : (args.length > 1 ? args[1] : null);
+            if (targetName == null) {
+                sender.sendMessage(ChatColor.RED + "Використання: /" + (command.getName().equalsIgnoreCase("unmute") ? "unmute" : "minecord unmute") + " <гравець>");
+                return true;
+            }
+            org.bukkit.OfflinePlayer target = plugin.getServer().getOfflinePlayer(targetName);
+            if (plugin.getAntiSpamManager().unmute(target.getUniqueId())) {
+                sender.sendMessage(ChatColor.GREEN + "Гравця " + targetName + " успішно розмучено!");
+                if (target.isOnline() && target.getPlayer() != null) {
+                    target.getPlayer().sendMessage(ChatColor.GREEN + "Вас було розмучено адміністратором.");
+                }
+            } else {
+                sender.sendMessage(ChatColor.YELLOW + "Гравець " + targetName + " не був у муті або його термін уже закінчився.");
+            }
+            return true;
+        }
+
         if (!(sender instanceof Player)) {
             sender.sendMessage("Ця команда доступна лише в грі!");
             return true;
@@ -88,6 +110,9 @@ public class MineCordCommand implements CommandExecutor {
             player.sendMessage(ChatColor.LIGHT_PURPLE + "=== Команди MineCord ===");
             player.sendMessage(ChatColor.YELLOW + "/discord link" + ChatColor.WHITE + " - Прив'язати акаунт до Discord");
             player.sendMessage(ChatColor.YELLOW + "/stats [гравець]" + ChatColor.WHITE + " - Статистика гравця");
+            player.sendMessage(ChatColor.YELLOW + "/top [категорія]" + ChatColor.WHITE + " - Топ гравців сервера");
+            player.sendMessage(ChatColor.YELLOW + "/sharecoords <опис>" + ChatColor.WHITE + " - Поділитися координатами з мапою");
+            player.sendMessage(ChatColor.YELLOW + "/report <гравець> <причина>" + ChatColor.WHITE + " - Скарга на порушника");
             player.sendMessage(ChatColor.YELLOW + "/map" + ChatColor.WHITE + " - Посилання на веб-мапу");
             player.sendMessage(ChatColor.YELLOW + "/mail send <гравець> <текст>" + ChatColor.WHITE + " - Надіслати офлайн-повідомлення");
             player.sendMessage(ChatColor.YELLOW + "/ticket create <текст>" + ChatColor.WHITE + " - Зв'язок з адміністрацією");

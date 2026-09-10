@@ -32,7 +32,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                               "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
                               "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
                               "🔹 `/help` — Показує це повідомлення\n" +
-                              "🔹 `/stats [гравець]` — Показати статистику сервера або гравця\n\n" +
+                              "🔹 `/stats [гравець]` — Показати статистику сервера або гравця\n" +
+                              "🔹 `/top [категорія]` — Топ-10 гравців (час, вбивства, смерті, алмази, блоки)\n\n" +
                               "👑 **Команди адміністратора:**\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
@@ -225,71 +226,79 @@ public class DiscordCommandListener extends ListenerAdapter {
                 
                 net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                 embed.setTitle("📊 Статистика гравця " + offlinePlayer.getName());
+                embed.setThumbnail(com.example.minecord.utils.SkinHelper.getAvatarUrl(offlinePlayer.getName()));
                 
-                if (offlinePlayer.isOnline()) {
+                // Unified Status & Ping
+                if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
                     org.bukkit.entity.Player p = offlinePlayer.getPlayer();
                     embed.setColor(0x00FF00); // Green
-                    embed.setDescription("🟢 **Статус:** Онлайн");
-                    
-                    int ping = p.getPing();
-                    double health = p.getHealth();
-                    int food = p.getFoodLevel();
-                    int level = p.getLevel();
-                    
-                    int deaths = p.getStatistic(org.bukkit.Statistic.DEATHS);
-                    int mobKills = p.getStatistic(org.bukkit.Statistic.MOB_KILLS);
-                    int playerKills = p.getStatistic(org.bukkit.Statistic.PLAYER_KILLS);
-                    
-                    long playtimeTicks = p.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
-                    long playtimeHours = playtimeTicks / (20 * 60 * 60);
-                    long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
-                    
-                    embed.addField("📶 Пінг", ping + " ms", true);
-                    embed.addField("🌟 Рівень", level + " lvl", true);
-                    embed.addField("☠️ Смертей", String.valueOf(deaths), true);
-                    embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
-                    
-                    embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
-                    
-                    int blocksBroken = 0;
-                    int blocksPlaced = 0;
-                    int itemsPickedUp = 0;
-                    for (org.bukkit.Material mat : org.bukkit.Material.values()) {
-                        if (mat.isBlock()) {
-                            try { blocksBroken += p.getStatistic(org.bukkit.Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
-                            try { blocksPlaced += p.getStatistic(org.bukkit.Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
-                        }
-                        if (mat.isItem()) {
-                            try { itemsPickedUp += p.getStatistic(org.bukkit.Statistic.PICKUP, mat); } catch (Exception ignored) {}
-                        }
-                    }
-                    
-                    long distanceCm = 0;
-                    org.bukkit.Statistic[] distStats = {
-                            org.bukkit.Statistic.WALK_ONE_CM, org.bukkit.Statistic.SPRINT_ONE_CM, org.bukkit.Statistic.SWIM_ONE_CM,
-                            org.bukkit.Statistic.FLY_ONE_CM, org.bukkit.Statistic.MINECART_ONE_CM, org.bukkit.Statistic.HORSE_ONE_CM,
-                            org.bukkit.Statistic.PIG_ONE_CM, org.bukkit.Statistic.BOAT_ONE_CM, org.bukkit.Statistic.AVIATE_ONE_CM,
-                            org.bukkit.Statistic.CLIMB_ONE_CM, org.bukkit.Statistic.FALL_ONE_CM, org.bukkit.Statistic.WALK_ON_WATER_ONE_CM,
-                            org.bukkit.Statistic.WALK_UNDER_WATER_ONE_CM, org.bukkit.Statistic.CROUCH_ONE_CM
-                    };
-                    for (org.bukkit.Statistic s : distStats) {
-                        try { distanceCm += p.getStatistic(s); } catch (Exception ignored) {}
-                    }
-                    long distanceBlocks = distanceCm / 100;
-                    long distanceKm = distanceBlocks / 1000;
-                    
-                    embed.addField("⛏️ Зламано блоків", String.valueOf(blocksBroken), true);
-                    embed.addField("🧱 Поставлено блоків", String.valueOf(blocksPlaced), true);
-                    embed.addField("🎒 Підібрано предметів", String.valueOf(itemsPickedUp), true);
-                    embed.addField("🏃 Подолано відстані", distanceKm + " км (" + distanceBlocks + " блоків)", false);
+                    embed.setDescription("🟢 **Статус:** Онлайн (Пінг: **" + p.getPing() + " ms**)");
+                    embed.addField("🌟 Рівень", p.getLevel() + " lvl", true);
                 } else {
-                    embed.setColor(0xFF0000); // Red
+                    embed.setColor(0x5865F2); // Blurple
                     embed.setDescription("🔴 **Статус:** Офлайн");
-                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-                    sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
-                    embed.addField("🕒 Останній вхід", sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())), false);
-                    embed.addField("📅 Перший вхід", sdf.format(new java.util.Date(offlinePlayer.getFirstPlayed())), false);
                 }
+                
+                // First & last login
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm");
+                sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
+                if (offlinePlayer.getFirstPlayed() > 0) {
+                    embed.addField("📅 Перший вхід", sdf.format(new java.util.Date(offlinePlayer.getFirstPlayed())), true);
+                }
+                if (offlinePlayer.isOnline()) {
+                    embed.addField("🕒 Останній вхід", "Зараз у грі", true);
+                } else if (offlinePlayer.getLastPlayed() > 0) {
+                    embed.addField("🕒 Останній вхід", sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())), true);
+                }
+                
+                // General statistics (works for both online and offline players!)
+                int deaths = 0;
+                int mobKills = 0;
+                int playerKills = 0;
+                long playtimeTicks = 0;
+                try { deaths = offlinePlayer.getStatistic(org.bukkit.Statistic.DEATHS); } catch (Exception ignored) {}
+                try { mobKills = offlinePlayer.getStatistic(org.bukkit.Statistic.MOB_KILLS); } catch (Exception ignored) {}
+                try { playerKills = offlinePlayer.getStatistic(org.bukkit.Statistic.PLAYER_KILLS); } catch (Exception ignored) {}
+                try { playtimeTicks = offlinePlayer.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE); } catch (Exception ignored) {}
+                
+                long playtimeHours = playtimeTicks / (20 * 60 * 60);
+                long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
+                
+                embed.addField("☠️ Смертей", String.valueOf(deaths), true);
+                embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
+                embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
+                
+                int blocksBroken = 0;
+                int blocksPlaced = 0;
+                int itemsPickedUp = 0;
+                for (org.bukkit.Material mat : org.bukkit.Material.values()) {
+                    if (mat.isBlock()) {
+                        try { blocksBroken += offlinePlayer.getStatistic(org.bukkit.Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
+                        try { blocksPlaced += offlinePlayer.getStatistic(org.bukkit.Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
+                    }
+                    if (mat.isItem()) {
+                        try { itemsPickedUp += offlinePlayer.getStatistic(org.bukkit.Statistic.PICKUP, mat); } catch (Exception ignored) {}
+                    }
+                }
+                
+                long distanceCm = 0;
+                org.bukkit.Statistic[] distStats = {
+                        org.bukkit.Statistic.WALK_ONE_CM, org.bukkit.Statistic.SPRINT_ONE_CM, org.bukkit.Statistic.SWIM_ONE_CM,
+                        org.bukkit.Statistic.FLY_ONE_CM, org.bukkit.Statistic.MINECART_ONE_CM, org.bukkit.Statistic.HORSE_ONE_CM,
+                        org.bukkit.Statistic.PIG_ONE_CM, org.bukkit.Statistic.BOAT_ONE_CM, org.bukkit.Statistic.AVIATE_ONE_CM,
+                        org.bukkit.Statistic.CLIMB_ONE_CM, org.bukkit.Statistic.FALL_ONE_CM, org.bukkit.Statistic.WALK_ON_WATER_ONE_CM,
+                        org.bukkit.Statistic.WALK_UNDER_WATER_ONE_CM, org.bukkit.Statistic.CROUCH_ONE_CM
+                };
+                for (org.bukkit.Statistic s : distStats) {
+                    try { distanceCm += offlinePlayer.getStatistic(s); } catch (Exception ignored) {}
+                }
+                long distanceBlocks = distanceCm / 100;
+                long distanceKm = distanceBlocks / 1000;
+                
+                embed.addField("⛏️ Зламано блоків", String.valueOf(blocksBroken), true);
+                embed.addField("🧱 Поставлено блоків", String.valueOf(blocksPlaced), true);
+                embed.addField("🎒 Підібрано предметів", String.valueOf(itemsPickedUp), true);
+                embed.addField("🏃 Подолано відстані", distanceKm + " км (" + distanceBlocks + " блоків)", false);
                 
                 event.replyEmbeds(embed.build()).queue();
             }
@@ -307,6 +316,42 @@ public class DiscordCommandListener extends ListenerAdapter {
             plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
             event.reply("✅ Акаунт Minecraft **" + offlinePlayer.getName() + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
         }
+        else if (event.getName().equals("top")) {
+            event.deferReply().queue();
+            String category = event.getOption("category") != null ? event.getOption("category").getAsString() : "time";
+            String normCat = plugin.getLeaderboardManager().normalizeCategory(category);
+            String catTitle = plugin.getLeaderboardManager().getCategoryTitle(normCat);
+
+            plugin.getLeaderboardManager().getTopAsync(normCat, 10, entries -> {
+                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                embed.setTitle("🏆 Топ-10: " + catTitle);
+                embed.setColor(0xFFD700);
+
+                if (entries == null || entries.isEmpty()) {
+                    embed.setDescription("*Дані для цього рейтингу поки що відсутні.*");
+                } else {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < entries.size(); i++) {
+                        com.example.minecord.utils.LeaderboardManager.TopEntry entry = entries.get(i);
+                        String medal = switch (i) {
+                            case 0 -> "🥇";
+                            case 1 -> "🥈";
+                            case 2 -> "🥉";
+                            default -> "`" + (i + 1) + ".`";
+                        };
+                        sb.append(medal).append(" **").append(entry.getName()).append("** — `").append(entry.getFormattedValue()).append("`\n");
+                    }
+                    embed.setDescription(sb.toString());
+
+                    // Top 1 avatar thumbnail
+                    String top1 = entries.get(0).getName();
+                    embed.setThumbnail(com.example.minecord.utils.SkinHelper.getAvatarUrl(top1));
+                }
+
+                embed.setFooter("MineCord Leaderboards • Оновлюється кожні 3 хвилини");
+                event.getHook().sendMessageEmbeds(embed.build()).queue();
+            });
+        }
         else {
             event.reply("❌ Невідома команда: /" + event.getName()).setEphemeral(true).queue();
         }
@@ -319,6 +364,19 @@ public class DiscordCommandListener extends ListenerAdapter {
                     event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
                 }
             );
+        }
+    }
+
+    @Override
+    public void onButtonInteraction(@NotNull net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
+        if (event.getComponentId().startsWith("report_done_")) {
+            if (event.getMessage().getEmbeds().isEmpty()) return;
+
+            net.dv8tion.jda.api.EmbedBuilder eb = new net.dv8tion.jda.api.EmbedBuilder(event.getMessage().getEmbeds().get(0));
+            eb.setColor(0x00FF00);
+            eb.addField("Статус", "✅ Оброблено модератором " + event.getUser().getAsMention(), false);
+
+            event.editMessageEmbeds(eb.build()).setComponents().queue();
         }
     }
 
