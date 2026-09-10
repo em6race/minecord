@@ -110,6 +110,9 @@ public class MineCordCommand implements CommandExecutor {
             player.sendMessage(ChatColor.LIGHT_PURPLE + "=== Команди MineCord ===");
             player.sendMessage(ChatColor.YELLOW + "/discord link" + ChatColor.WHITE + " - Прив'язати акаунт до Discord");
             player.sendMessage(ChatColor.YELLOW + "/stats [гравець]" + ChatColor.WHITE + " - Статистика гравця");
+            player.sendMessage(ChatColor.YELLOW + "/top [категорія]" + ChatColor.WHITE + " - Топ гравців сервера");
+            player.sendMessage(ChatColor.YELLOW + "/sharecoords <опис>" + ChatColor.WHITE + " - Поділитися координатами з мапою");
+            player.sendMessage(ChatColor.YELLOW + "/report <гравець> <причина>" + ChatColor.WHITE + " - Скарга на порушника");
             player.sendMessage(ChatColor.YELLOW + "/map" + ChatColor.WHITE + " - Посилання на веб-мапу");
             player.sendMessage(ChatColor.YELLOW + "/mail send <гравець> <текст>" + ChatColor.WHITE + " - Надіслати офлайн-повідомлення");
             player.sendMessage(ChatColor.YELLOW + "/ticket create <текст>" + ChatColor.WHITE + " - Зв'язок з адміністрацією");
