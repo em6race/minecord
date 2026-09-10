@@ -16,32 +16,31 @@ public class DiscordChatListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        // Ігноруємо повідомлення від самих ботів та вебхуків,
-        // щоб не створити нескінченний цикл (луну) повідомлень
+        // Ignore bot and webhook messages to prevent an infinite echo loop
         if (event.getAuthor().isBot() || event.isWebhookMessage()) {
             return;
         }
 
-        // 1. Перевіряємо, чи це канал КОНСОЛІ
+        // 1. Check if message is in the remote console channel
         String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
         if (consoleChannelId != null && event.getChannel().getId().equals(consoleChannelId)) {
-            // FIX: Перевірка дозволів - виконувати команди може лише адміністратор сервера
+            // Permission check: only server administrators can execute console commands
             if (event.getMember() == null || !event.getMember().hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) {
                 event.getChannel().asTextChannel().sendMessage("❌ Недостатньо прав! Тільки адміністратори можуть виконувати команди.").queue();
                 return;
             }
 
-            // Це канал консолі! Читаємо текст як команду
+            // In console channel: read text as server command
             String command = event.getMessage().getContentRaw();
             
-            // Якщо повідомлення починається з кирилиці, скоріш за все це випадковий чат, а не команда
+            // If message starts with Cyrillic characters, treat as chat and ignore
             if (command.matches("^[а-яА-ЯіІїЇєЄґҐ].*")) {
                 return;
             }
 
             plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
             
-            // Виконуємо в головному потоці сервера
+            // Execute on the main server thread
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 boolean success = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
                 if (success) {
@@ -54,7 +53,7 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
-        // 1.5 Перевіряємо, чи це відповідь у гілці (тікеті)
+        // 1.5 Check if message is a reply in a ticket thread
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel thread = event.getChannel().asThreadChannel();
             String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
@@ -91,20 +90,20 @@ public class DiscordChatListener extends ListenerAdapter {
             }
         }
 
-        // 2. Перевіряємо, чи це ІГРОВИЙ чат
+        // 2. Check if message is in the game chat bridge channel
         String targetChannelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (targetChannelId == null || !event.getChannel().getId().equals(targetChannelId)) {
             return;
         }
 
-        // Беремо нікнейм на сервері (якщо є), інакше глобальний нік
+        // Use effective guild nickname if available, else global username
         String author = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
-        // Беремо очищений текст (getContentDisplay замінює згадки <@id> на реальні імена)
+        // Use display text (replaces <@id> mentions with names)
         String message = event.getMessage().getContentDisplay();
         
         java.util.Set<java.util.UUID> pingedPlayers = new java.util.HashSet<>();
 
-        // 1. Обробляємо справжні Discord-пінги
+        // 1. Process genuine Discord mentions
         for (net.dv8tion.jda.api.entities.Member mentionedMember : event.getMessage().getMentions().getMembers()) {
             java.util.UUID uuid = plugin.getLinkManager().getUUIDFromDiscordId(mentionedMember.getId());
             if (uuid != null) {
@@ -116,7 +115,7 @@ public class DiscordChatListener extends ListenerAdapter {
             }
         }
 
-        // 2. Обробляємо текстові пінги (@Нікнейм)
+        // 2. Process text-based mentions (@PlayerName)
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9_]{3,16})");
         java.util.regex.Matcher matcher = pattern.matcher(message);
         while (matcher.find()) {
@@ -128,7 +127,7 @@ public class DiscordChatListener extends ListenerAdapter {
             }
         }
 
-        // 3. Відтворюємо звук для всіх пінгнутих гравців
+        // 3. Play notification sound for all mentioned players
         for (java.util.UUID uuid : pingedPlayers) {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 org.bukkit.entity.Player p = plugin.getServer().getPlayer(uuid);
@@ -138,17 +137,17 @@ public class DiscordChatListener extends ListenerAdapter {
             });
         }
 
-        // Створюємо красиво відформатоване повідомлення для гри
+        // Construct formatted message for Minecraft chat
         String formattedMessage = ChatColor.BLUE + "[Discord] " 
                 + ChatColor.WHITE + author + ": " 
                 + ChatColor.GRAY + message;
 
-        // Якщо користувач відправив картинку або файл, додаємо помітку
+        // Append attachment indicator if attachments are present
         if (!event.getMessage().getAttachments().isEmpty()) {
             formattedMessage += ChatColor.AQUA + " [Вкладення]";
         }
 
-        // Відправляємо сформоване повідомлення всім гравцям на сервері в головному потоці
+        // Broadcast to all online players on the main thread
         String finalMessage = formattedMessage;
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             plugin.getServer().broadcastMessage(finalMessage);

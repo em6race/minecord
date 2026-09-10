@@ -22,7 +22,7 @@ public class SkinHelper {
         }
     }
 
-    // Кеш на 60 секунд, щоб при зміні скіна через /skin він швидко оновлювався
+    // 60-second cache to update quickly when skin is changed via /skin
     private static final Map<UUID, CacheEntry> avatarCache = new ConcurrentHashMap<>();
     private static final Map<String, CacheEntry> nameCache = new ConcurrentHashMap<>();
 
@@ -61,7 +61,7 @@ public class SkinHelper {
             return cached.url;
         }
 
-        // Спроба отримати з SkinsRestorer для офлайн/щойно вийшовшого гравця
+        // Attempt to get skin from SkinsRestorer for offline/recently disconnected player
         try {
             org.bukkit.plugin.Plugin sr = Bukkit.getPluginManager().getPlugin("SkinsRestorer");
             if (sr != null && sr.isEnabled()) {
@@ -99,7 +99,7 @@ public class SkinHelper {
     }
 
     private static String resolveAvatarUrl(Player player) {
-        // 1. Спроба через Paper PlayerProfile Textures (нативний спосіб Paper)
+        // 1. Attempt via Paper PlayerProfile textures (native Paper method)
         try {
             org.bukkit.profile.PlayerTextures textures = player.getPlayerProfile().getTextures();
             URL skinUrl = textures.getSkin();
@@ -111,7 +111,7 @@ public class SkinHelper {
             }
         } catch (Throwable ignored) {}
 
-        // 2. Спроба через SkinsRestorer API (працює з будь-якими скінами, встановленими через /skin)
+        // 2. Attempt via SkinsRestorer API (works with any skin set via /skin)
         try {
             org.bukkit.plugin.Plugin sr = Bukkit.getPluginManager().getPlugin("SkinsRestorer");
             if (sr != null && sr.isEnabled()) {
@@ -138,7 +138,7 @@ public class SkinHelper {
             }
         } catch (Throwable ignored) {}
 
-        // 3. Запасний варіант: за нікнеймом гравця
+        // 3. Fallback: query by player name
         return "https://mc-heads.net/avatar/" + player.getName() + "/256";
     }
 
@@ -152,7 +152,7 @@ public class SkinHelper {
     }
 
     private static String extractHashFromJson(String json) {
-        // Шукаємо посилання в JSON: {"textures":{"SKIN":{"url":"http://textures.minecraft.net/texture/4b429074..."}}}
+        // Extract URL from JSON: {"textures":{"SKIN":{"url":"http://textures.minecraft.net/texture/4b429074..."}}}
         int idx = json.indexOf("/texture/");
         if (idx != -1) {
             int start = idx + 9;

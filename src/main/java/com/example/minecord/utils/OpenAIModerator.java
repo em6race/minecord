@@ -34,15 +34,15 @@ public class OpenAIModerator {
     }
 
     /**
-     * Перевіряє повідомлення на наявність образ, нецензурної лексики, агресії тощо.
-     * Працює асинхронно, щоб не зупиняти сервер під час очікування відповіді.
-     * @param message Повідомлення гравця
-     * @return CompletableFuture<Boolean> (true - якщо повідомлення погане, false - якщо нормальне)
+     * Checks message for offensive language, profanity, aggression, etc.
+     * Runs asynchronously to prevent blocking the server while waiting for response.
+     * @param message Player message
+     * @return CompletableFuture<Boolean> (true if message is toxic, false if acceptable)
      */
     public CompletableFuture<Boolean> isMessageToxic(String message) {
         return CompletableFuture.supplyAsync(() -> {
             if (apiKey == null || apiKey.isEmpty() || apiKey.equalsIgnoreCase("YOUR_OPENROUTER_API_KEY")) {
-                return false; // Якщо ключ не вказано або стоїть плейсхолдер, пропускаємо всі повідомлення
+                return false; // If API key is missing or placeholder, allow all messages
             }
 
             try {
@@ -53,14 +53,14 @@ public class OpenAIModerator {
                 con.setRequestProperty("HTTP-Referer", "https://minecord.plugin"); // OpenRouter requirement
                 con.setRequestProperty("X-Title", "MineCord Moderator"); // OpenRouter requirement
                 con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                con.setConnectTimeout(2000); // 2 секунди на підключення
-                con.setReadTimeout(3000);    // 3 секунди на читання
+                con.setConnectTimeout(2000); // 2 seconds connect timeout
+                con.setReadTimeout(3000);    // 3 seconds read timeout
                 con.setDoOutput(true);
 
-                // Очищаємо повідомлення від символів, що ламають JSON
+                // Sanitize message to prevent breaking JSON
                 String safeMessage = message.replace("\"", "\\\"").replace("\n", " ");
 
-                // Системний промпт для ШІ. Ми вимагаємо відповідати ТІЛЬКИ словом YES або NO.
+                // AI system prompt. Requires responding ONLY with YES or NO.
                 String systemPrompt = "Ти - адекватний модератор підліткового (13+) сервера Minecraft в Україні. " +
                         "Твоя мета - реагувати ТІЛЬКИ на РЕАЛЬНО ЖОРСТКІ порушення. " +
                         "Проаналізуй повідомлення в тегах <user_message> і визнач, чи містить воно дуже строгу нецензурну лексику, " +
@@ -95,7 +95,7 @@ public class OpenAIModerator {
                             response.append(responseLine.trim());
                         }
 
-                        // Простий парсинг JSON для пошуку відповіді ШІ
+                        // Simple JSON parsing to check AI response
                         String responseStr = response.toString();
                         if (responseStr.contains("\"content\":\"YES\"") || responseStr.contains("\"content\": \"YES\"") || responseStr.contains("YES")) {
                             return true;

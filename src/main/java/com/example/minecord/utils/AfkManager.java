@@ -25,7 +25,7 @@ public class AfkManager implements Listener {
     private final MineCord plugin;
     private final Map<UUID, AfkData> afkDataMap = new HashMap<>();
     private int taskId = -1;
-    private final long AFK_TIMEOUT = 60_000; // 1 хвилина
+    private final long AFK_TIMEOUT = 60_000; // 1 minute
 
     public AfkManager(MineCord plugin) {
         this.plugin = plugin;
@@ -102,7 +102,7 @@ public class AfkManager implements Listener {
             player.addPassenger(display);
             data.display = display;
             
-            // Оновлюємо нік в табі
+            // Update tab list name
             player.setPlayerListName(ChatColor.GRAY + "[АФК] " + ChatColor.RESET + player.getName());
             
             player.sendMessage(ChatColor.GRAY + "Ви перейшли в режим АФК.");
@@ -111,7 +111,7 @@ public class AfkManager implements Listener {
                 data.display.remove();
                 data.display = null;
             }
-            // Повертаємо нік в табі
+            // Restore tab list name
             player.setPlayerListName(player.getName());
             
             player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");

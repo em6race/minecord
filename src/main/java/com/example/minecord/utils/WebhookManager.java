@@ -21,7 +21,7 @@ public class WebhookManager {
     public void initialize(TextChannel channel) {
         if (channel == null) return;
 
-        // Шукаємо існуючий webhook або створюємо новий
+        // Find existing webhook or create a new one
         channel.retrieveWebhooks().queue(webhooks -> {
             Webhook targetWebhook = null;
             for (Webhook wh : webhooks) {
@@ -47,7 +47,7 @@ public class WebhookManager {
     public void sendMessage(String playerName, String message) {
         if (webhookUrl == null) return;
 
-        // Відправляємо повідомлення через Discord Webhook API напряму через HTTP
+        // Send message via Discord Webhook API directly over HTTP
         Thread thread = new Thread(() -> {
             try {
                 URL url = new URL(webhookUrl);
@@ -56,7 +56,7 @@ public class WebhookManager {
                 con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 con.setDoOutput(true);
 
-                // Екрануємо текст для JSON
+                // Escape text for JSON
                 String safeUsername = playerName.replace("\"", "\\\"");
                 String safeContent = message.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
                 String avatarUrl = SkinHelper.getAvatarUrl(playerName);
@@ -74,7 +74,7 @@ public class WebhookManager {
                     os.write(body);
                 }
 
-                // Читаємо відповідь (важливо для завершення запиту)
+                // Read response code (important for completing request)
                 int responseCode = con.getResponseCode();
                 if (responseCode >= 400) {
                     plugin.getLogger().warning("[Webhook] Discord повернув помилку: " + responseCode);

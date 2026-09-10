@@ -29,7 +29,7 @@ public class DiscordTicketListener extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-        // Кнопка створення заявки
+        // Ticket creation button
         if (event.getComponentId().equals("ticket_create")) {
             TextInput nicknameInput = TextInput.create("mc_nickname", "Ваш нікнейм у Minecraft", TextInputStyle.SHORT)
                     .setPlaceholder("Наприклад: Steve")
@@ -46,10 +46,10 @@ public class DiscordTicketListener extends ListenerAdapter {
             return;
         }
 
-        // Обробка прийняття/відхилення модератором
+        // Handle moderator accept/reject actions
         if (event.getComponentId().startsWith("ticket_accept_") || event.getComponentId().startsWith("ticket_reject_")) {
-            // Перевіряємо чи має право (чи це адмін/модератор)
-            // В даному випадку ми довіряємо каналу, але краще перевірити права
+            // Check permissions (whether the user is an admin/moderator)
+            // In this case we trust the channel, but it is better to verify permissions
             if (!event.getMember().hasPermission(net.dv8tion.jda.api.Permission.MANAGE_ROLES)) {
                 event.reply("❌ У вас немає прав керувати заявками (потрібне право MANAGE_ROLES) !").setEphemeral(true).queue();
                 return;
@@ -66,20 +66,20 @@ public class DiscordTicketListener extends ListenerAdapter {
             if (guild == null) return;
 
             if (action.equals("accept")) {
-                // Генерація Offline UUID (як на піратських серверах)
+                // Generate offline UUID (standard for offline-mode servers)
                 UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + nickname).getBytes(StandardCharsets.UTF_8));
                 
-                // Зберігаємо прив'язку
+                // Save the link
                 plugin.getLinkManager().linkAccountDirectly(offlineUuid, targetDiscordId);
 
-                // Отримуємо роль
+                // Retrieve role
                 String roleId = plugin.getConfig().getString("whitelist.require-discord-role", "");
                 if (!roleId.isEmpty()) {
                     Role role = guild.getRoleById(roleId);
                     if (role != null) {
                         guild.retrieveMemberById(targetDiscordId).queue(member -> {
                             guild.addRoleToMember(member, role).queue();
-                            // Надсилаємо ПП
+                            // Send direct message
                             member.getUser().openPrivateChannel().queue(pc -> {
                                 pc.sendMessage("✅ **Вашу заявку прийнято!** Ви додані до білого списку та можете заходити на сервер під ніком `" + nickname + "`.").queue(null, e -> {});
                             });
@@ -87,7 +87,7 @@ public class DiscordTicketListener extends ListenerAdapter {
                     }
                 }
 
-                // Оновлюємо повідомлення
+                // Update message
                 EmbedBuilder embed = new EmbedBuilder(event.getMessage().getEmbeds().get(0));
                 embed.setColor(0x00FF00);
                 embed.addField("Статус", "✅ Прийнято модератором " + event.getUser().getAsMention(), false);
