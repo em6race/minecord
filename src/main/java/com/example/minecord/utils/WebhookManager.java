@@ -59,7 +59,7 @@ public class WebhookManager {
                 // Екрануємо текст для JSON
                 String safeUsername = playerName.replace("\"", "\\\"");
                 String safeContent = message.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
-                String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+                String avatarUrl = SkinHelper.getAvatarUrl(playerName);
 
                 String json = "{" +
                         "\"username\":\"" + safeUsername + "\"," +

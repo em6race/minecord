@@ -173,6 +173,10 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
         }
         else if (event.getName().equals("queuerestart")) {
+            if (plugin.getAutoRestartManager() == null) {
+                event.reply("❌ Менеджер авторестартів не активний.").setEphemeral(true).queue();
+                return;
+            }
             boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
             if (isPending) {
                 if (plugin.getServer().getOnlinePlayers().isEmpty()) {
@@ -300,6 +304,9 @@ public class DiscordCommandListener extends ListenerAdapter {
             
             plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
             event.reply("✅ Акаунт Minecraft **" + offlinePlayer.getName() + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
+        }
+        else {
+            event.reply("❌ Невідома команда: /" + event.getName()).setEphemeral(true).queue();
         }
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);

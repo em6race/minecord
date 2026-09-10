@@ -3,6 +3,7 @@ package com.example.minecord.bot;
 import com.example.minecord.MineCord;
 import com.example.minecord.utils.WebhookManager;
 import com.example.minecord.utils.ConsoleManager;
+import com.example.minecord.utils.SkinHelper;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
@@ -210,7 +211,7 @@ public class BotManager {
                     embed.setColor(color);
                     
                     if (playerName != null && !playerName.isEmpty()) {
-                        String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+                        String avatarUrl = SkinHelper.getAvatarUrl(playerName);
                         embed.setAuthor(text, null, avatarUrl);
                     } else {
                         embed.setDescription(text);
@@ -235,7 +236,7 @@ public class BotManager {
                     embed.setColor(color);
                     
                     if (playerName != null && !playerName.isEmpty()) {
-                        String avatarUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+                        String avatarUrl = SkinHelper.getAvatarUrl(playerName);
                         embed.setAuthor(text, null, avatarUrl);
                     } else {
                         embed.setDescription(text);

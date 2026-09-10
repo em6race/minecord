@@ -4,6 +4,7 @@ main: com.example.minecord.MineCord
 api-version: '1.13'
 prefix: "\u00A7dMineCord\u00A7r"
 authors: [ You ]
+softdepend: [SkinsRestorer]
 description: A plugin that connects Minecraft with Discord.
 commands:
   discord:
