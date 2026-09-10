@@ -36,7 +36,7 @@ public class DiscordCommandListener extends ListenerAdapter {
 
             String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
                               "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
-                              "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
+                              "🔹 `/link [code]` — Прив'язати акаунт Minecraft до Discord (або інструкція)\n" +
                               "🔹 `/help` — Показує це повідомлення\n" +
                               "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
                               "🔹 `/serverinfo` — Інформація та стан сервера (TPS, RAM, онлайн)\n" +
@@ -79,11 +79,31 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.reply("🗺️ **Веб-мапа сервера (2D Flat):**\n[Натисніть тут, щоб відкрити мапу](" + fullUrl + ")").setEphemeral(true).queue();
         }
         else if (event.getName().equals("link")) {
-            String code = event.getOption("code").getAsString();
+            net.dv8tion.jda.api.interactions.commands.OptionMapping codeOpt = event.getOption("code");
+            if (codeOpt == null || codeOpt.getAsString().trim().isEmpty()) {
+                java.util.UUID existingUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
+                if (existingUuid != null) {
+                    org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
+                    String pName = linkedPlayer.getName() != null ? linkedPlayer.getName() : "Гравець";
+                    event.reply("✅ Ваш Discord акаунт вже прив'язано до Minecraft-акаунта **" + pName + "**!\n" +
+                            "💡 Якщо ви бажаєте прив'язати інший акаунт, отримайте новий код у грі (`/discord link`) та введіть: `/link code: <новий_код>`")
+                            .setEphemeral(true)
+                            .queue();
+                    return;
+                }
+                event.replyEmbeds(createLinkGuideEmbed("Щоб прив'язати свій Minecraft акаунт до Discord, виконайте прості дії:", false))
+                        .setEphemeral(true)
+                        .queue();
+                return;
+            }
+
+            String code = codeOpt.getAsString().trim();
             java.util.UUID uuid = plugin.getLinkManager().getUUIDFromCode(code);
 
             if (uuid == null) {
-                event.reply("❌ Невірний або застарілий код! Введіть `/discord link` у грі ще раз.").setEphemeral(true).queue();
+                event.replyEmbeds(createLinkGuideEmbed("❌ **Невірний або застарілий код!**\nКод діє обмежений час (10 хвилин). Переконайтеся, що ви отримали актуальний код у грі через `/discord link` та ввели його без помилок.", false))
+                        .setEphemeral(true)
+                        .queue();
             } else {
                 plugin.getLinkManager().linkAccount(code, event.getUser().getId());
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -547,6 +567,10 @@ public class DiscordCommandListener extends ListenerAdapter {
     }
 
     public static net.dv8tion.jda.api.entities.MessageEmbed createLinkGuideEmbed(String description) {
+        return createLinkGuideEmbed(description, true);
+    }
+
+    public static net.dv8tion.jda.api.entities.MessageEmbed createLinkGuideEmbed(String description, boolean includeStatsHint) {
         net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
         embed.setTitle("🔗 Прив'яжіть свій акаунт Minecraft");
         embed.setColor(0x5865F2);
@@ -561,9 +585,13 @@ public class DiscordCommandListener extends ListenerAdapter {
                 "3. Введіть тут команду: `/link code: <ваш_код>`", false);
         embed.addField("👑 Спосіб 2: Через адміністратора",
                 "Зверніться до адміністратора, щоб він прив'язав ваш акаунт командою `/linkadmin`.", false);
-        embed.addField("💡 Статистика іншого гравця",
-                "Ви також можете переглянути статистику будь-якого гравця за ніком:\n`/stats player: <нікнейм>`\n\n*Для інформації про стан сервера використовуйте:* `/serverinfo`", false);
-        embed.setFooter("MineCord • Прив'язка акаунта");
+        if (includeStatsHint) {
+            embed.addField("💡 Статистика іншого гравця",
+                    "Ви також можете переглянути статистику будь-якого гравця за ніком:\n`/stats player: <нікнейм>`\n\n*Для інформації про стан сервера використовуйте:* `/serverinfo`", false);
+            embed.setFooter("MineCord • Статистика гравців");
+        } else {
+            embed.setFooter("MineCord • Прив'язка акаунта");
+        }
         return embed.build();
     }
 }

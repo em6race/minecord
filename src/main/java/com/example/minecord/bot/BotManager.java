@@ -57,8 +57,8 @@ public class BotManager {
                         Commands.slash("online", "Список гравців"),
 
                         Commands.slash("map", "Отримати посилання на веб-мапу сервера"),
-                        Commands.slash("link", "Прив'язати акаунт Minecraft до Discord")
-                                .addOption(OptionType.STRING, "code", "4-значний код з гри", true),
+                        Commands.slash("link", "Прив'язати акаунт Minecraft до Discord (або інструкція)")
+                                .addOption(OptionType.STRING, "code", "4-значний код з гри (залиште порожнім для інструкції)", false),
                         Commands.slash("maintenance", "Увімкнути/вимкнути режим технічних робіт")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                                 .addOption(OptionType.BOOLEAN, "enabled", "Увімкнути (True) чи Вимкнути (False)", true),
