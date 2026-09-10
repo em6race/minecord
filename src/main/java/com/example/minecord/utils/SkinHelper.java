@@ -12,11 +12,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SkinHelper {
 
+    private static class CacheEntry {
+        final String url;
+        final long timestamp;
+
+        CacheEntry(String url) {
+            this.url = url;
+            this.timestamp = System.currentTimeMillis();
+        }
+    }
+
     // 60-second cache to update quickly when skin is changed via /skin
-    private static final Map<UUID, String> avatarCache = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> avatarTimeCache = new ConcurrentHashMap<>();
-    private static final Map<String, String> nameCache = new ConcurrentHashMap<>();
-    private static final Map<String, Long> nameTimeCache = new ConcurrentHashMap<>();
+    private static final Map<UUID, CacheEntry> avatarCache = new ConcurrentHashMap<>();
+    private static final Map<String, CacheEntry> nameCache = new ConcurrentHashMap<>();
 
     public static String getAvatarUrl(Player player) {
         if (player == null) {
@@ -24,20 +32,16 @@ public class SkinHelper {
         }
 
         UUID uuid = player.getUniqueId();
-        String cached = avatarCache.get(uuid);
-        Long cachedTime = avatarTimeCache.get(uuid);
-        if (cached != null && cachedTime != null && (System.currentTimeMillis() - cachedTime < 60000)) {
-            return cached;
+        CacheEntry cached = avatarCache.get(uuid);
+        if (cached != null && (System.currentTimeMillis() - cached.timestamp < 60000)) {
+            return cached.url;
         }
 
         String url = resolveAvatarUrl(player);
-        long now = System.currentTimeMillis();
-        avatarCache.put(uuid, url);
-        avatarTimeCache.put(uuid, now);
+        CacheEntry entry = new CacheEntry(url);
+        avatarCache.put(uuid, entry);
         if (player.getName() != null) {
-            String lowerName = player.getName().toLowerCase();
-            nameCache.put(lowerName, url);
-            nameTimeCache.put(lowerName, now);
+            nameCache.put(player.getName().toLowerCase(), entry);
         }
         return url;
     }
@@ -52,11 +56,9 @@ public class SkinHelper {
             return getAvatarUrl(player);
         }
 
-        String lowerName = playerName.toLowerCase();
-        String cached = nameCache.get(lowerName);
-        Long cachedTime = nameTimeCache.get(lowerName);
-        if (cached != null && cachedTime != null && (System.currentTimeMillis() - cachedTime < 300000)) {
-            return cached;
+        CacheEntry cached = nameCache.get(playerName.toLowerCase());
+        if (cached != null && (System.currentTimeMillis() - cached.timestamp < 300000)) {
+            return cached.url;
         }
 
         // Attempt to get skin from SkinsRestorer for offline/recently disconnected player (only if plugin is present)
@@ -79,8 +81,7 @@ public class SkinHelper {
                             String hash = extractHashFromJson(decodedJson);
                             if (hash != null && !hash.isEmpty()) {
                                 String url = "https://mc-heads.net/avatar/" + hash + "/256";
-                                nameCache.put(lowerName, url);
-                                nameTimeCache.put(lowerName, System.currentTimeMillis());
+                                nameCache.put(playerName.toLowerCase(), new CacheEntry(url));
                                 return url;
                             }
                         }
@@ -103,7 +104,6 @@ public class SkinHelper {
 
     public static void clearCache(UUID uuid) {
         avatarCache.remove(uuid);
-        avatarTimeCache.remove(uuid);
     }
 
     private static String resolveAvatarUrl(Player player) {

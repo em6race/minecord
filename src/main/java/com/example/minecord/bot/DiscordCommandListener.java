@@ -32,8 +32,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                               "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
                               "🔹 `/link <code>` — Прив'язати акаунт Minecraft до Discord\n" +
                               "🔹 `/help` — Показує це повідомлення\n" +
-                              "🔹 `/stats [гравець]` — Показати статистику сервера або гравця\n" +
-                              "🔹 `/top [категорія]` — Топ-10 гравців (час, вбивства, смерті, алмази, блоки)\n\n" +
+                              "🔹 `/stats [гравець]` — Показати статистику сервера або гравця\n\n" +
                               "👑 **Команди адміністратора:**\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
@@ -316,42 +315,6 @@ public class DiscordCommandListener extends ListenerAdapter {
             plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
             event.reply("✅ Акаунт Minecraft **" + offlinePlayer.getName() + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
         }
-        else if (event.getName().equals("top")) {
-            event.deferReply().queue();
-            String category = event.getOption("category") != null ? event.getOption("category").getAsString() : "time";
-            String normCat = plugin.getLeaderboardManager().normalizeCategory(category);
-            String catTitle = plugin.getLeaderboardManager().getCategoryTitle(normCat);
-
-            plugin.getLeaderboardManager().getTopAsync(normCat, 10, entries -> {
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                embed.setTitle("🏆 Топ-10: " + catTitle);
-                embed.setColor(0xFFD700);
-
-                if (entries == null || entries.isEmpty()) {
-                    embed.setDescription("*Дані для цього рейтингу поки що відсутні.*");
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < entries.size(); i++) {
-                        com.example.minecord.utils.LeaderboardManager.TopEntry entry = entries.get(i);
-                        String medal = switch (i) {
-                            case 0 -> "🥇";
-                            case 1 -> "🥈";
-                            case 2 -> "🥉";
-                            default -> "`" + (i + 1) + ".`";
-                        };
-                        sb.append(medal).append(" **").append(entry.getName()).append("** — `").append(entry.getFormattedValue()).append("`\n");
-                    }
-                    embed.setDescription(sb.toString());
-
-                    // Top 1 avatar thumbnail
-                    String top1 = entries.get(0).getName();
-                    embed.setThumbnail(com.example.minecord.utils.SkinHelper.getAvatarUrl(top1));
-                }
-
-                embed.setFooter("MineCord Leaderboards • Оновлюється кожні 3 хвилини");
-                event.getHook().sendMessageEmbeds(embed.build()).queue();
-            });
-        }
         else {
             event.reply("❌ Невідома команда: /" + event.getName()).setEphemeral(true).queue();
         }
@@ -364,19 +327,6 @@ public class DiscordCommandListener extends ListenerAdapter {
                     event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
                 }
             );
-        }
-    }
-
-    @Override
-    public void onButtonInteraction(@NotNull net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
-        if (event.getComponentId().startsWith("report_done_")) {
-            if (event.getMessage().getEmbeds().isEmpty()) return;
-
-            net.dv8tion.jda.api.EmbedBuilder eb = new net.dv8tion.jda.api.EmbedBuilder(event.getMessage().getEmbeds().get(0));
-            eb.setColor(0x00FF00);
-            eb.addField("Статус", "✅ Оброблено модератором " + event.getUser().getAsMention(), false);
-
-            event.editMessageEmbeds(eb.build()).setComponents().queue();
         }
     }
 
