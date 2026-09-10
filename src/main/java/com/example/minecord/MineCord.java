@@ -11,6 +11,7 @@ import com.example.minecord.utils.OpenAIModerator;
 import com.example.minecord.utils.AntiSpamManager;
 import com.example.minecord.utils.PerformanceMonitor;
 import com.example.minecord.utils.AfkManager;
+import com.example.minecord.utils.BlueMapManager;
 import com.example.minecord.utils.SleepManager;
 
 public final class MineCord extends JavaPlugin {
@@ -24,6 +25,7 @@ public final class MineCord extends JavaPlugin {
     private com.example.minecord.utils.TabManager tabManager;
     private AfkManager afkManager;
     private SleepManager sleepManager;
+    private BlueMapManager blueMapManager;
 
     @Override
     public void onEnable() {
@@ -65,6 +67,10 @@ public final class MineCord extends JavaPlugin {
         // Initialize sleep manager
         this.sleepManager = new SleepManager(this);
         this.sleepManager.start();
+
+        // Initialize BlueMap auto-reload manager
+        this.blueMapManager = new BlueMapManager(this);
+        this.blueMapManager.start();
 
         // Register commands
         MineCordCommand cmd = new MineCordCommand(this);
@@ -114,6 +120,12 @@ public final class MineCord extends JavaPlugin {
         if (sleepManager != null) {
             sleepManager.stop();
         }
+        if (performanceMonitor != null) {
+            performanceMonitor.stop();
+        }
+        if (blueMapManager != null) {
+            blueMapManager.stop();
+        }
     }
     
     public void reloadPlugin() {
@@ -140,6 +152,18 @@ public final class MineCord extends JavaPlugin {
             sleepManager.stop();
             this.sleepManager = new SleepManager(this);
             this.sleepManager.start();
+        }
+
+        if (performanceMonitor != null) {
+            performanceMonitor.stop();
+            this.performanceMonitor = new PerformanceMonitor(this);
+            this.performanceMonitor.start();
+        }
+
+        if (blueMapManager != null) {
+            blueMapManager.stop();
+            this.blueMapManager = new BlueMapManager(this);
+            this.blueMapManager.start();
         }
         
         if (botManager != null) {
@@ -178,5 +202,9 @@ public final class MineCord extends JavaPlugin {
 
     public AfkManager getAfkManager() {
         return afkManager;
+    }
+
+    public BlueMapManager getBlueMapManager() {
+        return blueMapManager;
     }
 }

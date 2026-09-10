@@ -180,12 +180,14 @@ public class DiscordCommandListener extends ListenerAdapter {
             boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
             if (isPending) {
                 if (plugin.getServer().getOnlinePlayers().isEmpty()) {
-                    event.reply("✅ На сервері немає гравців. Рестарт почнеться за мить!").queue();
+                    event.reply("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за мить!").queue();
                 } else {
-                    event.reply("⏳ Розумний рестарт **додано в чергу**. Він спрацює автоматично, коли на сервері буде 0 онлайну.").queue();
+                    event.reply("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
+                            "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
+                            "*(Повторний виклик команди скасує чергу)*").queue();
                 }
             } else {
-                event.reply("❌ Розумний рестарт **СКАСОВАНО**.").queue();
+                event.reply("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").queue();
             }
         }
 
