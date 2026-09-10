@@ -21,8 +21,8 @@ public class AutoRestartManager implements CommandExecutor {
     private final List<String> restartTimes = new ArrayList<>();
     private int taskId = -1;
     private int lastAnnouncedSecond = -1;
-    private boolean isPaused = false; // Змінна для паузи авторестартів
-    private final Set<UUID> ignoredPlayers = new HashSet<>(); // Гравці, які вимкнули сповіщення
+    private boolean isPaused = false; // Flag to pause auto-restarts
+    private final Set<UUID> ignoredPlayers = new HashSet<>(); // Players who opted out of notifications
     private boolean smartRestartPending = false;
     public AutoRestartManager(MineCord plugin) {
         this.plugin = plugin;
@@ -87,13 +87,13 @@ public class AutoRestartManager implements CommandExecutor {
                     
                     String diffStr = String.valueOf(diff);
                     
-                    // Відправка повідомлень в чат
+                    // Broadcast messages to chat
                     if (plugin.getConfig().contains("autorestart.messages." + diffStr)) {
                         String msg = plugin.getConfig().getString("autorestart.messages." + diffStr);
                         if (msg != null && !msg.isEmpty()) broadcast(msg, diff);
                     }
                     
-                    // Відправка Title та Subtitle
+                    // Send Title and Subtitle
                     if (plugin.getConfig().contains("autorestart.titles." + diffStr) || 
                         plugin.getConfig().contains("autorestart.subtitles." + diffStr)) {
                         
@@ -102,7 +102,7 @@ public class AutoRestartManager implements CommandExecutor {
                         broadcastTitle(title, subtitle);
                     }
                     
-                    // Виконання команд при досягненні 0
+                    // Execute commands when timer reaches 0
                     if (diff == 0) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
@@ -113,7 +113,7 @@ public class AutoRestartManager implements CommandExecutor {
                         });
                     }
                 } catch (Exception e) {
-                    // Ігноруємо помилки парсингу конкретного часу
+                    // Ignore parsing errors for individual time entries
                 }
             }
         }, 10L, 10L);
@@ -121,13 +121,13 @@ public class AutoRestartManager implements CommandExecutor {
     
     public void stop() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
-        // FIX: скидаємо стан, щоб після reload не пропустити секунду рестарту
+        // FIX: reset state so a reload doesn't skip restart second
         lastAnnouncedSecond = -1;
         taskId = -1;
     }
 
     private void broadcast(String message, long secondsLeft) {
-        // У Minecraft чаті використовуємо класичний жирний червоний текст
+        // In Minecraft chat, use classic bold red text
         String formattedMessage = ChatColor.RED + "" + ChatColor.BOLD + "[Увага] " + ChatColor.RESET + ChatColor.RED + message;
         
         for (Player p : plugin.getServer().getOnlinePlayers()) {
@@ -136,7 +136,7 @@ public class AutoRestartManager implements CommandExecutor {
             }
         }
         
-        // В Discord відправляємо тільки фінальне повідомлення про рестарт (коли secondsLeft == 0)
+        // Send scheduled restart notification to Discord
         if (plugin.getBotManager() != null) {
             if (secondsLeft == 300) {
                 plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 5 хвилин!", 0xFFA500, null);

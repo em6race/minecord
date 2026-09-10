@@ -68,7 +68,7 @@ public class ConsoleManager {
                             try {
                                 io.sentry.Sentry.captureException(record.getThrown());
                             } catch (Throwable ignored) {
-                                // Sentry бібліотека недоступна або ClassLoader конфлікт — ігноруємо
+                                // Sentry library not available or ClassLoader conflict — ignore
                             }
                         }
                     });

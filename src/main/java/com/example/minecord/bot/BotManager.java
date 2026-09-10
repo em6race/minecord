@@ -46,7 +46,7 @@ public class BotManager {
                 jda.awaitReady();
                 plugin.getLogger().info("Бот підключений як " + jda.getSelfUser().getName());
 
-                // Реєстрація команд
+                // Register slash commands
                 jda.updateCommands().addCommands(
                         Commands.slash("help", "Показує список всіх доступних команд бота"),
                         Commands.slash("online", "Список гравців"),
@@ -57,10 +57,10 @@ public class BotManager {
                         Commands.slash("maintenance", "Увімкнути/вимкнути режим технічних робіт")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                                 .addOption(OptionType.BOOLEAN, "enabled", "Увімкнути (True) чи Вимкнути (False)", true),
-                        //Commands.slash("ticket", "Налаштування заявок")
+                        //Commands.slash("ticket", "Ticket settings")
                         //        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                         //        .addSubcommands(
-                        //                new SubcommandData("setup", "Створити кнопку 'Подати заявку' в цьому каналі")
+                        //                new SubcommandData("setup", "Create a 'Create Ticket' button in this channel")
                         //        ),
                         Commands.slash("autorestart", "Управління авторестартами сервера")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
@@ -84,7 +84,7 @@ public class BotManager {
                                 .addOption(OptionType.USER, "user", "Користувач Discord", true)
                 ).queue();
 
-                // Ініціалізація Webhook для чату
+                // Initialize Webhook for chat bridge
                 webhookManager = new WebhookManager(plugin);
                 String channelId = plugin.getConfig().getString("discord.chat-channel-id");
                 if (channelId != null && !channelId.equals("000000000000000000") && !channelId.isEmpty()) {
@@ -96,16 +96,16 @@ public class BotManager {
                     }
                 }
 
-                // Ініціалізація консолі
+                // Initialize console logger
                 consoleManager = new ConsoleManager(plugin);
                 consoleManager.start();
 
-                // Запуск оновлення статусу
+                // Start status updater
                 if (plugin.getConfig().getBoolean("status.enabled", true)) {
                     startStatusUpdater();
                 }
 
-                // Відправка повідомлення про запуск
+                // Send startup notification
                 String startMsg = plugin.getConfig().getString("events.server-start", "✅ **Сервер успішно запущено! Можна заходити!**");
                 if (startMsg != null && !startMsg.isEmpty()) {
                     sendSystemEmbed(startMsg, 0x00FF00, null);
@@ -123,7 +123,7 @@ public class BotManager {
             statusTaskId = -1;
         }
         
-        // Відправка повідомлення про вимкнення (синхронно, щоб встигло дійти)
+        // Send shutdown notification (synchronously so it completes before process exits)
         if (jda != null) {
             try {
                 String stopMsg = plugin.getConfig().getString("events.server-stop", "🛑 **Сервер вимкнено!**");
@@ -175,7 +175,7 @@ public class BotManager {
                                           .replace("%max%", String.valueOf(max));
             }
             
-            // Оновлюємо статус лише якщо він змінився (щоб уникнути лімітів Discord API)
+            // Update presence only if changed to avoid Discord rate limits
             if (!statusText.equals(lastStatusText)) {
                 jda.getPresence().setActivity(Activity.playing(statusText));
                 lastStatusText = statusText;
@@ -183,7 +183,7 @@ public class BotManager {
         }, 0L, interval * 20L); // 20 ticks = 1 second
     }
     
-    // Допоміжний метод для відправки системних повідомлень (смерть, вхід тощо)
+    // Helper method for sending system messages (deaths, joins, etc.)
     public void sendSystemMessage(String message) {
         if (jda == null) return;
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
@@ -199,7 +199,7 @@ public class BotManager {
         }
     }
     
-    // Відправка повідомлення у вигляді красивого Embed (картки)
+    // Send message as Discord Embed card
     public void sendSystemEmbed(String text, int color, String playerName) {
         if (jda == null) return;
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
@@ -224,7 +224,7 @@ public class BotManager {
         }
     }
 
-    // Синхронна відправка, щоб гарантовано доставити повідомлення перед вимкненням
+    // Synchronous delivery to ensure message is delivered before shutdown
     public void sendSystemEmbedSync(String text, int color, String playerName) {
         if (jda == null) return;
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");

@@ -10,8 +10,8 @@ discord:
   moderator-channel-id: "000000000000000000"
   # ID вашого Discord сервера
   guild-id: "000000000000000000"
-  # Посилання на веб-мапу сервера (BlueMap)
-  map-url: "http://localhost:27218/"
+  # Посилання на веб-мапу сервера (BlueMap / Dynmap)
+  map-url: "http://localhost:8123/"
 
 # Система приватного доступу (White-list)
 whitelist:

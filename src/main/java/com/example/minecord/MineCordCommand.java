@@ -18,10 +18,10 @@ public class MineCordCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("map")) {
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
             sender.sendMessage(ChatColor.YELLOW + "Веб-мапа сервера:");
             
-            // Створюємо клікабельне посилання для зручності
+            // Create clickable link for convenience
             if (sender instanceof Player) {
                 net.md_5.bungee.api.chat.TextComponent link = new net.md_5.bungee.api.chat.TextComponent("§a§lНатисніть тут, щоб відкрити мапу");
                 link.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, mapUrl));
@@ -98,13 +98,13 @@ public class MineCordCommand implements CommandExecutor {
         if (args.length > 0 && args[0].equalsIgnoreCase("link")) {
             AccountLinkManager linkManager = plugin.getLinkManager();
             
-            // Якщо вже прив'язано
+            // If already linked
             if (linkManager.isLinked(player.getUniqueId())) {
                 player.sendMessage(ChatColor.GREEN + "Ваш акаунт вже прив'язано до Discord!");
                 return true;
             }
 
-            // Генеруємо код і видаємо гравцю
+            // Generate code and send to player
             String code = linkManager.generateCode(player.getUniqueId());
             player.sendMessage(ChatColor.GOLD + "Ваш код для прив'язки: " + ChatColor.AQUA + ChatColor.BOLD + code);
             player.sendMessage(ChatColor.YELLOW + "Зайдіть на наш Discord сервер і введіть команду: " + ChatColor.WHITE + "/link " + code);
@@ -120,7 +120,7 @@ public class MineCordCommand implements CommandExecutor {
             String targetName = args[1];
             String message = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
             
-            // Виконуємо асинхронно, бо getOfflinePlayer може лагати
+            // Execute asynchronously to avoid blocking on getOfflinePlayer lookup
             org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(targetName);
                 if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {

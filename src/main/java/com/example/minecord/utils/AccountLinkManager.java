@@ -13,13 +13,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AccountLinkManager {
     private final MineCord plugin;
-    // FIX: Змінено HashMap → ConcurrentHashMap, оскільки доступ відбувається
-    // з декількох потоків (Discord callbacks, AsyncPlayerPreLoginEvent тощо)
+    // FIX: Changed HashMap → ConcurrentHashMap since access occurs
+    // from multiple threads (Discord callbacks, AsyncPlayerPreLoginEvent, etc.)
     private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
     private final Map<UUID, String> linkedAccounts = new ConcurrentHashMap<>();
-    // FIX: Зберігаємо час генерації коду для автоматичного прострочення через 10 хв
+    // FIX: Store code creation time for automatic expiration after 10 mins
     private final Map<String, Long> codeExpiry = new ConcurrentHashMap<>();
-    private static final long CODE_TTL_MS = 10 * 60 * 1000L; // 10 хвилин
+    private static final long CODE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
 
     private File linksFile;
     private FileConfiguration linksConfig;
@@ -29,12 +29,12 @@ public class AccountLinkManager {
         loadLinks();
     }
 
-    // Завантаження збережених зв'язків з файлу links.yml
+    // Load saved links from links.yml
     private void loadLinks() {
         linksFile = new File(plugin.getDataFolder(), "links.yml");
         if (!linksFile.exists()) {
             try {
-                linksFile.getParentFile().mkdirs(); // FIX: переконуємось що тека існує
+                linksFile.getParentFile().mkdirs(); // FIX: ensure parent directory exists
                 linksFile.createNewFile();
             } catch (IOException e) {
                 plugin.getLogger().severe("Не вдалося створити links.yml: " + e.getMessage());
@@ -47,15 +47,15 @@ public class AccountLinkManager {
                 try {
                     linkedAccounts.put(UUID.fromString(uuidStr), linksConfig.getString("links." + uuidStr));
                 } catch (IllegalArgumentException ignored) {
-                    // FIX: Ігноруємо пошкоджені записи з невалідним UUID
+                    // FIX: Ignore corrupted records with invalid UUID
                 }
             }
         }
     }
 
-    // Збереження зв'язків у файл
+    // Save links to file
     public void saveLinks() {
-        linksConfig.set("links", null); // Очищуємо стару секцію
+        linksConfig.set("links", null); // Clear old section
         for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
             linksConfig.set("links." + entry.getKey().toString(), entry.getValue());
         }
@@ -66,12 +66,12 @@ public class AccountLinkManager {
         }
     }
 
-    // Генерація 4-значного коду для гравця
+    // Generate a 4-digit code for player
     public String generateCode(UUID playerUUID) {
-        // Видаляємо старий код гравця, якщо він робить запит повторно
+        // Remove old player code if requested again
         pendingCodes.values().remove(playerUUID);
 
-        // FIX: Очищуємо прострочені коди попутно
+        // FIX: Clean up expired codes concurrently
         long now = System.currentTimeMillis();
         codeExpiry.entrySet().removeIf(e -> now > e.getValue());
         codeExpiry.forEach((code, expiry) -> {
@@ -85,7 +85,7 @@ public class AccountLinkManager {
     }
 
     public UUID getUUIDFromCode(String code) {
-        // FIX: Перевіряємо чи код не прострочений
+        // FIX: Verify code is not expired
         Long expiry = codeExpiry.get(code);
         if (expiry != null && System.currentTimeMillis() > expiry) {
             pendingCodes.remove(code);
@@ -95,7 +95,7 @@ public class AccountLinkManager {
         return pendingCodes.get(code);
     }
 
-    // Прив'язка акаунта
+    // Link account
     public void linkAccount(String code, String discordId) {
         UUID uuid = pendingCodes.remove(code);
         codeExpiry.remove(code);
@@ -105,7 +105,7 @@ public class AccountLinkManager {
         }
     }
 
-    // Пряма прив'язка акаунта
+    // Direct account linking
     public void linkAccountDirectly(UUID uuid, String discordId) {
         linkedAccounts.put(uuid, discordId);
         saveLinks();

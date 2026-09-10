@@ -65,7 +65,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.replyEmbeds(embed.build()).queue();
         }
         else if (event.getName().equals("map")) {
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
             event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](" + mapUrl + ")").setEphemeral(true).queue();
         }
         else if (event.getName().equals("link")) {
@@ -77,13 +77,13 @@ public class DiscordCommandListener extends ListenerAdapter {
             } else {
                 plugin.getLinkManager().linkAccount(code, event.getUser().getId());
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    // Отримуємо ім'я гравця (навіть якщо він вийшов з гри)
+                    // Get player name (even if offline)
                     org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(uuid);
                     String playerName = offlinePlayer.getName() != null ? offlinePlayer.getName() : "Гравця";
 
                     event.reply("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").setEphemeral(true).queue();
 
-                    // Сповіщаємо гравця безпосередньо у грі, якщо він онлайн
+                    // Notify player directly in-game if online
                     Player onlinePlayer = plugin.getServer().getPlayer(uuid);
                     if (onlinePlayer != null) {
                         onlinePlayer.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт успішно прив'язано до Discord (" + event.getUser().getName() + ")!");
@@ -94,7 +94,7 @@ public class DiscordCommandListener extends ListenerAdapter {
         else if (event.getName().equals("maintenance")) {
             boolean enable = event.getOption("enabled").getAsBoolean();
 
-            // Всі зміни стану сервера робимо в головному потоці Minecraft
+            // Perform all server state changes on the main Minecraft thread
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 plugin.getConfig().set("maintenance.enabled", enable);
                 plugin.saveConfig();
@@ -105,7 +105,7 @@ public class DiscordCommandListener extends ListenerAdapter {
 
                     int kickedCount = 0;
                     for (Player p : plugin.getServer().getOnlinePlayers()) {
-                        // Якщо гравець не адмін (OP) і не має спеціального дозволу - кікаємо
+                        // Kick players who are not OP and lack bypass permission
                         if (!p.isOp() && !p.hasPermission("minecord.maintenance.bypass")) {
                             p.kickPlayer(kickMsg);
                             kickedCount++;
@@ -313,7 +313,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.reply("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(
                 success -> {},
                 error -> {
-                    // Якщо deferReply вже було викликано, reply() видасть помилку, тому оновлюємо оригінальне повідомлення
+                    // If deferReply was already called, reply() throws an error, so send via hook instead
                     event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
                 }
             );

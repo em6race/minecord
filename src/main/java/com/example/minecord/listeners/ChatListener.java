@@ -14,16 +14,16 @@ public class ChatListener implements Listener {
         this.plugin = plugin;
     }
 
-    // FIX: Використовуємо MONITOR з ignoreCancelled=false, щоб:
-    // - Перехопити повідомлення ПІСЛЯ всіх інших плагінів (антиспам тощо)
-    // - Все одно виконати нашу перевірку (мут, спам, ШІ) навіть якщо хтось вже скасував
-    // Модерація (мут/спам/ШІ) відміняє подію сама, тому нам потрібно її бачити
+    // FIX: Use MONITOR with ignoreCancelled=false in order to:
+    // - Intercept message AFTER all other plugins (anti-spam, etc.)
+    // - Still run our checks (mute, spam, AI) even if already cancelled by someone else
+    // Moderation (mute/spam/AI) cancels the event itself, so we need to see it
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        // Якщо повідомлення вже скасовано іншим плагіном — не відправляємо в Discord, але ШІ-перевірку все одно пропускаємо
+        // If the message was already cancelled by another plugin, do not send to Discord, and skip AI check
         boolean alreadyCancelled = event.isCancelled();
 
-        // 1. Перевірка на мут
+        // 1. Mute check
         if (plugin.getAntiSpamManager().isMuted(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
             long remaining = plugin.getAntiSpamManager().getMuteRemainingSeconds(event.getPlayer().getUniqueId());
@@ -31,7 +31,7 @@ public class ChatListener implements Listener {
             return;
         }
 
-        // 2. Перевірка на спам
+        // 2. Spam check
         if (!alreadyCancelled) {
             int spamLevel = plugin.getAntiSpamManager().checkSpamLevel(event.getPlayer().getUniqueId(), event.getMessage());
             if (spamLevel == 1) {
@@ -45,19 +45,19 @@ public class ChatListener implements Listener {
             }
         }
 
-        // 3. Якщо повідомлення вже скасовано іншим плагіном — не відправляємо в Discord
+        // 3. If the message is already cancelled by another plugin, do not send to Discord
         if (alreadyCancelled) return;
 
         if (plugin.getConfig().getBoolean("ai-moderator.enabled", false)) {
             String message = event.getMessage();
             org.bukkit.entity.Player player = event.getPlayer();
 
-            // Запускаємо перевірку ШІ повністю в фоні, щоб не було інпут лагу
+            // Run AI check completely in the background to prevent input lag
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
                     boolean isToxic = plugin.getOpenAIModerator().isMessageToxic(message).join();
                     if (isToxic) {
-                        // Повідомляємо модераторів у Discord замість автоматичного муту
+                        // Notify moderators in Discord instead of automatic mute
                         if (plugin.getBotManager() != null) {
                             String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
                             if (modChannelId != null && !modChannelId.isEmpty()) {
@@ -80,12 +80,12 @@ public class ChatListener implements Listener {
             });
         }
 
-        // Якщо все добре — готуємо повідомлення
+        // If all checks pass, prepare the message
         String playerName = event.getPlayer().getName();
         String originalMessage = event.getMessage();
         String discordMessage = originalMessage;
 
-        // Шукаємо пінги в повідомленні (формат @Нікнейм)
+        // Look for mentions in message (format @Nickname)
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9_]{3,16})");
         java.util.regex.Matcher matcher = pattern.matcher(originalMessage);
         
@@ -96,15 +96,15 @@ public class ChatListener implements Listener {
             org.bukkit.entity.Player targetPlayer = plugin.getServer().getPlayerExact(targetName);
             
             if (targetPlayer != null) {
-                // Підсвічуємо в Minecraft (тільки поточне співпадіння)
+                // Highlight in Minecraft (current match only)
                 minecraftMessage = minecraftMessage.replace("@" + targetName, org.bukkit.ChatColor.YELLOW + "@" + targetName + org.bukkit.ChatColor.RESET);
                 
-                // Відтворюємо звук (використовуємо runTask бо ми в async)
+                // Play sound (using runTask because we are in async)
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     targetPlayer.playSound(targetPlayer.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
                 });
                 
-                // Перетворюємо на Discord пінг, якщо гравець прив'язав акаунт
+                // Convert to Discord ping if the player has linked their account
                 String discordId = plugin.getLinkManager().getDiscordId(targetPlayer.getUniqueId());
                 if (discordId != null) {
                     discordMessage = discordMessage.replace("@" + targetName, "<@" + discordId + ">");
@@ -114,7 +114,7 @@ public class ChatListener implements Listener {
         
         event.setMessage(minecraftMessage);
 
-        // Відправляємо в Discord
+        // Send to Discord
         if (plugin.getBotManager() != null && plugin.getBotManager().getWebhookManager() != null) {
             plugin.getBotManager().getWebhookManager().sendMessage(playerName, discordMessage);
         }

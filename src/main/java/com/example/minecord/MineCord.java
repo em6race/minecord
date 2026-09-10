@@ -38,7 +38,7 @@ public final class MineCord extends JavaPlugin {
             getLogger().info("Sentry integration enabled!");
         }
         
-        // Ініціалізація AI модератора та анти-спаму
+        // Initialize AI moderator, anti-spam, and performance monitor
         this.openAIModerator = new OpenAIModerator(this);
         this.antiSpamManager = new AntiSpamManager();
         this.performanceMonitor = new PerformanceMonitor(this);
@@ -47,26 +47,26 @@ public final class MineCord extends JavaPlugin {
         botManager = new BotManager(this);
         botManager.start();
         
-        // Ініціалізація авторестартів
+        // Initialize auto-restart scheduler
         this.autoRestartManager = new AutoRestartManager(this);
         this.autoRestartManager.start();
         
-        // Запуск моніторингу
+        // Start performance monitoring
         this.performanceMonitor.start();
         
-        // Ініціалізація TAB-листа
+        // Initialize tab list manager
         this.tabManager = new com.example.minecord.utils.TabManager(this);
         this.tabManager.start();
         
-        // Ініціалізація AFK менеджера
+        // Initialize AFK manager
         this.afkManager = new AfkManager(this);
         this.afkManager.start();
         
-        // Ініціалізація менеджера сну
+        // Initialize sleep manager
         this.sleepManager = new SleepManager(this);
         this.sleepManager.start();
 
-        // Реєстрація команд
+        // Register commands
         MineCordCommand cmd = new MineCordCommand(this);
         if (getCommand("discord") != null) {
             getCommand("discord").setExecutor(cmd);
@@ -87,7 +87,7 @@ public final class MineCord extends JavaPlugin {
             getCommand("stats").setExecutor(new com.example.minecord.commands.StatsCommand(this));
         }
 
-        // Реєстрація слухачів
+        // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         
@@ -148,7 +148,7 @@ public final class MineCord extends JavaPlugin {
             this.botManager.start();
         }
         
-        // Перезавантажуємо AI
+        // Reload AI moderator
         this.openAIModerator = new OpenAIModerator(this);
     }
 

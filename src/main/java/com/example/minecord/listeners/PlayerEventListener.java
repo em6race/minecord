@@ -27,12 +27,12 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onAsyncPreLogin(AsyncPlayerPreLoginEvent event) {
-        // Перевірка Whitelist (синхронізація з Discord)
+        // Whitelist check (Discord synchronization)
         if (!plugin.getConfig().getBoolean("whitelist.enabled", false)) return;
 
         UUID uuid = event.getUniqueId();
         
-        // 1. Перевірка чи акаунт взагалі прив'язаний
+        // 1. Check if the account is linked
         if (!plugin.getLinkManager().isLinked(uuid)) {
             String code = plugin.getLinkManager().generateCode(uuid);
             String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-linked", "§cВведіть /link code %code% у Discord!");
@@ -41,7 +41,7 @@ public class PlayerEventListener implements Listener {
             return;
         }
 
-        // 2. Якщо вказана обов'язкова роль у Discord - перевіряємо її
+        // 2. If a required Discord role is configured, verify it
         String requiredRoleId = plugin.getConfig().getString("whitelist.require-discord-role", "");
         if (requiredRoleId != null && !requiredRoleId.isEmpty()) {
             String discordId = plugin.getLinkManager().getDiscordId(uuid);
@@ -56,7 +56,7 @@ public class PlayerEventListener implements Listener {
                 Guild guild = plugin.getBotManager().getJda().getGuildById(guildId);
                 if (guild != null) {
                     try {
-                        // Отримуємо учасника (це блокуючий виклик, але ми в Async-події, тому це безпечно)
+                        // Retrieve member (blocking call, but safe inside an async event)
                         Member member = guild.retrieveMemberById(discordId).complete();
                         
                         if (member == null) {
@@ -78,7 +78,7 @@ public class PlayerEventListener implements Listener {
                             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
                         }
                     } catch (Throwable e) {
-                        // Якщо користувач вийшов з сервера, JDA кине виняток ErrorResponseException (Unknown Member)
+                        // If user left the guild, JDA throws ErrorResponseException (Unknown Member)
                         String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
                         event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
                     }
@@ -89,10 +89,10 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler
     public void onPlayerLogin(PlayerLoginEvent event) {
-        // Перевіряємо, чи увімкнений режим технічних робіт
+        // Check if maintenance mode is enabled
         if (plugin.getConfig().getBoolean("maintenance.enabled", false)) {
             Player player = event.getPlayer();
-            // Якщо гравець не адмін, забороняємо вхід
+            // If player is not admin, disallow login
             if (!player.isOp() && !player.hasPermission("minecord.maintenance.bypass")) {
                 String kickMsg = plugin.getConfig().getString("maintenance.message", "🛠️ Сервер на тестуванні.");
                 kickMsg = org.bukkit.ChatColor.translateAlternateColorCodes('&', kickMsg);
@@ -148,14 +148,14 @@ public class PlayerEventListener implements Listener {
             if (worldName.endsWith("_nether")) dimension = "Незер";
             else if (worldName.endsWith("_the_end")) dimension = "Енд";
             
-            // Відправляємо координати гравцю з клікабельним посиланням на мапу
+            // Send coordinates to player with clickable map link
             String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
                     loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
             
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:27218/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
             if (!mapUrl.endsWith("/")) mapUrl += "/";
             
-            // Формат посилання для BlueMap (версія 4/5+ вимагає 10 параметрів)
+            // Link format for BlueMap (version 4/5+ requires 10 parameters)
             String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:perspective", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             
             net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
@@ -166,17 +166,17 @@ public class PlayerEventListener implements Listener {
             msgComponent.addExtra(linkComponent);
             player.spigot().sendMessage(msgComponent);
             
-            // Записуємо в консоль сервера
+            // Log to server console
             plugin.getLogger().info(String.format("Гравець %s помер на координатах: X: %d, Y: %d, Z: %d (%s)", 
                     player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension));
 
             if (plugin.getConfig().getBoolean("events.death", true)) {
                 String deathMessage = event.getDeathMessage();
                 if (deathMessage != null) {
-                    // Очищаємо повідомлення від кольорів Minecraft
+                    // Strip Minecraft color codes from message
                     String cleanMessage = ChatColor.stripColor(deathMessage);
                     
-                    // Перекладаємо повідомлення на українську
+                    // Translate message to Ukrainian
                     String translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
                     
                     if (plugin.getBotManager() != null) {
@@ -193,15 +193,15 @@ public class PlayerEventListener implements Listener {
     public void onPlayerAdvancement(org.bukkit.event.player.PlayerAdvancementDoneEvent event) {
         if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
         
-        // Ігноруємо технічні досягнення (наприклад, відкриття рецептів)
+        // Ignore recipe/technical advancements
         String advKey = event.getAdvancement().getKey().getKey();
         if (advKey.startsWith("recipes/")) return;
         
-        // Ігноруємо кореневі досягнення (відкриття категорії типу "Minecraft", "Nether", "Adventure"),
-        // бо вони не є повноцінними досягненнями
+        // Ignore root advancements (category milestones like "Minecraft", "Nether", "Adventure")
+        // because they are not real player achievements
         if (advKey.endsWith("/root")) return;
 
-        // Спроба отримати назву здобутку (безпечно)
+        // Safely attempt to get advancement title
         String fallbackTitle = advKey;
         try {
             Object display = event.getAdvancement().getDisplay();
@@ -209,13 +209,13 @@ public class PlayerEventListener implements Listener {
                 fallbackTitle = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
             }
         } catch (Throwable ignored) {
-            // В Paper API getDisplay() може кидати UnsupportedOperationException
+            // Paper API getDisplay() can throw UnsupportedOperationException
         }
 
         String translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
         
-        // Якщо це невідоме технічне досягнення, воно залишиться як ключ (напр. story/deflect_arrow).
-        // Але ми маємо переклад для всіх основних.
+        // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
+        // But we have translations for all standard ones.
         if (plugin.getBotManager() != null) {
             plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
         }
