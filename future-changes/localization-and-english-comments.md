@@ -33,6 +33,11 @@
 3. **Standardize Code Comments in English** *(Completed)*:
    - Refactored all inline comments, javadocs, and log explanations across all Java files to professional, concise English.
 
+4. **Modrinth Publication (Official Community Release)**:
+   - Official publication and distribution of MineCord on the [Modrinth](https://modrinth.com/) platform.
+   - Setup automated publishing via GitHub Actions upon git tag / release creation.
+   - Modrinth project presentation: gallery, feature highlights, multilingual guide, and badges.
+
 ---
 
 ## 2. Architecture
@@ -101,4 +106,46 @@ graph TD
 
 ## 4. How to Activate When Needed
 To implement this feature in the future, follow the steps outlined above, populate `uk.yml`, `en.yml`, and `sk.yml`, test locally with `./gradlew build`, and verify language switching between `uk`, `en`, and `sk` in `config.yml`.
+
+---
+
+## 5. Modrinth Publication Plan / План публікації на Modrinth
+
+### 5.1 Project Setup on Modrinth
+* **Project Type:** Plugin
+* **Loaders:** `Paper`, `Purpur`
+* **Game Versions:** `26.2+`
+* **Categories:** `chat`, `social`, `utility`, `management`
+* **Project Name:** `MineCord`
+* **Summary:** High-performance, modular Minecraft & Discord bridge with cross-chat, AI moderation, smart sleep voting, leaderboards, coordinates sharing, and remote console.
+
+### 5.2 Release Assets & Presentation
+* **Icon / Logo:** High-resolution Discord + Minecraft pixel-art themed logo.
+* **Gallery:** Screenshots of:
+  * In-game chat and Discord Webhook integration with 3D player skins.
+  * Rotating Discord bot status with TPS, online, and uptime.
+  * Interactive BlueMap death coordinates and `/coords` link.
+  * In-game `/top` leaderboard GUI and Discord `/top` command embeds.
+  * Moderator report tickets with review buttons.
+* **Description:** Dual-language presentation (English / Ukrainian) with Markdown formatting, feature matrix, permission list, and configuration guide.
+
+### 5.3 CI/CD Automation (GitHub Actions -> Modrinth)
+* Integrate `modrinth/minotaur` Gradle plugin or GitHub Action (`Kirigami/modrinth-publish` or `modrinth/minotaur`) to automatically build and upload `MineCord-*-all.jar` to Modrinth on git release:
+  ```groovy
+  // Example future build.gradle plugin configuration
+  modrinth {
+      token = System.getenv("MODRINTH_TOKEN")
+      projectId = "minecord"
+      versionNumber = project.version
+      versionName = "MineCord v${project.version}"
+      uploadFile = shadowJar
+      gameVersions = ["26.2"]
+      loaders = ["paper", "purpur"]
+  }
+  ```
+* Add official Modrinth badge to `README.md`:
+  ```markdown
+  [![Modrinth](https://img.shields.io/badge/Available_on-Modrinth-00AF5C?style=flat-square&logo=modrinth&logoColor=white)](https://modrinth.com/plugin/minecord)
+  ```
+
 
