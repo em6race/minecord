@@ -48,6 +48,7 @@ public class AutoRestartManager implements CommandExecutor {
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
                 smartRestartPending = false;
+                plugin.getLogger().info("Онлайн дорівнює 0: виконую відкладений одноразовий рестарт.");
                 List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                 if (commands.isEmpty()) commands.add("restart");
                 for (String cmd : commands) {
@@ -84,6 +85,16 @@ public class AutoRestartManager implements CommandExecutor {
                     if (diff < 0) diff += 86400;
                     
                     if (isPaused) continue;
+
+                    // Skip scheduled restart if the server was started recently (e.g. within 15 minutes)
+                    long uptimeMinutes = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime() / 60000;
+                    int minUptimeMinutes = plugin.getConfig().getInt("autorestart.min-uptime-minutes", 15);
+                    if (uptimeMinutes < minUptimeMinutes) {
+                        if (diff == 0) {
+                            plugin.getLogger().info("Плановий рестарт о " + targetTimeStr + " пропущено: сервер працює лише " + uptimeMinutes + " хв (мінімальний необхідний аптайм: " + minUptimeMinutes + " хв).");
+                        }
+                        continue;
+                    }
                     
                     String diffStr = String.valueOf(diff);
                     
@@ -104,6 +115,7 @@ public class AutoRestartManager implements CommandExecutor {
                     
                     // Execute commands when timer reaches 0
                     if (diff == 0) {
+                        smartRestartPending = false;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                             if (commands.isEmpty()) commands.add("restart");
