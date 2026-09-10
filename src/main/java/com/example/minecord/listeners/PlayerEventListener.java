@@ -258,42 +258,46 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler
     public void onPlayerAdvancement(org.bukkit.event.player.PlayerAdvancementDoneEvent event) {
-        // Ignore recipe/technical advancements
-        String advKey = event.getAdvancement().getKey().getKey();
-        if (advKey.startsWith("recipes/")) return;
-        
-        // Ignore root advancements (category milestones like "Minecraft", "Nether", "Adventure")
-        // because they are not real player achievements
-        if (advKey.endsWith("/root")) return;
-
-        if (plugin.getPlayerCacheManager() != null) {
-            plugin.getPlayerCacheManager().incrementAdvancements(event.getPlayer().getUniqueId());
-        }
-
-        if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
-
-        // Safely attempt to get advancement title
-        String fallbackTitle = advKey;
         try {
-            Object display = event.getAdvancement().getDisplay();
-            if (display != null) {
-                fallbackTitle = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
+            // Ignore recipe/technical advancements
+            String advKey = event.getAdvancement().getKey().getKey();
+            if (advKey.startsWith("recipes/")) return;
+            
+            // Ignore root advancements (category milestones like "Minecraft", "Nether", "Adventure")
+            // because they are not real player achievements
+            if (advKey.endsWith("/root")) return;
+
+            if (plugin.getPlayerCacheManager() != null) {
+                plugin.getPlayerCacheManager().incrementAdvancements(event.getPlayer().getUniqueId());
             }
-        } catch (Throwable ignored) {
-            // Paper API getDisplay() can throw UnsupportedOperationException
-        }
 
-        String translatedTitle = fallbackTitle;
-        try {
-            translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
-        } catch (Throwable t) {
-            plugin.getLogger().warning("Не вдалося перекласти назву досягнення: " + t.getMessage());
-        }
-        
-        // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
-        // But we have translations for all standard ones.
-        if (plugin.getBotManager() != null) {
-            plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
+            if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
+
+            // Safely attempt to get advancement title
+            String fallbackTitle = advKey;
+            try {
+                Object display = event.getAdvancement().getDisplay();
+                if (display != null) {
+                    fallbackTitle = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
+                }
+            } catch (Throwable ignored) {
+                // Paper API getDisplay() can throw UnsupportedOperationException
+            }
+
+            String translatedTitle = fallbackTitle;
+            try {
+                translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
+            } catch (Throwable t) {
+                plugin.getLogger().warning("Не вдалося перекласти назву досягнення: " + t.getMessage());
+            }
+            
+            // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
+            // But we have translations for all standard ones.
+            if (plugin.getBotManager() != null) {
+                plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
+            }
+        } catch (Throwable e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerAdvancement", e);
         }
     }
 }
