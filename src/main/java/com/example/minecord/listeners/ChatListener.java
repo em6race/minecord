@@ -14,17 +14,35 @@ public class ChatListener implements Listener {
         this.plugin = plugin;
     }
 
+    private static final java.util.Map<String, java.util.List<String>> recentMessages = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static java.util.List<String> getRecentMessages(String playerName) {
+        if (playerName == null) return java.util.Collections.emptyList();
+        java.util.List<String> list = recentMessages.get(playerName.toLowerCase());
+        return list != null ? new java.util.ArrayList<>(list) : java.util.Collections.emptyList();
+    }
+
     // FIX: Use MONITOR with ignoreCancelled=false in order to:
     // - Intercept message AFTER all other plugins (anti-spam, etc.)
     // - Still run our checks (mute, spam, AI) even if already cancelled by someone else
     // Moderation (mute/spam/AI) cancels the event itself, so we need to see it
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
+        // Record message for moderation / report history
+        recentMessages.compute(event.getPlayer().getName().toLowerCase(), (k, v) -> {
+            if (v == null) v = new java.util.ArrayList<>();
+            v.add(event.getMessage());
+            if (v.size() > 5) v.remove(0);
+            return v;
+        });
+
         // If the message was already cancelled by another plugin, do not send to Discord, and skip AI check
         boolean alreadyCancelled = event.isCancelled();
 
+        boolean canBypass = event.getPlayer().isOp() || event.getPlayer().hasPermission("minecord.antispam.bypass");
+
         // 1. Mute check
-        if (plugin.getAntiSpamManager().isMuted(event.getPlayer().getUniqueId())) {
+        if (!canBypass && plugin.getAntiSpamManager().isMuted(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
             long remaining = plugin.getAntiSpamManager().getMuteRemainingSeconds(event.getPlayer().getUniqueId());
             event.getPlayer().sendMessage("§cВи замучені за спам. Залишилося: " + remaining + " сек.");
@@ -32,15 +50,16 @@ public class ChatListener implements Listener {
         }
 
         // 2. Spam check
-        if (!alreadyCancelled) {
+        if (!alreadyCancelled && !canBypass) {
             int spamLevel = plugin.getAntiSpamManager().checkSpamLevel(event.getPlayer().getUniqueId(), event.getMessage());
             if (spamLevel == 1) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cЗачекайте перед відправкою наступного повідомлення (або не повторюйтесь)!");
+                event.getPlayer().sendMessage("§cЗачекайте перед відправкою наступного повідомлення!");
                 return;
             } else if (spamLevel == 2) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cВас замучено на 5 хвилин за спам у чаті!");
+                long muteSec = plugin.getConfig().getLong("antispam.mute-duration-seconds", 60);
+                event.getPlayer().sendMessage("§cВас замучено на " + muteSec + " сек. за спам у чаті!");
                 return;
             }
         }

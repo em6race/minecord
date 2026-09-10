@@ -78,6 +78,13 @@ public class BotManager {
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)),
                         Commands.slash("stats", "Статистика сервера або гравця")
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true),
+                        Commands.slash("top", "Рейтинг найкращих гравців сервера")
+                                .addOptions(new net.dv8tion.jda.api.interactions.commands.build.OptionData(OptionType.STRING, "category", "Категорія рейтингу", false)
+                                        .addChoice("⏱️ Награний час", "time")
+                                        .addChoice("⚔️ Вбито мобів", "kills")
+                                        .addChoice("💀 Смертей", "deaths")
+                                        .addChoice("💎 Добуто алмазів", "diamonds")
+                                        .addChoice("⛏️ Зламано блоків", "blocks")),
                         Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true, true)
@@ -154,11 +161,12 @@ public class BotManager {
     public WebhookManager getWebhookManager() { return webhookManager; }
     public ConsoleManager getConsoleManager() { return consoleManager; }
 
+    private int statusIndex = 0;
     private String lastStatusText = "";
 
     private void startStatusUpdater() {
-        int interval = plugin.getConfig().getInt("status.update-interval-seconds", 60);
-        String format = plugin.getConfig().getString("status.text", "Грає в Minecraft (%online%/%max%)");
+        int interval = plugin.getConfig().getInt("status.update-interval-seconds", 15);
+        if (interval < 5) interval = 5;
 
         statusTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (jda == null) return;
@@ -169,10 +177,34 @@ public class BotManager {
             if (isMaintenance) {
                 statusText = "🛠️ Сервер на тестуванні";
             } else {
+                java.util.List<String> messages = plugin.getConfig().getStringList("status.messages");
+                String template;
+                if (messages != null && !messages.isEmpty()) {
+                    if (statusIndex >= messages.size()) statusIndex = 0;
+                    template = messages.get(statusIndex);
+                    statusIndex = (statusIndex + 1) % messages.size();
+                } else {
+                    template = plugin.getConfig().getString("status.text", "Грає в Minecraft (%online%/%max%)");
+                }
+
                 int online = Bukkit.getOnlinePlayers().size();
                 int max = Bukkit.getMaxPlayers();
-                statusText = format.replace("%online%", String.valueOf(online))
-                                          .replace("%max%", String.valueOf(max));
+                double tps = 20.0;
+                try {
+                    tps = Math.min(20.0, Bukkit.getServer().getTPS()[0]);
+                } catch (Throwable ignored) {}
+                String tpsStr = String.format(java.util.Locale.US, "%.1f", tps);
+
+                long uptimeMs = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
+                long totalMins = uptimeMs / (60 * 1000L);
+                long hours = totalMins / 60;
+                long mins = totalMins % 60;
+                String uptimeStr = hours > 0 ? (hours + "г " + mins + "хв") : (mins + "хв");
+
+                statusText = template.replace("%online%", String.valueOf(online))
+                                     .replace("%max%", String.valueOf(max))
+                                     .replace("%tps%", tpsStr)
+                                     .replace("%uptime%", uptimeStr);
             }
             
             // Update presence only if changed to avoid Discord rate limits
