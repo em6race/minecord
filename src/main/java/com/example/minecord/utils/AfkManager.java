@@ -18,6 +18,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -74,14 +76,14 @@ public class AfkManager implements Listener {
                                 currentLoc.getYaw() != lastLoc.getYaw() ||
                                 currentLoc.getPitch() != lastLoc.getPitch();
                 
-                if (moved) {
+                if (moved || player.isSleeping()) {
                     data.lastLocation = currentLoc;
                     data.lastActivityTime = now;
                     if (data.isAfk) {
                         setAfk(player, data, false, now);
                     }
                 } else {
-                    if (!data.isAfk && now - data.lastActivityTime >= afkTimeout) {
+                    if (!player.isSleeping() && !data.isAfk && now - data.lastActivityTime >= afkTimeout) {
                         setAfk(player, data, true, now);
                     }
                 }
@@ -280,6 +282,16 @@ public class AfkManager implements Listener {
 
     @EventHandler
     public void onSwapHand(PlayerSwapHandItemsEvent event) {
+        updateActivity(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onBedEnter(PlayerBedEnterEvent event) {
+        updateActivity(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onBedLeave(PlayerBedLeaveEvent event) {
         updateActivity(event.getPlayer());
     }
 
