@@ -44,7 +44,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                               "👑 **Команди адміністратора:**\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
-                              "🔸 `/consolefilter <info>` — Увімкнути/вимкнути INFO логи в каналі консолі\n" +
+                              "🔸 `/queuerestart` — Одноразовий розумний рестарт при 0 онлайну\n" +
                               "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord";
             embed.setDescription(commands);
 
@@ -102,6 +102,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
         }
         else if (event.getName().equals("maintenance")) {
+            if (!isAdmin(event)) return;
             boolean enable = event.getOption("enabled").getAsBoolean();
 
             // Perform all server state changes on the main Minecraft thread
@@ -128,6 +129,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             });
         }
         else if (event.getName().equals("autorestart")) {
+            if (!isAdmin(event)) return;
             String sub = event.getSubcommandName();
             if (sub == null) return;
 
@@ -183,6 +185,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
         }
         else if (event.getName().equals("queuerestart")) {
+            if (!isAdmin(event)) return;
             if (plugin.getAutoRestartManager() == null) {
                 event.reply("❌ Менеджер авторестартів не активний.").setEphemeral(true).queue();
                 return;
@@ -393,6 +396,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             });
         }
         else if (event.getName().equals("linkadmin")) {
+            if (!isAdmin(event)) return;
             event.deferReply(true).queue();
             String playerName = event.getOption("player").getAsString();
             net.dv8tion.jda.api.entities.User discordUser = event.getOption("user").getAsUser();
@@ -516,5 +520,13 @@ public class DiscordCommandListener extends ListenerAdapter {
         try {
             event.replyChoices(java.util.Collections.emptyList()).queue();
         } catch (Throwable ignored) {}
+    }
+
+    private boolean isAdmin(SlashCommandInteractionEvent event) {
+        if (event.getMember() != null && event.getMember().hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) {
+            return true;
+        }
+        event.reply("❌ Ця команда доступна лише адміністраторам сервера.").setEphemeral(true).queue();
+        return false;
     }
 }
