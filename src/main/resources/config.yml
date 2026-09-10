@@ -27,7 +27,14 @@ whitelist:
 # Налаштування динамічного статусу бота в Discord
 status:
   enabled: true
-  update-interval-seconds: 5
+  # Інтервал ротації статусу в секундах (рекомендовано 15-30)
+  update-interval-seconds: 15
+  # Список повідомлень для почергової ротації (підтримуються %online%, %max%, %tps%, %uptime%)
+  messages:
+    - "Minecraft (%online%/%max%)"
+    - "TPS: %tps% | Аптайм: %uptime%"
+    - "Онлайн: %online% | /discord"
+  # Текст за замовчуванням (якщо messages вимкнено або порожній)
   text: "Грає в Minecraft (%online%/%max%)"
 
 # Налаштування сповіщень про ігрові події
@@ -38,6 +45,12 @@ events:
   first-join: true
   death: true
   night-skip: true
+  dragon: true # Сповіщення про призов та перемогу над Ендер Драконом
+
+# Налаштування системи скарг на порушників (/report)
+report:
+  # Затримка між повторними скаргами від одного гравця в секундах
+  cooldown-seconds: 60
 
 # Випадкові поради та факти для гравців при вході
 join-tips:

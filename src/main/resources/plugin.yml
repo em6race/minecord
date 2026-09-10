@@ -32,3 +32,13 @@ commands:
     description: Зняти мут від антиспаму з гравця
     usage: /unmute <гравець>
     permission: minecord.admin
+  top:
+    description: Топ гравців за статистикою
+    usage: /top [категорія]
+  report:
+    description: Надіслати скаргу на гравця модераторам
+    usage: /report <гравець> <причина>
+  sharecoords:
+    aliases: [coords]
+    description: Поділитися координатами з описом місця
+    usage: /sharecoords <опис місця>

@@ -26,6 +26,7 @@ public final class MineCord extends JavaPlugin {
     private AfkManager afkManager;
     private SleepManager sleepManager;
     private BlueMapManager blueMapManager;
+    private com.example.minecord.utils.LeaderboardManager leaderboardManager;
 
     @Override
     public void onEnable() {
@@ -92,15 +93,34 @@ public final class MineCord extends JavaPlugin {
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(cmd);
         }
+        // Initialize leaderboard manager
+        this.leaderboardManager = new com.example.minecord.utils.LeaderboardManager(this);
+
         if (getCommand("stats") != null) {
             com.example.minecord.commands.StatsCommand statsCmd = new com.example.minecord.commands.StatsCommand(this);
             getCommand("stats").setExecutor(statsCmd);
             getCommand("stats").setTabCompleter(statsCmd);
         }
+        if (getCommand("top") != null) {
+            com.example.minecord.commands.TopCommand topCmd = new com.example.minecord.commands.TopCommand(this);
+            getCommand("top").setExecutor(topCmd);
+            getCommand("top").setTabCompleter(topCmd);
+        }
+        if (getCommand("report") != null) {
+            com.example.minecord.commands.ReportCommand reportCmd = new com.example.minecord.commands.ReportCommand(this);
+            getCommand("report").setExecutor(reportCmd);
+            getCommand("report").setTabCompleter(reportCmd);
+        }
+        if (getCommand("sharecoords") != null) {
+            com.example.minecord.commands.ShareCoordsCommand shareCoordsCmd = new com.example.minecord.commands.ShareCoordsCommand(this);
+            getCommand("sharecoords").setExecutor(shareCoordsCmd);
+            getCommand("sharecoords").setTabCompleter(shareCoordsCmd);
+        }
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.example.minecord.listeners.DragonEventListener(this), this);
         
         // Soft-dependency check
         if (com.example.minecord.utils.SkinHelper.isSkinsRestorerAvailable()) {
@@ -109,6 +129,8 @@ public final class MineCord extends JavaPlugin {
             getLogger().info("Плагін SkinsRestorer не знайдено — інтеграцію скінів вимкнено (використовується нативний профіль Paper).");
         }
 
+        getLogger().info("📦 Збірка плагіна: коміт " + com.example.minecord.utils.GitVersion.getCommitHash() + " (" + com.example.minecord.utils.GitVersion.getBuildTime() + ")");
+        getLogger().info("📝 Зміни: " + com.example.minecord.utils.GitVersion.getCommitMessage());
         getLogger().info("MineCord (Модульна версія) успішно завантажено!");
     }
 
@@ -218,5 +240,9 @@ public final class MineCord extends JavaPlugin {
 
     public BlueMapManager getBlueMapManager() {
         return blueMapManager;
+    }
+
+    public com.example.minecord.utils.LeaderboardManager getLeaderboardManager() {
+        return leaderboardManager;
     }
 }

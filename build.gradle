@@ -54,6 +54,42 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+def getGitHash = { ->
+    try {
+        def proc = "git rev-parse --short HEAD".execute()
+        proc.waitFor()
+        def res = proc.text.trim()
+        return res.isEmpty() ? "unknown" : res
+    } catch (Exception e) {
+        return "unknown"
+    }
+}
+
+def getGitMessage = { ->
+    try {
+        def proc = "git log -1 --pretty=%B".execute()
+        proc.waitFor()
+        def res = proc.text.trim().replaceAll("[\r\n]+", " ")
+        return res.isEmpty() ? "development build" : res
+    } catch (Exception e) {
+        return "development build"
+    }
+}
+
+processResources {
+    def gitHash = getGitHash()
+    def gitMsg = getGitMessage()
+    inputs.property "gitHash", gitHash
+    inputs.property "gitMsg", gitMsg
+    filesMatching("git.properties") {
+        expand(
+            'gitHash': gitHash,
+            'gitMsg': gitMsg,
+            'buildTime': new Date().format("dd.MM.yyyy HH:mm:ss")
+        )
+    }
+}
+
 // Налаштовуємо shadowJar для збірки
 shadowJar {
     // DO NOT relocate net.dv8tion, it breaks JDA internally!
@@ -64,3 +100,4 @@ shadowJar {
     relocate 'com.neovisionaries.ws.client', 'com.example.minecord.libs.com.neovisionaries.ws.client'
     relocate 'io.sentry', 'com.example.minecord.libs.io.sentry'
 }
+
