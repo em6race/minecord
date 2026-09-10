@@ -44,6 +44,8 @@ public class SleepManager implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> checkSleep(world, event.getPlayer()), 10L);
     }
     
+    private long lastNightSkipTime = 0;
+
     private void checkSleep(World world, Player bedEnterer) {
         if (world.getTime() < 12541 && world.getTime() > 23458 && !world.hasStorm()) return;
         
@@ -62,12 +64,38 @@ public class SleepManager implements Listener {
         int required = (int) Math.ceil(totalActive / 2.0);
         
         if (sleepingCount >= required) {
+            long now = System.currentTimeMillis();
+            if (now - lastNightSkipTime < 5000) return;
+            lastNightSkipTime = now;
+
             world.setTime(0);
             if (world.hasStorm()) {
                 world.setStorm(false);
                 world.setThundering(false);
             }
             Bukkit.broadcastMessage(ChatColor.GOLD + "🌙 Світло перемогло темряву! Ніч пропущено.");
+
+            if (plugin.getConfig().getBoolean("events.night-skip", true) && plugin.getBotManager() != null) {
+                List<String> sleepingNames = activePlayers.stream()
+                        .filter(Player::isSleeping)
+                        .map(Player::getName)
+                        .collect(Collectors.toList());
+
+                String headPlayer = null;
+                String text;
+                if (!sleepingNames.isEmpty()) {
+                    if (sleepingNames.size() == 1) {
+                        headPlayer = sleepingNames.get(0);
+                        text = "☀️ " + headPlayer + " пропустив(ла) ніч. Доброго ранку!";
+                    } else {
+                        text = "☀️ " + String.join(", ", sleepingNames) + " пропустили ніч. Доброго ранку!";
+                    }
+                } else {
+                    text = "☀️ Ніч було пропущено. Доброго ранку!";
+                }
+
+                plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
+            }
         } else {
             Bukkit.broadcastMessage(ChatColor.YELLOW + "🛏 " + ChatColor.WHITE + 
                 bedEnterer.getName() + " ліг спати. Потрібно ще " + (required - sleepingCount) + " (всього " + required + " з " + totalActive + " активних).");

@@ -11,23 +11,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 public class PlayerEventListener implements Listener {
 
     private final MineCord plugin;
-    private final Set<String> sleepingPlayers = Collections.synchronizedSet(new HashSet<>());
-    private long lastNightSkipTime = 0;
 
     public PlayerEventListener(MineCord plugin) {
         this.plugin = plugin;
@@ -226,53 +218,6 @@ public class PlayerEventListener implements Listener {
         // Але ми маємо переклад для всіх основних.
         if (plugin.getBotManager() != null) {
             plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
-        }
-    }
-
-    @EventHandler
-    public void onBedEnter(PlayerBedEnterEvent event) {
-        if (event.getBedEnterResult() == PlayerBedEnterEvent.BedEnterResult.OK) {
-            sleepingPlayers.add(event.getPlayer().getName());
-        }
-    }
-
-    @EventHandler
-    public void onBedLeave(PlayerBedLeaveEvent event) {
-        long now = System.currentTimeMillis();
-        if (now - lastNightSkipTime > 2000) {
-            sleepingPlayers.remove(event.getPlayer().getName());
-        }
-    }
-
-    @EventHandler
-    public void onTimeSkip(TimeSkipEvent event) {
-        if (event.getSkipReason() == TimeSkipEvent.SkipReason.NIGHT_SKIP) {
-            if (!plugin.getConfig().getBoolean("events.night-skip", true)) return;
-
-            long now = System.currentTimeMillis();
-            if (now - lastNightSkipTime < 5000) return;
-            lastNightSkipTime = now;
-
-            String headPlayer = null;
-            String text;
-            synchronized (sleepingPlayers) {
-                if (!sleepingPlayers.isEmpty()) {
-                    if (sleepingPlayers.size() == 1) {
-                        String name = sleepingPlayers.iterator().next();
-                        headPlayer = name;
-                        text = "☀️ " + name + " пропустив(ла) ніч. Доброго ранку!";
-                    } else {
-                        text = "☀️ " + String.join(", ", sleepingPlayers) + " пропустили ніч. Доброго ранку!";
-                    }
-                    sleepingPlayers.clear();
-                } else {
-                    text = "☀️ Ніч було пропущено. Доброго ранку!";
-                }
-            }
-
-            if (plugin.getBotManager() != null) {
-                plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
-            }
         }
     }
 }
