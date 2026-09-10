@@ -61,10 +61,9 @@ public class SkinHelper {
             return cached.url;
         }
 
-        // Attempt to get skin from SkinsRestorer for offline/recently disconnected player
-        try {
-            org.bukkit.plugin.Plugin sr = Bukkit.getPluginManager().getPlugin("SkinsRestorer");
-            if (sr != null && sr.isEnabled()) {
+        // Attempt to get skin from SkinsRestorer for offline/recently disconnected player (only if plugin is present)
+        if (isSkinsRestorerAvailable()) {
+            try {
                 Class<?> providerClass = Class.forName("net.skinsrestorer.api.SkinsRestorerProvider");
                 Object srApi = providerClass.getMethod("get").invoke(null);
                 Object playerStorage = srApi.getClass().getMethod("getPlayerStorage").invoke(srApi);
@@ -88,10 +87,19 @@ public class SkinHelper {
                         }
                     }
                 }
-            }
-        } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {}
+        }
 
         return "https://mc-heads.net/avatar/" + playerName + "/256";
+    }
+
+    public static boolean isSkinsRestorerAvailable() {
+        try {
+            org.bukkit.plugin.Plugin sr = Bukkit.getPluginManager().getPlugin("SkinsRestorer");
+            return sr != null && sr.isEnabled();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     public static void clearCache(UUID uuid) {
@@ -111,10 +119,9 @@ public class SkinHelper {
             }
         } catch (Throwable ignored) {}
 
-        // 2. Attempt via SkinsRestorer API (works with any skin set via /skin)
-        try {
-            org.bukkit.plugin.Plugin sr = Bukkit.getPluginManager().getPlugin("SkinsRestorer");
-            if (sr != null && sr.isEnabled()) {
+        // 2. Attempt via SkinsRestorer API (only if plugin is installed and active)
+        if (isSkinsRestorerAvailable()) {
+            try {
                 Class<?> providerClass = Class.forName("net.skinsrestorer.api.SkinsRestorerProvider");
                 Object srApi = providerClass.getMethod("get").invoke(null);
                 Object playerStorage = srApi.getClass().getMethod("getPlayerStorage").invoke(srApi);
@@ -135,8 +142,8 @@ public class SkinHelper {
                         }
                     }
                 }
-            }
-        } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {}
+        }
 
         // 3. Fallback: query by player name
         return "https://mc-heads.net/avatar/" + player.getName() + "/256";

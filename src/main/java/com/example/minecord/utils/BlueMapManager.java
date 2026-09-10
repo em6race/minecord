@@ -2,6 +2,7 @@ package com.example.minecord.utils;
 
 import com.example.minecord.MineCord;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
 
 public class BlueMapManager {
     private final MineCord plugin;
@@ -18,6 +19,13 @@ public class BlueMapManager {
             return;
         }
 
+        // Check if BlueMap plugin is installed and active on the server
+        Plugin blueMap = Bukkit.getPluginManager().getPlugin("BlueMap");
+        if (blueMap == null || !blueMap.isEnabled()) {
+            plugin.getLogger().info("Плагін BlueMap не знайдено на сервері. Автоматичне оновлення карти вимкнено.");
+            return;
+        }
+
         long hours = plugin.getConfig().getLong("bluemap.auto-reload.interval-hours", 2);
         if (hours <= 0) {
             hours = 2;
@@ -31,6 +39,12 @@ public class BlueMapManager {
         plugin.getLogger().info(String.format("Планувальник BlueMap активовано: виконання '/%s' кожні %d год.", command, hours));
 
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            Plugin bm = Bukkit.getPluginManager().getPlugin("BlueMap");
+            if (bm == null || !bm.isEnabled()) {
+                plugin.getLogger().warning("Плагін BlueMap було вимкнено або видалено. Пропускаю оновлення.");
+                return;
+            }
+
             try {
                 plugin.getLogger().info("Виконую автоматичне оновлення BlueMap: /" + command);
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
