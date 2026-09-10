@@ -14,28 +14,12 @@ public class ChatListener implements Listener {
         this.plugin = plugin;
     }
 
-    private static final java.util.Map<String, java.util.List<String>> recentMessages = new java.util.concurrent.ConcurrentHashMap<>();
-
-    public static java.util.List<String> getRecentMessages(String playerName) {
-        if (playerName == null) return java.util.Collections.emptyList();
-        java.util.List<String> list = recentMessages.get(playerName.toLowerCase());
-        return list != null ? new java.util.ArrayList<>(list) : java.util.Collections.emptyList();
-    }
-
     // FIX: Use MONITOR with ignoreCancelled=false in order to:
     // - Intercept message AFTER all other plugins (anti-spam, etc.)
     // - Still run our checks (mute, spam, AI) even if already cancelled by someone else
     // Moderation (mute/spam/AI) cancels the event itself, so we need to see it
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        // Record message for moderation / report history
-        recentMessages.compute(event.getPlayer().getName().toLowerCase(), (k, v) -> {
-            if (v == null) v = new java.util.ArrayList<>();
-            v.add(event.getMessage());
-            if (v.size() > 5) v.remove(0);
-            return v;
-        });
-
         // If the message was already cancelled by another plugin, do not send to Discord, and skip AI check
         boolean alreadyCancelled = event.isCancelled();
 
