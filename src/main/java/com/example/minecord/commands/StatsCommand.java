@@ -38,14 +38,22 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         }
 
         String targetName = args[0];
-        OfflinePlayer target = plugin.getServer().getOfflinePlayer(targetName);
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            java.util.UUID resolvedUuid = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolveExistingPlayerUuid(targetName) : null;
+            OfflinePlayer target = resolvedUuid != null ? plugin.getServer().getOfflinePlayer(resolvedUuid) : plugin.getServer().getOfflinePlayer(targetName);
 
-        if (!target.hasPlayedBefore() && !target.isOnline()) {
-            sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері.");
-            return true;
-        }
+            boolean hasPlayed = target != null && (target.hasPlayedBefore() || target.isOnline() || target.getLastPlayed() > 0);
+            if (!hasPlayed && target != null && plugin.getPlayerCacheManager() != null) {
+                hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(target);
+            }
 
-        showStats(sender, target);
+            if (target == null || !hasPlayed) {
+                sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері (або він ніколи не заходив).");
+                return;
+            }
+
+            showStats(sender, target);
+        });
         return true;
     }
 
@@ -53,6 +61,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             String prefix = args[0].toLowerCase();
+            if (plugin.getPlayerCacheManager() != null) {
+                return plugin.getPlayerCacheManager().getMatchingPlayers(prefix);
+            }
             List<String> suggestions = new ArrayList<>();
             for (Player p : plugin.getServer().getOnlinePlayers()) {
                 if (p.getName().toLowerCase().startsWith(prefix)) {
@@ -65,7 +76,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
     }
 
     private void showStats(CommandSender viewer, OfflinePlayer target) {
-        viewer.sendMessage(ChatColor.YELLOW + "=== Статистика гравця " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " ===");
+        String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().getPlayerNameByUuid(target.getUniqueId()) : null;
+        String displayName = (target.getName() != null) ? target.getName() : (cachedName != null ? cachedName : "Гравець");
+        viewer.sendMessage(ChatColor.YELLOW + "=== Статистика гравця " + ChatColor.GOLD + displayName + ChatColor.YELLOW + " ===");
 
         // Unified Status & Ping
         if (target.isOnline() && target.getPlayer() != null) {
@@ -74,6 +87,21 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             viewer.sendMessage(ChatColor.WHITE + "Рівень: " + p.getLevel() + " lvl");
         } else {
             viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.RED + "Офлайн");
+            if (plugin.getPlayerCacheManager() != null) {
+                com.example.minecord.utils.PlayerCacheManager.PlayerXpData xp = plugin.getPlayerCacheManager().getPlayerXp(target);
+                if (xp.totalExp > 0) {
+                    viewer.sendMessage(ChatColor.WHITE + "Рівень: " + xp.level + " lvl (" + String.format(java.util.Locale.US, "%,d", xp.totalExp) + " XP)");
+                } else if (xp.level > 0) {
+                    viewer.sendMessage(ChatColor.WHITE + "Рівень: " + xp.level + " lvl");
+                }
+            }
+        }
+
+        // Advancements
+        if (plugin.getPlayerCacheManager() != null) {
+            int doneAdv = plugin.getPlayerCacheManager().getPlayerAdvancements(target);
+            int totalAdv = plugin.getPlayerCacheManager().getTotalAdvancements();
+            viewer.sendMessage(ChatColor.WHITE + "Досягнення: " + doneAdv + " / " + totalAdv);
         }
 
         // First and last login dates

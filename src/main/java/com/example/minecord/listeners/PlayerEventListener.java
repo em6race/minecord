@@ -128,49 +128,23 @@ public class PlayerEventListener implements Listener {
                 }
             }
 
-            // Send random tip/fact to the player with a small chance
-            triggerJoinTip(player);
+            // Start periodic personal tips for this player (1-2 hours)
+            if (plugin.getPlayerTipManager() != null) {
+                plugin.getPlayerTipManager().startForPlayer(player);
+            }
 
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerJoin", e);
         }
     }
 
-    private void triggerJoinTip(Player player) {
-        try {
-            if (!plugin.getConfig().getBoolean("join-tips.enabled", true)) {
-                return;
-            }
-
-            int chance = plugin.getConfig().getInt("join-tips.chance-percent", 20);
-            if (chance <= 0) return;
-
-            if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= chance) {
-                return;
-            }
-
-            List<String> tips = plugin.getConfig().getStringList("join-tips.messages");
-            if (tips == null || tips.isEmpty()) {
-                return;
-            }
-
-            int delaySeconds = plugin.getConfig().getInt("join-tips.delay-seconds", 4);
-            long delayTicks = Math.max(1, delaySeconds) * 20L;
-
-            String randomTip = tips.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(tips.size()));
-            final String formattedTip = ChatColor.translateAlternateColorCodes('&', randomTip);
-
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                if (player.isOnline()) {
-                    player.sendMessage(formattedTip);
-                }
-            }, delayTicks);
-        } catch (Throwable ignored) {}
-    }
-
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         try {
+            if (plugin.getPlayerTipManager() != null) {
+                plugin.getPlayerTipManager().stopForPlayer(event.getPlayer().getUniqueId());
+            }
+
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().updatePlayerXp(event.getPlayer().getUniqueId(), event.getPlayer().getLevel(), event.getPlayer().getTotalExperience());
                 plugin.getPlayerCacheManager().updatePlayerAdvancements(event.getPlayer());

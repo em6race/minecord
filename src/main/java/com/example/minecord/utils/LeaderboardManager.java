@@ -92,8 +92,16 @@ public class LeaderboardManager {
         List<TopEntry> list = new ArrayList<>();
 
         for (OfflinePlayer p : players) {
-            if (!p.hasPlayedBefore() && !p.isOnline()) continue;
+            boolean hasPlayed = p.hasPlayedBefore() || p.isOnline() || p.getLastPlayed() > 0;
+            if (!hasPlayed && plugin.getPlayerCacheManager() != null) {
+                hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(p);
+            }
+            if (!hasPlayed) continue;
+
             String name = p.getName();
+            if ((name == null || name.isEmpty()) && plugin.getPlayerCacheManager() != null) {
+                name = plugin.getPlayerCacheManager().getPlayerNameByUuid(p.getUniqueId());
+            }
             if (name == null || name.isEmpty()) continue;
 
             long val = 0;
