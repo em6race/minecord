@@ -5,10 +5,15 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-public class MineCordCommand implements CommandExecutor {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class MineCordCommand implements CommandExecutor, TabCompleter {
 
     private final MineCord plugin;
 
@@ -127,7 +132,7 @@ public class MineCordCommand implements CommandExecutor {
             player.sendMessage(ChatColor.YELLOW + "/sharecoords <опис>" + ChatColor.WHITE + " - Поділитися координатами з мапою");
             player.sendMessage(ChatColor.YELLOW + "/report <гравець> <причина>" + ChatColor.WHITE + " - Скарга на порушника");
             player.sendMessage(ChatColor.YELLOW + "/map" + ChatColor.WHITE + " - Посилання на веб-мапу");
-            player.sendMessage(ChatColor.YELLOW + "/mail send <гравець> <текст>" + ChatColor.WHITE + " - Надіслати офлайн-повідомлення");
+            player.sendMessage(ChatColor.YELLOW + "/mail <гравець> <текст>" + ChatColor.WHITE + " - Надіслати офлайн-повідомлення в Discord");
             player.sendMessage(ChatColor.YELLOW + "/ticket create <текст>" + ChatColor.WHITE + " - Зв'язок з адміністрацією");
             player.sendMessage(ChatColor.YELLOW + "/togglerestart" + ChatColor.WHITE + " - Увімкнути/вимкнути сповіщення авторестарту");
             return true;
@@ -151,37 +156,59 @@ public class MineCordCommand implements CommandExecutor {
 
         if (command.getName().equalsIgnoreCase("mail")) {
             if (!(sender instanceof Player)) return true;
-            if (args.length < 3 || !args[0].equalsIgnoreCase("send")) {
-                sender.sendMessage(ChatColor.RED + "Використання: /mail send <гравець> <повідомлення>");
+
+            if (args.length >= 1 && args[0].equalsIgnoreCase("read")) {
+                sender.sendMessage(ChatColor.YELLOW + "📩 Окремої скриньки в грі немає — листи надходять напряму в приватні повідомлення Discord прив'язаного гравця!");
+                sender.sendMessage(ChatColor.GRAY + "Щоб надіслати листа: " + ChatColor.WHITE + "/mail <гравець> <повідомлення>");
                 return true;
             }
-            String targetName = args[1];
-            String message = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
-            
+
+            String targetName;
+            String message;
+
+            if (args.length >= 1 && args[0].equalsIgnoreCase("send")) {
+                if (args.length < 3) {
+                    sender.sendMessage(ChatColor.RED + "Використання: /mail <гравець> <повідомлення>");
+                    return true;
+                }
+                targetName = args[1];
+                message = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
+            } else {
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Використання: /mail <гравець> <повідомлення>");
+                    return true;
+                }
+                targetName = args[0];
+                message = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+            }
+
+            final String finalTargetName = targetName;
+            final String finalMessage = message;
+
             // Execute asynchronously to avoid blocking on getOfflinePlayer lookup
             org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(targetName);
+                org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(finalTargetName);
                 if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
-                    sender.sendMessage(ChatColor.RED + "Гравця не знайдено на сервері.");
+                    sender.sendMessage(ChatColor.RED + "❌ Гравця з ніком " + finalTargetName + " не знайдено на сервері.");
                     return;
                 }
                 String discordId = plugin.getLinkManager().getDiscordId(target.getUniqueId());
                 if (discordId == null) {
-                    sender.sendMessage(ChatColor.RED + "Гравець не прив'язав свій Discord-акаунт.");
+                    sender.sendMessage(ChatColor.RED + "❌ Гравець " + finalTargetName + " ще не прив'язав свій Discord-акаунт.");
                     return;
                 }
                 
                 if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
                     plugin.getBotManager().getJda().openPrivateChannelById(discordId).queue(channel -> {
                         net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                        embed.setTitle("📩 Новий лист у грі!");
-                        embed.setDescription("**Від:** " + sender.getName() + "\n**Повідомлення:** " + message);
-                        embed.setColor(0x00FF00);
+                        embed.setTitle("📩 Новий лист із сервера Minecraft!");
+                        embed.setDescription("**Від:** " + sender.getName() + "\n**Повідомлення:** " + finalMessage);
+                        embed.setColor(0x5865F2);
                         channel.sendMessageEmbeds(embed.build()).queue(
-                            success -> sender.sendMessage(ChatColor.GREEN + "Лист успішно надіслано в Discord гравцю " + targetName + "!"),
-                            error -> sender.sendMessage(ChatColor.RED + "Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
+                            success -> sender.sendMessage(ChatColor.GREEN + "✅ Лист успішно надіслано в Discord гравцю " + finalTargetName + "!"),
+                            error -> sender.sendMessage(ChatColor.RED + "❌ Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
                         );
-                    }, error -> sender.sendMessage(ChatColor.RED + "Не вдалося знайти користувача Discord."));
+                    }, error -> sender.sendMessage(ChatColor.RED + "❌ Не вдалося знайти користувача Discord."));
                 }
             });
             return true;
@@ -223,5 +250,48 @@ public class MineCordCommand implements CommandExecutor {
 
         player.sendMessage(ChatColor.RED + "Використання: /discord link");
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("mail")) {
+            if (args.length == 1) {
+                String prefix = args[0].toLowerCase();
+                List<String> list = new ArrayList<>();
+                if (plugin.getPlayerCacheManager() != null) {
+                    list.addAll(plugin.getPlayerCacheManager().getMatchingPlayers(prefix));
+                } else {
+                    for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        if (p.getName().toLowerCase().startsWith(prefix)) {
+                            list.add(p.getName());
+                        }
+                    }
+                }
+                return list;
+            }
+            if (args.length == 2 && args[0].equalsIgnoreCase("send")) {
+                String prefix = args[1].toLowerCase();
+                if (plugin.getPlayerCacheManager() != null) {
+                    return plugin.getPlayerCacheManager().getMatchingPlayers(prefix);
+                }
+            }
+        } else if (command.getName().equalsIgnoreCase("discord") || command.getName().equalsIgnoreCase("minecord")) {
+            if (args.length == 1) {
+                List<String> sub = new ArrayList<>();
+                for (String s : List.of("link", "unlink", "help", "reload")) {
+                    if (s.startsWith(args[0].toLowerCase())) {
+                        sub.add(s);
+                    }
+                }
+                return sub;
+            }
+        } else if (command.getName().equalsIgnoreCase("ticket")) {
+            if (args.length == 1) {
+                if ("create".startsWith(args[0].toLowerCase())) {
+                    return List.of("create");
+                }
+            }
+        }
+        return Collections.emptyList();
     }
 }

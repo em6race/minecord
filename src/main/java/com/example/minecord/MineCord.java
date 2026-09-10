@@ -80,18 +80,22 @@ public final class MineCord extends JavaPlugin {
         MineCordCommand cmd = new MineCordCommand(this);
         if (getCommand("discord") != null) {
             getCommand("discord").setExecutor(cmd);
+            getCommand("discord").setTabCompleter(cmd);
         }
         if (getCommand("minecord") != null) {
             getCommand("minecord").setExecutor(cmd);
+            getCommand("minecord").setTabCompleter(cmd);
         }
         if (getCommand("map") != null) {
             getCommand("map").setExecutor(cmd);
         }
         if (getCommand("mail") != null) {
             getCommand("mail").setExecutor(cmd);
+            getCommand("mail").setTabCompleter(cmd);
         }
         if (getCommand("ticket") != null) {
             getCommand("ticket").setExecutor(cmd);
+            getCommand("ticket").setTabCompleter(cmd);
         }
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(cmd);
