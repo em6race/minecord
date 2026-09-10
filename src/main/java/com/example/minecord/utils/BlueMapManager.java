@@ -36,7 +36,7 @@ public class BlueMapManager {
         String rawCmd = plugin.getConfig().getString("bluemap.auto-reload.command", "bluemap reload");
         final String command = (rawCmd != null && rawCmd.startsWith("/")) ? rawCmd.substring(1) : (rawCmd != null ? rawCmd : "bluemap reload");
 
-        plugin.getLogger().info(String.format("Планувальник BlueMap активовано: виконання '/%s' кожні %d год.", command, hours));
+        plugin.logPink(String.format("Планувальник BlueMap активовано: виконання '/%s' кожні %d год.", command, hours));
 
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             Plugin bm = Bukkit.getPluginManager().getPlugin("BlueMap");

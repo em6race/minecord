@@ -2,7 +2,7 @@ name: MineCord
 version: '1.0'
 main: com.example.minecord.MineCord
 api-version: '1.13'
-prefix: "\u00A7dMineCord\u00A7r"
+prefix: MineCord
 authors: [ You ]
 softdepend: [SkinsRestorer, BlueMap]
 description: A plugin that connects Minecraft with Discord.
@@ -41,4 +41,4 @@ commands:
   sharecoords:
     aliases: [coords]
     description: Поділитися координатами з описом місця
-    usage: /sharecoords <опис місця>
+    usage: /sharecoords [X Y Z] <опис місця>

@@ -106,6 +106,7 @@ public class ConsoleManager {
                 sb.append("```\n");
                 for (String line : toSend) {
                     String clean = org.bukkit.ChatColor.stripColor(line);
+                    clean = clean.replaceAll("\u001B\\[[;\\d]*m", "");
                     if (clean.isEmpty()) clean = " ";
                     int i = 0;
                     while (i < clean.length()) {
@@ -147,6 +148,7 @@ public class ConsoleManager {
                 sb.append("```\n");
                 for (String line : toSend) {
                     String clean = org.bukkit.ChatColor.stripColor(line);
+                    clean = clean.replaceAll("\u001B\\[[;\\d]*m", "");
                     if (clean.isEmpty()) clean = " ";
                     int i = 0;
                     while (i < clean.length()) {

@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class MineCordCommand implements CommandExecutor {
@@ -19,16 +20,28 @@ public class MineCordCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("map")) {
             String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
-            sender.sendMessage(ChatColor.YELLOW + "Веб-мапа сервера:");
+            if (!mapUrl.endsWith("/")) mapUrl += "/";
+
+            String fullUrl;
+            if (sender instanceof Player player) {
+                Location loc = player.getLocation();
+                String worldName = loc.getWorld() != null ? loc.getWorld().getName() : "world";
+                fullUrl = String.format("%s#%s:%d:%d:%d:500:0:0:0:0:flat", 
+                        mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            } else {
+                fullUrl = mapUrl.contains("#") ? mapUrl : (mapUrl + "#world:0:0:0:1500:0:0:0:0:flat");
+            }
+
+            sender.sendMessage(ChatColor.YELLOW + "Веб-мапа сервера (2D Flat):");
             
             // Create clickable link for convenience
-            if (sender instanceof Player) {
+            if (sender instanceof Player player) {
                 net.md_5.bungee.api.chat.TextComponent link = new net.md_5.bungee.api.chat.TextComponent("§a§lНатисніть тут, щоб відкрити мапу");
-                link.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, mapUrl));
-                link.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("§7Перейти на сайт мапи")));
-                ((Player) sender).spigot().sendMessage(link);
+                link.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
+                link.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("§7Перейти на 2D-мапу сервера")));
+                player.spigot().sendMessage(link);
             } else {
-                sender.sendMessage(ChatColor.AQUA + mapUrl);
+                sender.sendMessage(ChatColor.AQUA + fullUrl);
             }
             return true;
         }

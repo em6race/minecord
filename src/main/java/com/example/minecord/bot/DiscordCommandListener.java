@@ -67,7 +67,9 @@ public class DiscordCommandListener extends ListenerAdapter {
         }
         else if (event.getName().equals("map")) {
             String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
-            event.reply("🗺️ **Веб-мапа сервера:**\n[Натисніть тут, щоб відкрити мапу](" + mapUrl + ")").setEphemeral(true).queue();
+            if (!mapUrl.endsWith("/")) mapUrl += "/";
+            String fullUrl = mapUrl.contains("#") ? mapUrl : (mapUrl + "#world:0:0:0:1500:0:0:0:0:flat");
+            event.reply("🗺️ **Веб-мапа сервера (2D Flat):**\n[Натисніть тут, щоб відкрити мапу](" + fullUrl + ")").setEphemeral(true).queue();
         }
         else if (event.getName().equals("link")) {
             String code = event.getOption("code").getAsString();
@@ -355,7 +357,7 @@ public class DiscordCommandListener extends ListenerAdapter {
         else {
             event.reply("❌ Невідома команда: /" + event.getName()).setEphemeral(true).queue();
         }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);
             event.reply("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(
                 success -> {},
@@ -369,32 +371,40 @@ public class DiscordCommandListener extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@NotNull net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
-        if (event.getComponentId().startsWith("report_done_")) {
-            if (event.getMessage().getEmbeds().isEmpty()) return;
+        try {
+            if (event.getComponentId().startsWith("report_done_")) {
+                if (event.getMessage().getEmbeds().isEmpty()) return;
 
-            net.dv8tion.jda.api.EmbedBuilder eb = new net.dv8tion.jda.api.EmbedBuilder(event.getMessage().getEmbeds().get(0));
-            eb.setColor(0x00FF00);
-            eb.addField("Статус", "✅ Оброблено модератором " + event.getUser().getAsMention(), false);
+                net.dv8tion.jda.api.EmbedBuilder eb = new net.dv8tion.jda.api.EmbedBuilder(event.getMessage().getEmbeds().get(0));
+                eb.setColor(0x00FF00);
+                eb.addField("Статус", "✅ Оброблено модератором " + event.getUser().getAsMention(), false);
 
-            event.editMessageEmbeds(eb.build()).setComponents().queue();
+                event.editMessageEmbeds(eb.build()).setComponents().queue();
+            }
+        } catch (Throwable t) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка обробки кнопки: " + t.getMessage(), t);
         }
     }
 
     @Override
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
-        if (event.getName().equals("stats") || event.getName().equals("linkadmin")) {
-            if (event.getFocusedOption().getName().equals("player")) {
-                String partialName = event.getFocusedOption().getValue().toLowerCase();
-                
-                List<Choice> choices = new ArrayList<>();
-                for (org.bukkit.OfflinePlayer p : plugin.getServer().getOfflinePlayers()) {
-                    if (p.getName() != null && p.getName().toLowerCase().startsWith(partialName)) {
-                        choices.add(new Choice(p.getName(), p.getName()));
-                        if (choices.size() >= 25) break; // Discord allows max 25 choices
+        try {
+            if (event.getName().equals("stats") || event.getName().equals("linkadmin")) {
+                if (event.getFocusedOption().getName().equals("player")) {
+                    String partialName = event.getFocusedOption().getValue().toLowerCase();
+                    
+                    List<Choice> choices = new ArrayList<>();
+                    for (org.bukkit.OfflinePlayer p : plugin.getServer().getOfflinePlayers()) {
+                        if (p.getName() != null && p.getName().toLowerCase().startsWith(partialName)) {
+                            choices.add(new Choice(p.getName(), p.getName()));
+                            if (choices.size() >= 25) break; // Discord allows max 25 choices
+                        }
                     }
+                    event.replyChoices(choices).queue();
                 }
-                event.replyChoices(choices).queue();
             }
+        } catch (Throwable t) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "[MineCord] Помилка автодоповнення: " + t.getMessage(), t);
         }
     }
 }

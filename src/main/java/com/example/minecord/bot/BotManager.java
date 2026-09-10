@@ -44,7 +44,7 @@ public class BotManager {
                         .build();
                 
                 jda.awaitReady();
-                plugin.getLogger().info("Бот підключений як " + jda.getSelfUser().getName());
+                plugin.logPink("Бот підключений як " + jda.getSelfUser().getName());
 
                 // Register slash commands
                 jda.updateCommands().addCommands(
