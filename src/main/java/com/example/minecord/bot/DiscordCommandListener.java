@@ -269,15 +269,26 @@ public class DiscordCommandListener extends ListenerAdapter {
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
-                    org.bukkit.OfflinePlayer offlinePlayer;
-                    if (targetUuid != null) {
-                        offlinePlayer = plugin.getServer().getOfflinePlayer(targetUuid);
-                    } else {
+                    org.bukkit.OfflinePlayer offlinePlayer = null;
+                    java.util.UUID targetUuidResolved = targetUuid;
+
+                    if (targetUuidResolved == null && targetName != null && plugin.getPlayerCacheManager() != null) {
+                        targetUuidResolved = plugin.getPlayerCacheManager().getUuidByName(targetName);
+                    }
+
+                    if (targetUuidResolved != null) {
+                        offlinePlayer = plugin.getServer().getOfflinePlayer(targetUuidResolved);
+                    } else if (targetName != null) {
                         offlinePlayer = plugin.getServer().getOfflinePlayer(targetName);
                     }
 
-                    if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline()) {
-                        String nameToShow = targetName != null ? targetName : (offlinePlayer.getName() != null ? offlinePlayer.getName() : "невідомий");
+                    boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
+                    if (!hasPlayed && offlinePlayer != null && plugin.getPlayerCacheManager() != null) {
+                        hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(offlinePlayer);
+                    }
+
+                    if (offlinePlayer == null || !hasPlayed) {
+                        String nameToShow = targetName != null ? targetName : (offlinePlayer != null && offlinePlayer.getName() != null ? offlinePlayer.getName() : "невідомий");
                         event.getHook().sendMessage("❌ Гравця з ніком **" + nameToShow + "** не знайдено на сервері (або він ніколи не заходив).").setEphemeral(true).queue();
                         return;
                     }
@@ -291,10 +302,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                     org.bukkit.entity.Player onlineP = isOnline ? offlinePlayer.getPlayer() : null;
 
                     int playerLevel = 0;
-                    if (plugin.getPlayerCacheManager() != null) {
-                        playerLevel = plugin.getPlayerCacheManager().getPlayerLevel(offlinePlayer);
-                    } else if (isOnline) {
+                    int playerTotalExp = 0;
+                    if (isOnline) {
                         playerLevel = onlineP.getLevel();
+                        playerTotalExp = onlineP.getTotalExperience();
+                    } else if (plugin.getPlayerCacheManager() != null) {
+                        com.example.minecord.utils.PlayerCacheManager.PlayerXpData xpData = plugin.getPlayerCacheManager().getPlayerXp(offlinePlayer);
+                        playerLevel = xpData.level;
+                        playerTotalExp = xpData.totalExp;
                     }
 
                     if (isOnline) {
@@ -330,7 +345,11 @@ public class DiscordCommandListener extends ListenerAdapter {
                     long playtimeHours = playtimeTicks / (20 * 60 * 60);
                     long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
 
-                    embed.addField("🌟 Рівень", playerLevel + " lvl", true);
+                    String levelDisplay = playerLevel + " lvl";
+                    if (playerTotalExp > 0) {
+                        levelDisplay += " (" + String.format(java.util.Locale.US, "%,d", playerTotalExp) + " XP)";
+                    }
+                    embed.addField("🌟 Рівень", levelDisplay, true);
                     embed.addField("☠️ Смертей", String.valueOf(deaths), true);
                     embed.addField("⚔️ Вбивств (Мобів/Гравців)", mobKills + " / " + playerKills, true);
                     embed.addField("⏱️ Награний час", playtimeHours + " год. " + playtimeMins + " хв.", true);
