@@ -129,6 +129,12 @@ public final class MineCord extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new com.example.minecord.listeners.DragonEventListener(this), this);
         
+        // Warm up and eagerly pre-load translator classes into JVM RAM
+        try {
+            com.example.minecord.utils.DeathTranslator.translate("");
+            com.example.minecord.utils.AdvancementTranslator.translate("", "");
+        } catch (Throwable ignored) {}
+
         // Soft-dependency check
         if (com.example.minecord.utils.SkinHelper.isSkinsRestorerAvailable()) {
             logPink("Плагін SkinsRestorer знайдено — увімкнено підтримку кастомних скінів для Discord.");
