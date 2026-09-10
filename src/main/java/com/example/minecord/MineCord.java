@@ -97,6 +97,13 @@ public final class MineCord extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         
+        // Soft-dependency check
+        if (com.example.minecord.utils.SkinHelper.isSkinsRestorerAvailable()) {
+            getLogger().info("Плагін SkinsRestorer знайдено — увімкнено підтримку кастомних скінів для Discord.");
+        } else {
+            getLogger().info("Плагін SkinsRestorer не знайдено — інтеграцію скінів вимкнено (використовується нативний профіль Paper).");
+        }
+
         getLogger().info("MineCord (Модульна версія) успішно завантажено!");
     }
 
