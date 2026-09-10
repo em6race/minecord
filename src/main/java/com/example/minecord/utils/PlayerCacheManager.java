@@ -41,6 +41,8 @@ public class PlayerCacheManager {
     private final Map<UUID, Integer> playerAdvancementsCache = new ConcurrentHashMap<>();
     private final Set<String> visibleAdvancementKeys = ConcurrentHashMap.newKeySet();
     private int totalAdvancementsCount = -1;
+    private final Map<String, UUID> mojangUuidCache = new ConcurrentHashMap<>();
+    private static final UUID EMPTY_UUID_SENTINEL = new UUID(0L, 0L);
 
     public PlayerCacheManager(MineCord plugin) {
         this.plugin = plugin;
@@ -68,10 +70,13 @@ public class PlayerCacheManager {
                 // 3. Load from usercache.json
                 loadUsercacheFile();
 
-                // 4. Add currently online players
+                // 4. Load from world playerdata files
+                loadPlayerDataFiles();
+
+                // 5. Add currently online players
                 loadOnlinePlayers();
 
-                // 5. Cache visible server advancements count
+                // 6. Cache visible server advancements count
                 refreshAdvancements();
 
                 plugin.getLogger().info("[MineCord] Завантажено " + cachedPlayerNames.size() + " гравців у кеш.");
@@ -110,6 +115,165 @@ public class PlayerCacheManager {
     public UUID getUuidByName(String name) {
         if (name == null || name.trim().isEmpty()) return null;
         return playerNameToUuid.get(name.trim().toLowerCase());
+    }
+
+    /**
+     * Look up known player nickname for a UUID.
+     */
+    public String getPlayerNameByUuid(UUID uuid) {
+        if (uuid == null) return null;
+        return uuidToPlayerName.get(uuid);
+    }
+
+    /**
+     * Parses a 32-character hex string into a UUID with dashes.
+     */
+    public static UUID parseUuidWithoutDashes(String id) {
+        if (id == null || id.length() != 32) return null;
+        try {
+            return UUID.fromString(
+                    id.substring(0, 8) + "-" +
+                    id.substring(8, 12) + "-" +
+                    id.substring(12, 16) + "-" +
+                    id.substring(16, 20) + "-" +
+                    id.substring(20, 32)
+            );
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Queries the official Mojang API to get the official Online UUID for a licensed player.
+     * Returns null if player is not licensed, not found, or on network error.
+     * Caches both hits and misses to prevent redundant lookups.
+     * Will NOT perform network I/O if called on the main server thread.
+     */
+    public UUID fetchMojangUuid(String playerName) {
+        if (playerName == null || playerName.trim().isEmpty()) return null;
+        String cleanName = playerName.trim();
+        String lowerName = cleanName.toLowerCase();
+
+        UUID cached = mojangUuidCache.get(lowerName);
+        if (cached != null) {
+            return cached.equals(EMPTY_UUID_SENTINEL) ? null : cached;
+        }
+
+        // Avoid blocking the main server tick thread with HTTP requests
+        if (Bukkit.isPrimaryThread()) {
+            return null;
+        }
+
+        try {
+            java.net.URI uri = java.net.URI.create("https://api.mojang.com/users/profiles/minecraft/" + cleanName);
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(3))
+                    .build();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(java.time.Duration.ofSeconds(3))
+                    .header("User-Agent", "MineCord-Minecraft-Bot")
+                    .GET()
+                    .build();
+
+            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
+                JsonObject obj = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (obj.has("id")) {
+                    String id = obj.get("id").getAsString();
+                    UUID mojangUuid = parseUuidWithoutDashes(id);
+                    if (mojangUuid != null) {
+                        mojangUuidCache.put(lowerName, mojangUuid);
+                        return mojangUuid;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+            // Silently handle network errors/timeouts
+        }
+
+        mojangUuidCache.put(lowerName, EMPTY_UUID_SENTINEL);
+        return null;
+    }
+
+    /**
+     * Resolves the actual UUID used by this player on the server.
+     * Checks:
+     * 1. Currently online player.
+     * 2. Cached UUID in memory.
+     * 3. Mojang Online UUID (for licensed players).
+     * 4. Offline UUID.
+     * Checks files on disk (.dat in playerdata or .json in stats).
+     * If multiple candidates have files on disk, picks candidate with newest file lastModified timestamp.
+     */
+    public UUID resolveExistingPlayerUuid(String playerName) {
+        if (playerName == null || playerName.trim().isEmpty()) return null;
+        String cleanName = playerName.trim();
+        String lowerName = cleanName.toLowerCase();
+
+        // 1. Online player
+        try {
+            Player online = Bukkit.getPlayerExact(cleanName);
+            if (online != null) {
+                UUID u = online.getUniqueId();
+                addPlayer(cleanName, u);
+                return u;
+            }
+        } catch (Throwable ignored) {}
+
+        // Collect candidates
+        List<UUID> candidates = new ArrayList<>();
+
+        UUID cachedUuid = playerNameToUuid.get(lowerName);
+        if (cachedUuid != null && !candidates.contains(cachedUuid)) {
+            candidates.add(cachedUuid);
+        }
+
+        UUID mojangUuid = fetchMojangUuid(cleanName);
+        if (mojangUuid != null && !candidates.contains(mojangUuid)) {
+            candidates.add(mojangUuid);
+        }
+
+        UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + cleanName).getBytes(StandardCharsets.UTF_8));
+        if (!candidates.contains(offlineUuid)) {
+            candidates.add(offlineUuid);
+        }
+
+        // Check which candidate has files on disk
+        UUID bestUuid = null;
+        long bestTimestamp = -1;
+
+        for (UUID cand : candidates) {
+            File datFile = findUserDataFile("playerdata", ".dat", cand, null);
+            File jsonFile = findUserDataFile("stats", ".json", cand, null);
+
+            long datTime = (datFile != null && datFile.exists()) ? datFile.lastModified() : -1;
+            long jsonTime = (jsonFile != null && jsonFile.exists()) ? jsonFile.lastModified() : -1;
+            long maxTime = Math.max(datTime, jsonTime);
+
+            if (maxTime > 0 && maxTime > bestTimestamp) {
+                bestTimestamp = maxTime;
+                bestUuid = cand;
+            }
+        }
+
+        if (bestUuid != null) {
+            playerNameToUuid.put(lowerName, bestUuid);
+            uuidToPlayerName.put(bestUuid, cleanName);
+            cachedPlayerNames.add(cleanName);
+            return bestUuid;
+        }
+
+        // Fallbacks if no data files found on disk yet
+        if (cachedUuid != null) return cachedUuid;
+        if (mojangUuid != null) {
+            playerNameToUuid.put(lowerName, mojangUuid);
+            uuidToPlayerName.put(mojangUuid, cleanName);
+            cachedPlayerNames.add(cleanName);
+            return mojangUuid;
+        }
+
+        return offlineUuid;
     }
 
     /**
@@ -304,7 +468,14 @@ public class PlayerCacheManager {
     public boolean hasPlayerData(OfflinePlayer player) {
         if (player == null) return false;
         if (player.isOnline() || player.hasPlayedBefore() || player.getLastPlayed() > 0) return true;
-        return findPlayerDataFile(player.getUniqueId(), player.getName()) != null;
+        String name = player.getName();
+        if (name == null && player.getUniqueId() != null) {
+            name = uuidToPlayerName.get(player.getUniqueId());
+        }
+        if (findPlayerDataFile(player.getUniqueId(), name) != null) {
+            return true;
+        }
+        return findUserDataFile("stats", ".json", player.getUniqueId(), name) != null;
     }
 
     public File findPlayerDataFile(UUID uuid, String playerName) {
@@ -322,11 +493,16 @@ public class PlayerCacheManager {
         List<UUID> candidateUuids = new ArrayList<>();
         if (uuid != null) candidateUuids.add(uuid);
         if (playerName != null && !playerName.trim().isEmpty()) {
-            UUID cachedUuid = playerNameToUuid.get(playerName.trim().toLowerCase());
+            String cleanName = playerName.trim();
+            UUID cachedUuid = playerNameToUuid.get(cleanName.toLowerCase());
             if (cachedUuid != null && !candidateUuids.contains(cachedUuid)) {
                 candidateUuids.add(cachedUuid);
             }
-            UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName.trim()).getBytes(StandardCharsets.UTF_8));
+            UUID mojangUuid = fetchMojangUuid(cleanName);
+            if (mojangUuid != null && !candidateUuids.contains(mojangUuid)) {
+                candidateUuids.add(mojangUuid);
+            }
+            UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + cleanName).getBytes(StandardCharsets.UTF_8));
             if (!candidateUuids.contains(offlineUuid)) {
                 candidateUuids.add(offlineUuid);
             }
@@ -347,10 +523,18 @@ public class PlayerCacheManager {
             for (UUID u : candidateUuids) {
                 File f = new File(dir, u.toString() + extension);
                 if (f.exists() && f.canRead() && f.length() > 0) {
+                    if (playerName != null && !playerName.trim().isEmpty()) {
+                        playerNameToUuid.put(playerName.trim().toLowerCase(), u);
+                        uuidToPlayerName.put(u, playerName.trim());
+                    }
                     return f;
                 }
                 File fNoDash = new File(dir, u.toString().replace("-", "") + extension);
                 if (fNoDash.exists() && fNoDash.canRead() && fNoDash.length() > 0) {
+                    if (playerName != null && !playerName.trim().isEmpty()) {
+                        playerNameToUuid.put(playerName.trim().toLowerCase(), u);
+                        uuidToPlayerName.put(u, playerName.trim());
+                    }
                     return fNoDash;
                 }
             }
@@ -414,6 +598,115 @@ public class PlayerCacheManager {
         return searchDirs;
     }
 
+    private byte[] readDecompressedNbt(File file) {
+        if (file == null || !file.exists() || file.length() == 0) return null;
+        try {
+            byte[] compressed = Files.readAllBytes(file.toPath());
+            if (compressed.length == 0) return null;
+
+            // GZIP: 0x1F 0x8B
+            if (compressed.length > 2 && (compressed[0] == (byte) 0x1F) && (compressed[1] == (byte) 0x8B)) {
+                try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
+                    return gis.readAllBytes();
+                }
+            }
+            // ZLIB: 0x78
+            else if (compressed.length > 2 && compressed[0] == 0x78) {
+                try (InflaterInputStream iis = new InflaterInputStream(new ByteArrayInputStream(compressed))) {
+                    return iis.readAllBytes();
+                }
+            }
+            // Uncompressed NBT: TAG_Compound = 0x0A
+            else if (compressed[0] == 0x0A) {
+                return compressed;
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    private void loadPlayerDataFiles() {
+        try {
+            List<File> playerdataDirs = getPossibleWorldDirs("playerdata");
+            Set<String> seen = new HashSet<>();
+            for (File dir : playerdataDirs) {
+                if (dir == null || !dir.isDirectory()) continue;
+                try {
+                    String can = dir.getCanonicalPath();
+                    if (!seen.add(can)) continue;
+                } catch (Exception e) {
+                    if (!seen.add(dir.getAbsolutePath())) continue;
+                }
+
+                File[] files = dir.listFiles((d, name) -> name.endsWith(".dat") && !name.endsWith(".dat_old"));
+                if (files == null) continue;
+
+                for (File f : files) {
+                    String fname = f.getName();
+                    String rawUuid = fname.substring(0, fname.length() - 4);
+                    UUID uuid = null;
+                    try {
+                        if (rawUuid.contains("-")) {
+                            uuid = UUID.fromString(rawUuid);
+                        } else if (rawUuid.length() == 32) {
+                            uuid = parseUuidWithoutDashes(rawUuid);
+                        }
+                    } catch (Exception ignored) {}
+
+                    if (uuid == null) continue;
+
+                    String name = null;
+                    try {
+                        OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+                        name = op.getName();
+                    } catch (Throwable ignored) {}
+
+                    if (name == null || name.isEmpty()) {
+                        try {
+                            byte[] nbt = readDecompressedNbt(f);
+                            if (nbt != null) {
+                                name = findTagString(nbt, "lastKnownName");
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+
+                    if (name != null && !name.trim().isEmpty()) {
+                        addPlayer(name.trim(), uuid);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            plugin.getLogger().warning("[MineCord] Не вдалося завантажити playerdata файли: " + t.getMessage());
+        }
+    }
+
+    private String findTagString(byte[] data, String tagName) {
+        if (data == null || tagName == null) return null;
+        byte[] nameBytes = tagName.getBytes(StandardCharsets.UTF_8);
+        byte[] pattern = new byte[3 + nameBytes.length];
+        pattern[0] = 8; // TAG_String
+        pattern[1] = (byte) ((nameBytes.length >> 8) & 0xFF);
+        pattern[2] = (byte) (nameBytes.length & 0xFF);
+        System.arraycopy(nameBytes, 0, pattern, 3, nameBytes.length);
+
+        for (int i = 0; i <= data.length - pattern.length - 2; i++) {
+            boolean match = true;
+            for (int j = 0; j < pattern.length; j++) {
+                if (data[i + j] != pattern[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                int offset = i + pattern.length;
+                int strLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
+                if (strLen > 0 && offset + 2 + strLen <= data.length) {
+                    return new String(data, offset + 2, strLen, StandardCharsets.UTF_8);
+                }
+            }
+        }
+        return null;
+    }
+
     private PlayerXpData readXpFromPlayerData(UUID uuid, String playerName) {
         try {
             File playerdataFile = findPlayerDataFile(uuid, playerName);
@@ -421,29 +714,7 @@ public class PlayerCacheManager {
                 return new PlayerXpData(0, 0);
             }
 
-            byte[] compressed = Files.readAllBytes(playerdataFile.toPath());
-            if (compressed == null || compressed.length == 0) {
-                return new PlayerXpData(0, 0);
-            }
-
-            byte[] data = null;
-            // GZIP: 0x1F 0x8B
-            if (compressed.length > 2 && (compressed[0] == (byte) 0x1F) && (compressed[1] == (byte) 0x8B)) {
-                try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
-                    data = gis.readAllBytes();
-                }
-            }
-            // ZLIB: 0x78
-            else if (compressed.length > 2 && compressed[0] == 0x78) {
-                try (InflaterInputStream iis = new InflaterInputStream(new ByteArrayInputStream(compressed))) {
-                    data = iis.readAllBytes();
-                }
-            }
-            // Uncompressed NBT: TAG_Compound = 0x0A
-            else if (compressed.length > 0 && compressed[0] == 0x0A) {
-                data = compressed;
-            }
-
+            byte[] data = readDecompressedNbt(playerdataFile);
             if (data == null || data.length < 10) {
                 return new PlayerXpData(0, 0);
             }

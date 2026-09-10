@@ -283,7 +283,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                     java.util.UUID targetUuidResolved = targetUuid;
 
                     if (targetUuidResolved == null && targetName != null && plugin.getPlayerCacheManager() != null) {
-                        targetUuidResolved = plugin.getPlayerCacheManager().getUuidByName(targetName);
+                        targetUuidResolved = plugin.getPlayerCacheManager().resolveExistingPlayerUuid(targetName);
                     }
 
                     if (targetUuidResolved != null) {
@@ -304,7 +304,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                     }
 
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                    String displayName = offlinePlayer.getName() != null ? offlinePlayer.getName() : (targetName != null ? targetName : "Гравець");
+                    String cachedName = (plugin.getPlayerCacheManager() != null && offlinePlayer != null) ? plugin.getPlayerCacheManager().getPlayerNameByUuid(offlinePlayer.getUniqueId()) : null;
+                    String displayName = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : (targetName != null ? targetName : "Гравець"));
                     embed.setTitle("📊 Статистика гравця " + displayName);
                     embed.setThumbnail(com.example.minecord.utils.SkinHelper.getAvatarUrl(displayName));
                         
@@ -439,14 +440,20 @@ public class DiscordCommandListener extends ListenerAdapter {
             
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
-                    org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
-                    if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline()) {
+                    java.util.UUID resolved = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolveExistingPlayerUuid(playerName) : null;
+                    org.bukkit.OfflinePlayer offlinePlayer = resolved != null ? plugin.getServer().getOfflinePlayer(resolved) : plugin.getServer().getOfflinePlayer(playerName);
+                    boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
+                    if (!hasPlayed && offlinePlayer != null && plugin.getPlayerCacheManager() != null) {
+                        hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(offlinePlayer);
+                    }
+                    if (offlinePlayer == null || !hasPlayed) {
                         event.getHook().sendMessage("❌ Гравця **" + playerName + "** не знайдено на сервері.").setEphemeral(true).queue();
                         return;
                     }
                     
                     plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
-                    String name = offlinePlayer.getName() != null ? offlinePlayer.getName() : playerName;
+                    String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().getPlayerNameByUuid(offlinePlayer.getUniqueId()) : null;
+                    String name = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : playerName);
                     event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
                 } catch (Throwable t) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка linkadmin: " + t.getMessage(), t);

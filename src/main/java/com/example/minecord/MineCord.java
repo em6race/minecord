@@ -28,6 +28,7 @@ public final class MineCord extends JavaPlugin {
     private BlueMapManager blueMapManager;
     private com.example.minecord.utils.LeaderboardManager leaderboardManager;
     private com.example.minecord.utils.PlayerCacheManager playerCacheManager;
+    private com.example.minecord.utils.PlayerTipManager playerTipManager;
 
     @Override
     public void onEnable() {
@@ -50,6 +51,8 @@ public final class MineCord extends JavaPlugin {
         linkManager = new AccountLinkManager(this);
         this.playerCacheManager = new com.example.minecord.utils.PlayerCacheManager(this);
         this.playerCacheManager.init();
+        this.playerTipManager = new com.example.minecord.utils.PlayerTipManager(this);
+        this.playerTipManager.start();
         botManager = new BotManager(this);
         botManager.start();
         
@@ -190,6 +193,9 @@ public final class MineCord extends JavaPlugin {
         if (blueMapManager != null) {
             blueMapManager.stop();
         }
+        if (playerTipManager != null) {
+            playerTipManager.stop();
+        }
     }
     
     public void reloadPlugin() {
@@ -228,6 +234,12 @@ public final class MineCord extends JavaPlugin {
             blueMapManager.stop();
             this.blueMapManager = new BlueMapManager(this);
             this.blueMapManager.start();
+        }
+        
+        if (playerTipManager != null) {
+            playerTipManager.stop();
+            this.playerTipManager = new com.example.minecord.utils.PlayerTipManager(this);
+            this.playerTipManager.start();
         }
         
         if (botManager != null) {
@@ -282,5 +294,9 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.PlayerCacheManager getPlayerCacheManager() {
         return playerCacheManager;
+    }
+
+    public com.example.minecord.utils.PlayerTipManager getPlayerTipManager() {
+        return playerTipManager;
     }
 }
