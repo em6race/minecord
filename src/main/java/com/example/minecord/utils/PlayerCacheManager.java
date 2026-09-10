@@ -17,6 +17,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class PlayerCacheManager {
 
@@ -35,6 +38,9 @@ public class PlayerCacheManager {
     private final Map<String, UUID> playerNameToUuid = new ConcurrentHashMap<>();
     private final Map<UUID, String> uuidToPlayerName = new ConcurrentHashMap<>();
     private final Map<UUID, PlayerXpData> playerXpCache = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> playerAdvancementsCache = new ConcurrentHashMap<>();
+    private final Set<String> visibleAdvancementKeys = ConcurrentHashMap.newKeySet();
+    private int totalAdvancementsCount = -1;
 
     public PlayerCacheManager(MineCord plugin) {
         this.plugin = plugin;
@@ -64,6 +70,9 @@ public class PlayerCacheManager {
 
                 // 4. Add currently online players
                 loadOnlinePlayers();
+
+                // 5. Cache visible server advancements count
+                refreshAdvancements();
 
                 plugin.getLogger().info("[MineCord] Завантажено " + cachedPlayerNames.size() + " гравців у кеш.");
             } catch (Throwable t) {
@@ -299,15 +308,65 @@ public class PlayerCacheManager {
     }
 
     public File findPlayerDataFile(UUID uuid, String playerName) {
+        return findUserDataFile("playerdata", ".dat", uuid, playerName);
+    }
+
+    public File findAdvancementsFile(UUID uuid, String playerName) {
+        return findUserDataFile("advancements", ".json", uuid, playerName);
+    }
+
+    public File findUserDataFile(String subDir, String extension, UUID uuid, String playerName) {
         if (uuid == null && playerName == null) return null;
 
+        List<File> searchDirs = getPossibleWorldDirs(subDir);
+        List<UUID> candidateUuids = new ArrayList<>();
+        if (uuid != null) candidateUuids.add(uuid);
+        if (playerName != null && !playerName.trim().isEmpty()) {
+            UUID cachedUuid = playerNameToUuid.get(playerName.trim().toLowerCase());
+            if (cachedUuid != null && !candidateUuids.contains(cachedUuid)) {
+                candidateUuids.add(cachedUuid);
+            }
+            UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName.trim()).getBytes(StandardCharsets.UTF_8));
+            if (!candidateUuids.contains(offlineUuid)) {
+                candidateUuids.add(offlineUuid);
+            }
+        }
+
+        Set<String> seenDirs = new HashSet<>();
+        for (File dir : searchDirs) {
+            if (dir == null) continue;
+            try {
+                String canonical = dir.getCanonicalPath();
+                if (!seenDirs.add(canonical)) continue;
+            } catch (Exception e) {
+                if (!seenDirs.add(dir.getAbsolutePath())) continue;
+            }
+
+            if (!dir.exists() || !dir.isDirectory()) continue;
+
+            for (UUID u : candidateUuids) {
+                File f = new File(dir, u.toString() + extension);
+                if (f.exists() && f.canRead() && f.length() > 0) {
+                    return f;
+                }
+                File fNoDash = new File(dir, u.toString().replace("-", "") + extension);
+                if (fNoDash.exists() && fNoDash.canRead() && fNoDash.length() > 0) {
+                    return fNoDash;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private List<File> getPossibleWorldDirs(String subDirName) {
         List<File> searchDirs = new ArrayList<>();
 
         // 1. All worlds known to Bukkit
         try {
             for (org.bukkit.World w : Bukkit.getWorlds()) {
                 if (w != null && w.getWorldFolder() != null) {
-                    searchDirs.add(new File(w.getWorldFolder(), "playerdata"));
+                    searchDirs.add(new File(w.getWorldFolder(), subDirName));
                 }
             }
         } catch (Throwable ignored) {}
@@ -323,8 +382,8 @@ public class PlayerCacheManager {
                         if (line.startsWith("level-name=")) {
                             String levelName = line.substring("level-name=".length()).trim();
                             if (!levelName.isEmpty()) {
-                                searchDirs.add(new File(levelName, "playerdata"));
-                                searchDirs.add(new File(Bukkit.getWorldContainer(), levelName + "/playerdata"));
+                                searchDirs.add(new File(levelName, subDirName));
+                                searchDirs.add(new File(Bukkit.getWorldContainer(), levelName + "/" + subDirName));
                             }
                             break;
                         }
@@ -337,63 +396,22 @@ public class PlayerCacheManager {
         try {
             File worldContainer = Bukkit.getWorldContainer();
             if (worldContainer != null && worldContainer.exists()) {
-                searchDirs.add(new File(worldContainer, "playerdata"));
-                searchDirs.add(new File(worldContainer, "world/playerdata"));
+                searchDirs.add(new File(worldContainer, subDirName));
+                searchDirs.add(new File(worldContainer, "world/" + subDirName));
                 File[] subdirs = worldContainer.listFiles(File::isDirectory);
                 if (subdirs != null) {
                     for (File sub : subdirs) {
-                        searchDirs.add(new File(sub, "playerdata"));
+                        searchDirs.add(new File(sub, subDirName));
                     }
                 }
             }
         } catch (Throwable ignored) {}
 
         // 4. Default root locations
-        searchDirs.add(new File("world/playerdata"));
-        searchDirs.add(new File("playerdata"));
+        searchDirs.add(new File("world/" + subDirName));
+        searchDirs.add(new File(subDirName));
 
-        // Candidate UUIDs
-        List<UUID> candidateUuids = new ArrayList<>();
-        if (uuid != null) {
-            candidateUuids.add(uuid);
-        }
-        if (playerName != null && !playerName.trim().isEmpty()) {
-            UUID cachedUuid = playerNameToUuid.get(playerName.trim().toLowerCase());
-            if (cachedUuid != null && !candidateUuids.contains(cachedUuid)) {
-                candidateUuids.add(cachedUuid);
-            }
-            UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName.trim()).getBytes(StandardCharsets.UTF_8));
-            if (!candidateUuids.contains(offlineUuid)) {
-                candidateUuids.add(offlineUuid);
-            }
-        }
-
-        // Deduplicate directories
-        Set<String> seenDirs = new HashSet<>();
-        for (File dir : searchDirs) {
-            if (dir == null) continue;
-            try {
-                String canonical = dir.getCanonicalPath();
-                if (!seenDirs.add(canonical)) continue;
-            } catch (Exception e) {
-                if (!seenDirs.add(dir.getAbsolutePath())) continue;
-            }
-
-            if (!dir.exists() || !dir.isDirectory()) continue;
-
-            for (UUID u : candidateUuids) {
-                File f = new File(dir, u.toString() + ".dat");
-                if (f.exists() && f.canRead() && f.length() > 0) {
-                    return f;
-                }
-                File fNoDash = new File(dir, u.toString().replace("-", "") + ".dat");
-                if (fNoDash.exists() && fNoDash.canRead() && fNoDash.length() > 0) {
-                    return fNoDash;
-                }
-            }
-        }
-
-        return null;
+        return searchDirs;
     }
 
     private PlayerXpData readXpFromPlayerData(UUID uuid, String playerName) {
@@ -488,6 +506,146 @@ public class PlayerCacheManager {
         }
 
         return 0;
+    }
+
+    public int getTotalAdvancements() {
+        if (totalAdvancementsCount > 0) {
+            return totalAdvancementsCount;
+        }
+        refreshAdvancements();
+        return Math.max(totalAdvancementsCount, 1);
+    }
+
+    public synchronized void refreshAdvancements() {
+        int count = 0;
+        try {
+            Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
+            while (it.hasNext()) {
+                org.bukkit.advancement.Advancement adv = it.next();
+                String key = adv.getKey().toString();
+                String subKey = adv.getKey().getKey();
+                if (subKey.startsWith("recipes/") || subKey.endsWith("/root")) {
+                    continue;
+                }
+                boolean hasDisplay = false;
+                try {
+                    hasDisplay = (adv.getDisplay() != null);
+                } catch (Throwable ignored) {
+                    hasDisplay = true;
+                }
+                if (hasDisplay) {
+                    visibleAdvancementKeys.add(key);
+                    count++;
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        if (count > 0) {
+            totalAdvancementsCount = count;
+        } else if (totalAdvancementsCount <= 0) {
+            totalAdvancementsCount = 110;
+        }
+    }
+
+    public int getPlayerAdvancements(OfflinePlayer player) {
+        if (player == null) return 0;
+        UUID uuid = player.getUniqueId();
+        String name = player.getName();
+
+        if (player.isOnline() && player.getPlayer() != null) {
+            int done = countOnlinePlayerAdvancements(player.getPlayer());
+            if (uuid != null) {
+                playerAdvancementsCache.put(uuid, done);
+            }
+            return done;
+        }
+
+        if (uuid != null) {
+            Integer cached = playerAdvancementsCache.get(uuid);
+            if (cached != null) {
+                return cached;
+            }
+        }
+
+        int done = readCompletedAdvancements(uuid, name);
+        if (uuid != null) {
+            playerAdvancementsCache.put(uuid, done);
+        }
+        return done;
+    }
+
+    public int countOnlinePlayerAdvancements(Player player) {
+        if (player == null) return 0;
+        if (visibleAdvancementKeys.isEmpty()) {
+            refreshAdvancements();
+        }
+
+        int done = 0;
+        for (String keyStr : visibleAdvancementKeys) {
+            try {
+                org.bukkit.NamespacedKey nsk = org.bukkit.NamespacedKey.fromString(keyStr);
+                if (nsk != null) {
+                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(nsk);
+                    if (adv != null && player.getAdvancementProgress(adv).isDone()) {
+                        done++;
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+        return done;
+    }
+
+    public void updatePlayerAdvancements(Player player) {
+        if (player != null && player.getUniqueId() != null) {
+            int count = countOnlinePlayerAdvancements(player);
+            playerAdvancementsCache.put(player.getUniqueId(), count);
+        }
+    }
+
+    public void incrementAdvancements(UUID uuid) {
+        if (uuid != null) {
+            playerAdvancementsCache.compute(uuid, (k, v) -> (v == null ? 1 : v + 1));
+        }
+    }
+
+    private int readCompletedAdvancements(UUID uuid, String playerName) {
+        try {
+            File advFile = findAdvancementsFile(uuid, playerName);
+            if (advFile == null || !advFile.exists()) {
+                return 0;
+            }
+
+            String content = Files.readString(advFile.toPath(), StandardCharsets.UTF_8);
+            if (content == null || content.isEmpty()) return 0;
+
+            if (visibleAdvancementKeys.isEmpty()) {
+                refreshAdvancements();
+            }
+
+            int count = 0;
+            JsonObject root = JsonParser.parseString(content).getAsJsonObject();
+            for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+                String key = entry.getKey();
+                if (key == null || key.startsWith("minecraft:recipes/") || key.endsWith("/root") || key.equals("DataVersion")) {
+                    continue;
+                }
+
+                if (!visibleAdvancementKeys.isEmpty() && !visibleAdvancementKeys.contains(key)) {
+                    continue;
+                }
+
+                if (entry.getValue().isJsonObject()) {
+                    JsonObject obj = entry.getValue().getAsJsonObject();
+                    if (obj.has("done") && obj.get("done").getAsBoolean()) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        } catch (Throwable t) {
+            plugin.getLogger().warning("[MineCord] Не вдалося зчитати advancements для " + (uuid != null ? uuid : playerName) + ": " + t.getMessage());
+            return 0;
+        }
     }
 
     public Set<String> getCachedPlayerNames() {
