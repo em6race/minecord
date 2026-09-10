@@ -108,6 +108,11 @@ public class PlayerEventListener implements Listener {
         try {
             Player player = event.getPlayer();
 
+            if (plugin.getPlayerCacheManager() != null) {
+                plugin.getPlayerCacheManager().addPlayer(player.getName());
+                plugin.getPlayerCacheManager().updatePlayerLevel(player.getUniqueId(), player.getLevel());
+            }
+
             if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
                 String welcomeMessage = ChatColor.GOLD + "🎉 Вітаємо нового гравця " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " на сервері!";
                 plugin.getServer().broadcastMessage(welcomeMessage);
@@ -164,6 +169,10 @@ public class PlayerEventListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         try {
+            if (plugin.getPlayerCacheManager() != null) {
+                plugin.getPlayerCacheManager().updatePlayerLevel(event.getPlayer().getUniqueId(), event.getPlayer().getLevel());
+            }
+
             if (plugin.getConfig().getBoolean("events.join-leave", true)) {
                 if (plugin.getBotManager() != null) {
                     plugin.getBotManager().sendSystemEmbed(event.getPlayer().getName() + " вийшов із сервера.", 0xFF0000, event.getPlayer().getName());

@@ -76,8 +76,9 @@ public class BotManager {
 
                         Commands.slash("queuerestart", "Одноразовий рестарт у чергу при 0 онлайну (повтор команди скасовує)")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)),
-                        Commands.slash("stats", "Статистика сервера або гравця")
+                        Commands.slash("stats", "Статистика гравця (або ваша, якщо не вказано нік)")
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true),
+                        Commands.slash("serverinfo", "Інформація та стан сервера (TPS, оперативна пам'ять, онлайн)"),
                         Commands.slash("top", "Рейтинг найкращих гравців сервера")
                                 .addOptions(new net.dv8tion.jda.api.interactions.commands.build.OptionData(OptionType.STRING, "category", "Категорія рейтингу", false)
                                         .addChoice("⏱️ Награний час", "time")
