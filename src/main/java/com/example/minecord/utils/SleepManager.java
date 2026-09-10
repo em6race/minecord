@@ -6,8 +6,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +32,7 @@ public class SleepManager implements Listener {
     }
     
     public void stop() {
-        PlayerBedEnterEvent.getHandlerList().unregister(this);
+        HandlerList.unregisterAll(this);
     }
     
     @EventHandler
@@ -43,25 +45,69 @@ public class SleepManager implements Listener {
         // Wait 10 ticks (half a second) to ensure the player is considered "sleeping"
         Bukkit.getScheduler().runTaskLater(plugin, () -> checkSleep(world, event.getPlayer()), 10L);
     }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (World world : Bukkit.getWorlds()) {
+                if (world.getEnvironment() == World.Environment.NORMAL) {
+                    for (Player p : world.getPlayers()) {
+                        if (p.isSleeping()) {
+                            checkSleep(world, p);
+                            break;
+                        }
+                    }
+                }
+            }
+        }, 1L);
+    }
     
     private long lastNightSkipTime = 0;
 
     private void checkSleep(World world, Player bedEnterer) {
-        if (world.getTime() < 12541 && world.getTime() > 23458 && !world.hasStorm()) return;
+        long time = world.getTime();
+        boolean isNight = time >= 12541 && time <= 23458;
+        if (!isNight && !world.hasStorm()) return;
         
-        List<Player> players = world.getPlayers();
-        // Ignore players who are AFK using our AfkManager
-        List<Player> activePlayers = players.stream()
-            .filter(p -> plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
+        List<Player> nonSpectators = world.getPlayers().stream()
             .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)
             .collect(Collectors.toList());
             
-        int totalActive = activePlayers.size();
-        if (totalActive == 0) totalActive = 1;
+        int totalInWorld = nonSpectators.size();
+        if (totalInWorld == 0) return;
+
+        long totalOnline = Bukkit.getOnlinePlayers().stream()
+            .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)
+            .count();
+
+        boolean isSmallGroup = totalInWorld <= 2 || totalOnline <= 2;
         
-        long sleepingCount = activePlayers.stream().filter(Player::isSleeping).count();
+        List<Player> activePlayers;
+        int required;
         
-        int required = (int) Math.ceil(totalActive / 2.0);
+        if (isSmallGroup) {
+            // When 1 or 2 players are on the server/world, AFK players are NOT ignored and do not auto-skip night
+            activePlayers = nonSpectators;
+            required = totalInWorld; // 1 -> 1, 2 -> 2
+        } else {
+            // 3+ players: ignore AFK players
+            activePlayers = nonSpectators.stream()
+                .filter(p -> plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
+                .collect(Collectors.toList());
+            int totalActive = activePlayers.size();
+            if (totalActive == 0) totalActive = 1;
+            
+            if (totalActive <= 2) {
+                required = totalActive;
+            } else {
+                required = (int) Math.ceil(totalActive / 2.0);
+            }
+        }
+        
+        long sleepingCount = activePlayers.stream()
+            .filter(Player::isSleeping)
+            .filter(p -> plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
+            .count();
         
         if (sleepingCount >= required) {
             long now = System.currentTimeMillis();
@@ -97,8 +143,13 @@ public class SleepManager implements Listener {
                 plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
             }
         } else {
+            String poolLabel = totalInWorld == 1 ? "гравця" : "гравців";
+            if (!isSmallGroup) {
+                poolLabel = "активних";
+            }
+            int poolSize = isSmallGroup ? totalInWorld : activePlayers.size();
             Bukkit.broadcastMessage(ChatColor.YELLOW + "🛏 " + ChatColor.WHITE + 
-                bedEnterer.getName() + " ліг спати. Потрібно ще " + (required - sleepingCount) + " (всього " + required + " з " + totalActive + " активних).");
+                bedEnterer.getName() + " ліг спати. Потрібно ще " + (required - sleepingCount) + " (всього " + required + " з " + poolSize + " " + poolLabel + ").");
         }
     }
 }
