@@ -67,11 +67,12 @@
 * Можливість виконувати будь-які серверні команди прямо з текстового поля Discord без необхідності відкривати панель хостингу.
 
 ### 10. 📊 Моніторинг та оптимізація
-* **AFK-система**: Відстеження неактивності з автоматичним присвоєнням префіксу `[AFK]` у табі та чаті.
+* **AFK-система та захист від мобів**: Відстеження неактивності з відображенням таймера над головою, статусом `[АФК]` у табі та повною невразливістю до атак і снарядів мобів під час AFK.
 * **Стильний TabList**: Інформативний таб із відображенням пінгів, онлайну, TPS та привітання сервера.
 * **Команда статистики**: Перегляд ігрового часу, смертей та досягнень (`/stats`).
 * **Режим технічних робіт (`/maintenance`)**: Швидке закриття сервера на обслуговування з персоналізованим повідомленням про причину робіт.
 * **Автооновлення BlueMap**: Періодичне виконання `/bluemap reload` (за замовчуванням кожні 2 години) для автоматичної актуалізації веб-карти.
+* **Поради та факти при вході**: З невеликим шансом (за замовчуванням 20%) гравець при підключенні отримує персональну корисну пораду про можливості сервера (мапа, пошта, тікети, статистика тощо).
 * **Sentry Error Tracking**: Вбудоване логування винятків для миттєвого виявлення та налагодження помилок.
 
 ---
@@ -165,11 +166,12 @@
 * Execute any server console command directly by typing it in the Discord channel.
 
 ### 10. 📊 Monitoring & Polish
-* **AFK Detection**: Automatically flags inactive players with an `[AFK]` prefix in the player list and chat.
+* **AFK Detection & Mob Invulnerability**: Inactivity tracking with 3D overhead timer, `[AFK]` status, and complete invulnerability against hostile mob attacks and projectiles while AFK.
 * **Custom TabList**: Clean header and footer showing online count, TPS, ping, and server branding.
 * **Stats Command**: Inspect player playtime, death count, and achievements (`/stats`).
 * **Maintenance Mode (`/maintenance`)**: Close the server to non-staff players with a custom kick screen.
 * **BlueMap Auto-Reload**: Periodic execution of `/bluemap reload` (by default every 2 hours) to keep web maps constantly refreshed.
+* **Join Tips & Facts**: With a configurable chance (default 20%), connecting players receive a private, helpful tip or fun fact about server features (/map, /mail, /ticket, /stats, etc.).
 * **Sentry Error Tracking**: Built-in exception capture for instant diagnostics.
 
 ---
