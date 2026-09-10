@@ -222,8 +222,13 @@ public class PlayerEventListener implements Listener {
                     // Strip Minecraft color codes from message
                     String cleanMessage = ChatColor.stripColor(deathMessage);
                     
-                    // Translate message to Ukrainian
-                    String translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
+                    // Translate message to Ukrainian with fallback
+                    String translatedMessage = cleanMessage;
+                    try {
+                        translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
+                    } catch (Throwable t) {
+                        plugin.getLogger().warning("Не вдалося перекласти повідомлення про смерть: " + t.getMessage());
+                    }
                     
                     if (plugin.getBotManager() != null) {
                         plugin.getBotManager().sendSystemEmbed("💀 " + translatedMessage, 0x000000, player.getName());
@@ -258,7 +263,12 @@ public class PlayerEventListener implements Listener {
             // Paper API getDisplay() can throw UnsupportedOperationException
         }
 
-        String translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
+        String translatedTitle = fallbackTitle;
+        try {
+            translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
+        } catch (Throwable t) {
+            plugin.getLogger().warning("Не вдалося перекласти назву досягнення: " + t.getMessage());
+        }
         
         // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
         // But we have translations for all standard ones.
