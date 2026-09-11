@@ -11,6 +11,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,9 +157,7 @@ public class RoleSyncManager {
             if (!nametagColor) {
                 for (Team t : sb.getTeams()) {
                     if (t.getName().startsWith("mc_")) {
-                        try {
-                            t.setColor(ChatColor.RESET);
-                        } catch (Throwable ignored) {}
+                        clearTeamColor(t);
                     }
                 }
             }
@@ -321,13 +320,9 @@ public class RoleSyncManager {
 
             boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", false);
             if (nametagColor && role.color != null) {
-                try {
-                    team.setColor(role.color);
-                } catch (Throwable ignored) {}
+                applyTeamColor(team, role.color);
             } else {
-                try {
-                    team.setColor(ChatColor.RESET);
-                } catch (Throwable ignored) {}
+                clearTeamColor(team);
             }
 
             boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
@@ -403,7 +398,58 @@ public class RoleSyncManager {
         } catch (Throwable ignored) {}
     }
 
-    private void cleanupScoreboardTeams() {
+    public static void clearTeamColor(Team team) {
+        if (team == null) return;
+        // 1. Paper / Adventure API: setting color to null clears team color and restores vanilla UUID-based marker color
+        try {
+            team.color((NamedTextColor) null);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 2. Direct NMS PlayerTeam reflection fallback (sets color to ChatFormatting.RESET)
+        try {
+            java.lang.reflect.Method getHandle = team.getClass().getMethod("getHandle");
+            Object nmsTeam = getHandle.invoke(team);
+            for (java.lang.reflect.Method m : nmsTeam.getClass().getMethods()) {
+                if (m.getName().equals("setColor") && m.getParameterCount() == 1) {
+                    Class<?> paramType = m.getParameterTypes()[0];
+                    if (paramType.isEnum()) {
+                        for (Object constant : paramType.getEnumConstants()) {
+                            if ("RESET".equals(((Enum<?>) constant).name())) {
+                                m.invoke(nmsTeam, constant);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public static void applyTeamColor(Team team, ChatColor chatColor) {
+        if (team == null) return;
+        if (chatColor == null || chatColor == ChatColor.RESET) {
+            clearTeamColor(team);
+            return;
+        }
+        try {
+            NamedTextColor named = NamedTextColor.NAMES.value(chatColor.name().toLowerCase(Locale.ROOT));
+            if (named != null) {
+                team.color(named);
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            if (chatColor.isColor()) {
+                team.setColor(chatColor);
+            } else {
+                clearTeamColor(team);
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public void cleanupScoreboardTeams() {
         try {
             Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
             for (Team t : new ArrayList<>(sb.getTeams())) {
