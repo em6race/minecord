@@ -413,4 +413,41 @@ public class RoleSyncManager {
             }
         } catch (Throwable ignored) {}
     }
+
+    private static final java.util.regex.Pattern ROLE_TAG_REGEX_1 = java.util.regex.Pattern.compile(
+            "\\[\\s*(?:[⚔💻🛡👑💵⛏⚡]|\b(?:ст\\.?\\s*модератор|модератор|розробник|спонсор|vip|віп|гравець|admin|moder|player|dev|афк)\b)[^\\]]*\\]\\s*",
+            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+    );
+
+    private static final java.util.regex.Pattern ROLE_TAG_REGEX_2 = java.util.regex.Pattern.compile(
+            "\\[[^\\]]*(?:модератор|розробник|спонсор|гравець|admin|vip|віп|афк)[^\\]]*\\]\\s*",
+            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+    );
+
+    public static String stripRoleTags(String text) {
+        if (text == null || text.isEmpty()) return text;
+        String cleaned = ROLE_TAG_REGEX_1.matcher(text).replaceAll("");
+        cleaned = ROLE_TAG_REGEX_2.matcher(cleaned).replaceAll("");
+        return cleaned.replaceAll("\\s{2,}", " ").trim();
+    }
+
+    public String cleanRoleTags(String text) {
+        if (text == null || text.isEmpty()) return text;
+        String cleaned = text;
+        for (RoleDefinition def : configuredRoles) {
+            if (def.prefix != null && !def.prefix.isEmpty()) {
+                String stripped = ChatColor.stripColor(def.prefix).trim();
+                if (!stripped.isEmpty()) {
+                    cleaned = cleaned.replace(stripped, "");
+                }
+            }
+        }
+        if (unlinkedRole != null && unlinkedRole.prefix != null) {
+            String stripped = ChatColor.stripColor(unlinkedRole.prefix).trim();
+            if (!stripped.isEmpty()) {
+                cleaned = cleaned.replace(stripped, "");
+            }
+        }
+        return stripRoleTags(cleaned);
+    }
 }

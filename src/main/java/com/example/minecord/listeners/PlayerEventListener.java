@@ -220,6 +220,11 @@ public class PlayerEventListener implements Listener {
                 if (deathMessage != null) {
                     // Strip Minecraft color codes from message
                     String cleanMessage = ChatColor.stripColor(deathMessage);
+                    if (plugin.getRoleSyncManager() != null) {
+                        cleanMessage = plugin.getRoleSyncManager().cleanRoleTags(cleanMessage);
+                    } else {
+                        cleanMessage = com.example.minecord.utils.RoleSyncManager.stripRoleTags(cleanMessage);
+                    }
                     
                     // Translate message to Ukrainian with fallback
                     String translatedMessage = cleanMessage;
@@ -227,6 +232,12 @@ public class PlayerEventListener implements Listener {
                         translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
                     } catch (Throwable t) {
                         plugin.getLogger().warning("Не вдалося перекласти повідомлення про смерть: " + t.getMessage());
+                    }
+
+                    if (plugin.getRoleSyncManager() != null) {
+                        translatedMessage = plugin.getRoleSyncManager().cleanRoleTags(translatedMessage);
+                    } else {
+                        translatedMessage = com.example.minecord.utils.RoleSyncManager.stripRoleTags(translatedMessage);
                     }
                     
                     if (plugin.getBotManager() != null) {

@@ -251,6 +251,11 @@ public class BotManager {
     // Send message as Discord Embed card
     public void sendSystemEmbed(String text, int color, String playerName) {
         if (jda == null) return;
+        if (text != null && plugin.getRoleSyncManager() != null) {
+            text = plugin.getRoleSyncManager().cleanRoleTags(text);
+        } else if (text != null) {
+            text = com.example.minecord.utils.RoleSyncManager.stripRoleTags(text);
+        }
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
@@ -276,6 +281,11 @@ public class BotManager {
     // Synchronous delivery to ensure message is delivered before shutdown
     public void sendSystemEmbedSync(String text, int color, String playerName) {
         if (jda == null) return;
+        if (text != null && plugin.getRoleSyncManager() != null) {
+            text = plugin.getRoleSyncManager().cleanRoleTags(text);
+        } else if (text != null) {
+            text = com.example.minecord.utils.RoleSyncManager.stripRoleTags(text);
+        }
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
