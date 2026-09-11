@@ -114,13 +114,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                         .setEphemeral(true)
                         .queue();
             } else {
+                event.deferReply(true).queue();
                 plugin.getLinkManager().linkAccount(code, event.getUser().getId());
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     // Get player name (even if offline)
                     org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(uuid);
                     String playerName = offlinePlayer.getName() != null ? offlinePlayer.getName() : "Гравця";
 
-                    event.reply("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").setEphemeral(true).queue();
+                    event.getHook().sendMessage("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").queue();
 
                     // Notify player directly in-game if online and trigger role sync
                     Player onlinePlayer = plugin.getServer().getPlayer(uuid);
@@ -136,6 +137,8 @@ public class DiscordCommandListener extends ListenerAdapter {
         else if (event.getName().equals("maintenance")) {
             if (!isAdmin(event)) return;
             boolean enable = event.getOption("enabled").getAsBoolean();
+
+            event.deferReply(true).queue();
 
             // Perform all server state changes on the main Minecraft thread
             plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -154,9 +157,9 @@ public class DiscordCommandListener extends ListenerAdapter {
                             kickedCount++;
                         }
                     }
-                    event.reply("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).setEphemeral(true).queue();
+                    event.getHook().sendMessage("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).queue();
                 } else {
-                    event.reply("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").setEphemeral(true).queue();
+                    event.getHook().sendMessage("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").queue();
                 }
             });
         }
@@ -617,13 +620,13 @@ public class DiscordCommandListener extends ListenerAdapter {
         }
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);
-            event.reply("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(
-                success -> {},
-                error -> {
-                    // If deferReply was already called, reply() throws an error, so send via hook instead
-                    event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue();
+            try {
+                if (event.isAcknowledged()) {
+                    event.getHook().sendMessage("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(null, err -> {});
+                } else {
+                    event.reply("❌ Внутрішня помилка бота при виконанні команди. Перевірте консоль.").setEphemeral(true).queue(null, err -> {});
                 }
-            );
+            } catch (Throwable ignored) {}
         }
     }
 
