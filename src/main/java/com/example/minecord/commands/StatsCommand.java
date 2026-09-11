@@ -43,13 +43,15 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
                     ? plugin.getPlayerCacheManager().resolvePlayerWithData(targetName, (java.util.List<java.util.UUID>) null) 
                     : plugin.getServer().getOfflinePlayer(targetName);
 
+            boolean isWhitelisted = (target != null && target.isWhitelisted()) ||
+                    (plugin.getPlayerCacheManager() != null && plugin.getPlayerCacheManager().isWhitelisted(targetName));
             boolean hasPlayed = target != null && (target.hasPlayedBefore() || target.isOnline() || target.getLastPlayed() > 0);
             if (!hasPlayed && target != null && plugin.getPlayerCacheManager() != null) {
                 hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(target);
             }
 
-            if (target == null || !hasPlayed) {
-                sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері (або він ніколи не заходив).");
+            if (target == null || (!hasPlayed && !isWhitelisted)) {
+                sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері та у вайтлісті.");
                 return;
             }
 
@@ -87,7 +89,11 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.GREEN + "Онлайн " + ChatColor.GRAY + "(Пінг: " + p.getPing() + " ms)");
             viewer.sendMessage(ChatColor.WHITE + "Рівень: " + p.getLevel() + " lvl");
         } else {
-            viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.RED + "Офлайн");
+            if (!target.hasPlayedBefore() && target.getLastPlayed() <= 0) {
+                viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.GRAY + "У вайтлісті (ще не заходив на сервер)");
+            } else {
+                viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.RED + "Офлайн");
+            }
             if (plugin.getPlayerCacheManager() != null) {
                 com.example.minecord.utils.PlayerCacheManager.PlayerXpData xp = plugin.getPlayerCacheManager().getPlayerXp(target);
                 if (xp.totalExp > 0) {

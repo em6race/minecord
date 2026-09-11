@@ -308,12 +308,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                         }
                     }
 
+                    boolean isWhitelisted = (offlinePlayer != null && offlinePlayer.isWhitelisted()) ||
+                            (targetName != null && plugin.getPlayerCacheManager() != null && plugin.getPlayerCacheManager().isWhitelisted(targetName));
                     boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
                     if (!hasPlayed && offlinePlayer != null && plugin.getPlayerCacheManager() != null) {
                         hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(offlinePlayer);
                     }
 
-                    if (offlinePlayer == null || !hasPlayed) {
+                    if (offlinePlayer == null || (!hasPlayed && !isWhitelisted)) {
                         String nameToShow = targetName;
                         if (nameToShow == null && offlinePlayer != null) {
                             nameToShow = offlinePlayer.getName();
@@ -326,7 +328,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                         }
                         if (nameToShow == null) nameToShow = "невідомий";
 
-                        event.getHook().sendMessage("❌ Гравця з ніком **" + nameToShow + "** не знайдено на сервері (або він ніколи не заходив).").setEphemeral(true).queue();
+                        event.getHook().sendMessage("❌ Гравця з ніком **" + nameToShow + "** не знайдено на сервері та у вайтлісті.").setEphemeral(true).queue();
                         return;
                     }
 
@@ -364,11 +366,16 @@ public class DiscordCommandListener extends ListenerAdapter {
                         embed.addField("📶 Пінг", onlineP.getPing() + " ms", true);
                     } else {
                         embed.setColor(0x5865F2); // Blurple
-                        embed.setDescription("🔴 **Статус:** Офлайн");
-                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm");
-                        sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
-                        String lastSeen = offlinePlayer.getLastPlayed() > 0 ? sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())) : "Невідомо";
-                        embed.addField("🕒 Останній вхід", lastSeen, true);
+                        if (!hasPlayed) {
+                            embed.setDescription("⚪ **Статус:** У вайтлісті (ще не заходив на сервер)");
+                            embed.addField("🕒 Останній вхід", "Ще не заходив", true);
+                        } else {
+                            embed.setDescription("🔴 **Статус:** Офлайн");
+                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm");
+                            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Europe/Kyiv"));
+                            String lastSeen = offlinePlayer.getLastPlayed() > 0 ? sdf.format(new java.util.Date(offlinePlayer.getLastPlayed())) : "Невідомо";
+                            embed.addField("🕒 Останній вхід", lastSeen, true);
+                        }
                     }
 
                     int deaths = 0;
