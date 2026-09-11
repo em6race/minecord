@@ -198,6 +198,8 @@ role-sync:
   enabled: true
   # Відображати префікс ролі у TAB-листі
   tab-prefix: true
+  # Відображати префікс ролі та емодзі над головою гравця у грі (у 3D світі)
+  nametag-prefix: true
   # Сортувати гравців у TAB за ієрархією ролей (через Scoreboard Teams)
   tab-sorting: true
   # Фарбувати нікнейм над головою гравця у колір його ролі
@@ -209,46 +211,47 @@ role-sync:
 
   # Налаштування ролей за ієрархією (пріоритет: 1 - найвищий)
   # Можна вказувати role-id (ID ролі в Discord) та/або role-name (назву ролі в Discord, ігнорує регістр)
+  # Підтримуються як звичайні коди (&9, &c), так і сучасні 16M HEX-градієнти (&#RRGGBB)
   roles:
     senior_moderator:
       role-id: ""
       role-name: "старший модератор"
-      prefix: "&9&l[🛡 Ст. Модератор] &r"
+      prefix: "&#0072ff&l[🛡 &#00c6ff&lСт. Модератор&#0072ff&l] &r"
       color: "BLUE"
       priority: 1
     developer:
       role-id: ""
       role-name: "розробник"
-      prefix: "&c&l[⚙ Розробник] &r"
+      prefix: "&#ff416c&l[⚙ &#ff4b2b&lРозробник&#ff416c&l] &r"
       color: "DARK_RED"
       priority: 2
     moderator:
       role-id: ""
       role-name: "модератор"
-      prefix: "&b&l[⚔ Модератор] &r"
+      prefix: "&#00b4db&l[⚔ &#0083b0&lМодератор&#00b4db&l] &r"
       color: "AQUA"
       priority: 3
     vip_sponsor:
       role-id: ""
       role-name: "VIP спонсор"
-      prefix: "&d&l[👑 VIP Спонсор] &r"
+      prefix: "&#da22ff&l[👑 &#9733ee&lVIP Спонсор&#da22ff&l] &r"
       color: "LIGHT_PURPLE"
       priority: 4
     sponsor:
       role-id: ""
       role-name: "спонсор"
-      prefix: "&6&l[💎 Спонсор] &r"
+      prefix: "&#f7971e&l[💎 &#ffd200&lСпонсор&#f7971e&l] &r"
       color: "GOLD"
       priority: 5
     player:
       role-id: ""
       role-name: "гравець"
-      prefix: "&a[Гравець] &r"
+      prefix: "&#56ab2f[&#a8e063Гравець&#56ab2f] &r"
       color: "GREEN"
       priority: 6
 
   # Налаштування для гравців без прив'язаного акаунта до Discord
   unlinked:
-    prefix: "&7"
+    prefix: "&#757f9a"
     color: "GRAY"
     priority: 99
