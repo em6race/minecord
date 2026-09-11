@@ -448,8 +448,80 @@ public class PlayerCacheManager {
     }
 
     /**
+     * Reads the current live whitelist from whitelist.json and Bukkit whitelist.
+     * Always returns up-to-date names so removed players are instantly omitted from autocomplete.
+     */
+    public Set<String> getCurrentWhitelistedPlayers() {
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+        // 1. From whitelist.json directly
+        File[] possibleFiles = new File[] {
+                new File("whitelist.json"),
+                new File(plugin.getServer().getWorldContainer(), "whitelist.json")
+        };
+        for (File file : possibleFiles) {
+            if (file.exists() && file.canRead()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    Matcher entryMatcher = Pattern.compile("\"uuid\"\\s*:\\s*\"([0-9a-fA-F-]+)\"\\s*,\\s*\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(sb.toString());
+                    while (entryMatcher.find()) {
+                        String uStr = entryMatcher.group(1).trim();
+                        String n = entryMatcher.group(2).trim();
+                        if (!n.isEmpty()) {
+                            names.add(n);
+                            try {
+                                addPlayer(n, UUID.fromString(uStr));
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    if (names.isEmpty()) {
+                        Matcher nameMatcher = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(sb.toString());
+                        while (nameMatcher.find()) {
+                            String n = nameMatcher.group(1).trim();
+                            if (!n.isEmpty()) {
+                                names.add(n);
+                            }
+                        }
+                    }
+                    if (!names.isEmpty()) {
+                        break;
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // 2. From Bukkit whitelist API
+        try {
+            for (OfflinePlayer op : Bukkit.getWhitelistedPlayers()) {
+                String n = op.getName();
+                if (n == null && op.getUniqueId() != null) {
+                    n = resolvePlayerName(op.getUniqueId());
+                }
+                if (n != null && !n.trim().isEmpty()) {
+                    names.add(n.trim());
+                    if (op.getUniqueId() != null) {
+                        addPlayer(n.trim(), op.getUniqueId());
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        return names;
+    }
+
+    public boolean isWhitelisted(String playerName) {
+        if (playerName == null || playerName.trim().isEmpty()) return false;
+        return getCurrentWhitelistedPlayers().contains(playerName.trim());
+    }
+
+    /**
      * Returns matching player suggestions for Discord autocomplete (max 25).
-     * Online players are prioritized at the top of the list.
+     * Online players are prioritized at the top of the list, followed by the current live whitelist.
+     * Removed whitelist players are automatically excluded.
      */
     public List<String> getMatchingPlayers(String partial) {
         String prefix = (partial == null) ? "" : partial.trim().toLowerCase();
@@ -470,7 +542,25 @@ public class PlayerCacheManager {
             }
         } catch (Throwable ignored) {}
 
-        // 2. Second priority: whitelisted / cached players
+        // 2. Second priority: current live whitelist (excludes removed players!)
+        Set<String> liveWhitelist = getCurrentWhitelistedPlayers();
+        if (!liveWhitelist.isEmpty()) {
+            List<String> sortedWhitelist = new ArrayList<>(liveWhitelist);
+            Collections.sort(sortedWhitelist, String.CASE_INSENSITIVE_ORDER);
+
+            for (String name : sortedWhitelist) {
+                if (!seen.contains(name.toLowerCase()) && name.toLowerCase().startsWith(prefix)) {
+                    results.add(name);
+                    seen.add(name.toLowerCase());
+                    if (results.size() >= 25) {
+                        break;
+                    }
+                }
+            }
+            return results;
+        }
+
+        // 3. Fallback (if server doesn't use whitelist): cached players
         List<String> sortedCached = new ArrayList<>(cachedPlayerNames);
         Collections.sort(sortedCached, String.CASE_INSENSITIVE_ORDER);
 

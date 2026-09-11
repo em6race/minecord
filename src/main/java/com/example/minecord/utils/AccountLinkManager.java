@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +20,7 @@ public class AccountLinkManager {
     // from multiple threads (Discord callbacks, AsyncPlayerPreLoginEvent, etc.)
     private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
     private final Map<UUID, String> linkedAccounts = new ConcurrentHashMap<>();
+    private final Set<UUID> adminLinkedAccounts = ConcurrentHashMap.newKeySet();
     // FIX: Store code creation time for automatic expiration after 10 mins
     private final Map<String, Long> codeExpiry = new ConcurrentHashMap<>();
     private static final long CODE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
@@ -53,6 +55,14 @@ public class AccountLinkManager {
                 }
             }
         }
+
+        if (linksConfig.contains("admin-links")) {
+            for (String uuidStr : linksConfig.getStringList("admin-links")) {
+                try {
+                    adminLinkedAccounts.add(UUID.fromString(uuidStr));
+                } catch (IllegalArgumentException ignored) {}
+            }
+        }
     }
 
     // Save links to file
@@ -61,6 +71,11 @@ public class AccountLinkManager {
         for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
             linksConfig.set("links." + entry.getKey().toString(), entry.getValue());
         }
+        List<String> adminList = new ArrayList<>();
+        for (UUID u : adminLinkedAccounts) {
+            adminList.add(u.toString());
+        }
+        linksConfig.set("admin-links", adminList);
         try {
             linksConfig.save(linksFile);
         } catch (IOException e) {
@@ -98,14 +113,18 @@ public class AccountLinkManager {
     }
 
     // Link account
-    public void linkAccount(String code, String discordId) {
-        UUID uuid = pendingCodes.remove(code);
-        codeExpiry.remove(code);
-        if (uuid != null && discordId != null) {
-            linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
-            linkedAccounts.put(uuid, discordId);
-            saveLinks();
+    public boolean linkAccount(String code, String discordId) {
+        UUID uuid = pendingCodes.get(code);
+        if (uuid == null || discordId == null) return false;
+        if (adminLinkedAccounts.contains(uuid)) {
+            return false;
         }
+        pendingCodes.remove(code);
+        codeExpiry.remove(code);
+        linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
+        linkedAccounts.put(uuid, discordId);
+        saveLinks();
+        return true;
     }
 
     // Direct account linking
@@ -113,7 +132,21 @@ public class AccountLinkManager {
         if (uuid == null || discordId == null) return;
         linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
         linkedAccounts.put(uuid, discordId);
+        adminLinkedAccounts.add(uuid);
         saveLinks();
+    }
+
+    public boolean isAdminLinked(UUID uuid) {
+        return uuid != null && adminLinkedAccounts.contains(uuid);
+    }
+
+    public boolean isLinkedTo(UUID uuid, String discordId) {
+        if (uuid == null || discordId == null) return false;
+        return discordId.equals(linkedAccounts.get(uuid));
+    }
+
+    public Map<UUID, String> getAllLinks() {
+        return java.util.Collections.unmodifiableMap(linkedAccounts);
     }
 
     public String getDiscordId(UUID uuid) {
@@ -122,6 +155,26 @@ public class AccountLinkManager {
 
     public boolean isLinked(UUID uuid) {
         return linkedAccounts.containsKey(uuid);
+    }
+
+    public boolean unlinkAccount(UUID uuid) {
+        if (uuid == null) return false;
+        if (adminLinkedAccounts.contains(uuid)) {
+            return false;
+        }
+        boolean removed = linkedAccounts.remove(uuid) != null;
+        if (removed) {
+            saveLinks();
+        }
+        return removed;
+    }
+
+    public boolean unlinkAccountForced(UUID uuid) {
+        if (uuid == null) return false;
+        adminLinkedAccounts.remove(uuid);
+        boolean removed = linkedAccounts.remove(uuid) != null;
+        saveLinks();
+        return removed;
     }
 
     public UUID getUUIDFromDiscordId(String discordId) {

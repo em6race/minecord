@@ -7,11 +7,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class MineCordCommand implements CommandExecutor, TabCompleter {
 
@@ -56,6 +59,34 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.YELLOW + "Перезавантаження конфігурації та бота MineCord...");
                 plugin.reloadPlugin();
                 sender.sendMessage(ChatColor.GREEN + "MineCord успішно перезавантажено!");
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
+                return true;
+            }
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("links")) {
+            if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                Map<UUID, String> allLinks = plugin.getLinkManager().getAllLinks();
+                sender.sendMessage(ChatColor.GOLD + "=== [MineCord] Прив'язані акаунти (" + allLinks.size() + ") ===");
+                if (allLinks.isEmpty()) {
+                    sender.sendMessage(ChatColor.GRAY + "Прив'язаних акаунтів поки немає.");
+                } else {
+                    for (Map.Entry<UUID, String> entry : allLinks.entrySet()) {
+                        UUID uuid = entry.getKey();
+                        String discordId = entry.getValue();
+                        String pName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(uuid) : null;
+                        if (pName == null) {
+                            OfflinePlayer op = plugin.getServer().getOfflinePlayer(uuid);
+                            pName = op.getName() != null ? op.getName() : uuid.toString().substring(0, 8);
+                        }
+                        boolean adminLinked = plugin.getLinkManager().isAdminLinked(uuid);
+                        sender.sendMessage(ChatColor.YELLOW + "• " + ChatColor.WHITE + pName + 
+                                ChatColor.GRAY + " ⮀ Discord ID: " + ChatColor.AQUA + discordId + 
+                                (adminLinked ? ChatColor.GOLD + " [Admin 👑]" : ""));
+                    }
+                }
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
@@ -141,6 +172,12 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         if (args.length > 0 && args[0].equalsIgnoreCase("link")) {
             AccountLinkManager linkManager = plugin.getLinkManager();
             
+            if (linkManager.isAdminLinked(player.getUniqueId())) {
+                player.sendMessage(ChatColor.RED + "❌ Ваш акаунт прив'язано адміністратором (/linkadmin).");
+                player.sendMessage(ChatColor.GRAY + "Ви не можете самостійно змінити прив'язку. Зверніться до адміністратора сервера.");
+                return true;
+            }
+
             // If already linked
             if (linkManager.isLinked(player.getUniqueId())) {
                 player.sendMessage(ChatColor.GREEN + "Ваш акаунт вже прив'язано до Discord!");
@@ -151,6 +188,25 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             String code = linkManager.generateCode(player.getUniqueId());
             player.sendMessage(ChatColor.GOLD + "Ваш код для прив'язки: " + ChatColor.AQUA + ChatColor.BOLD + code);
             player.sendMessage(ChatColor.YELLOW + "Зайдіть на наш Discord сервер і введіть команду: " + ChatColor.WHITE + "/link " + code);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("unlink")) {
+            AccountLinkManager linkManager = plugin.getLinkManager();
+            if (linkManager.isAdminLinked(player.getUniqueId())) {
+                player.sendMessage(ChatColor.RED + "❌ Ваш акаунт прив'язано адміністратором (/linkadmin).");
+                player.sendMessage(ChatColor.GRAY + "Ви не можете самостійно відв'язати його. Зверніться до адміністратора сервера.");
+                return true;
+            }
+            if (!linkManager.isLinked(player.getUniqueId())) {
+                player.sendMessage(ChatColor.YELLOW + "Ваш акаунт не прив'язаний до Discord.");
+                return true;
+            }
+            linkManager.unlinkAccount(player.getUniqueId());
+            player.sendMessage(ChatColor.GREEN + "✅ Ваш акаунт успішно відв'язано від Discord.");
+            if (plugin.getRoleSyncManager() != null) {
+                plugin.getRoleSyncManager().syncPlayer(player);
+            }
             return true;
         }
 
@@ -281,7 +337,12 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         } else if (command.getName().equalsIgnoreCase("discord") || command.getName().equalsIgnoreCase("minecord")) {
             if (args.length == 1) {
                 List<String> sub = new ArrayList<>();
-                for (String s : List.of("link", "unlink", "help", "reload")) {
+                List<String> available = new ArrayList<>(List.of("link", "unlink", "help"));
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    available.add("reload");
+                    available.add("links");
+                }
+                for (String s : available) {
                     if (s.startsWith(args[0].toLowerCase())) {
                         sub.add(s);
                     }

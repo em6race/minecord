@@ -45,7 +45,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
                               "🔸 `/queuerestart` — Одноразовий розумний рестарт при 0 онлайну\n" +
-                              "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord";
+                              "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord\n" +
+                              "🔸 `/links` — Список усіх прив'язаних акаунтів (Minecraft ⮀ Discord)";
             embed.setDescription(commands);
 
             event.replyEmbeds(embed.build()).setEphemeral(true).queue();
@@ -106,6 +107,10 @@ public class DiscordCommandListener extends ListenerAdapter {
 
             if (uuid == null) {
                 event.replyEmbeds(createLinkGuideEmbed("❌ **Невірний або застарілий код!**\nКод діє обмежений час (10 хвилин). Переконайтеся, що ви отримали актуальний код у грі через `/discord link` та ввели його без помилок.", false))
+                        .setEphemeral(true)
+                        .queue();
+            } else if (plugin.getLinkManager().isAdminLinked(uuid)) {
+                event.reply("❌ Цей Minecraft-акаунт було прив'язано адміністратором (`/linkadmin`). Ви не можете самостійно змінити або перезаписати прив'язку. Зверніться до адміністратора сервера.")
                         .setEphemeral(true)
                         .queue();
             } else {
@@ -467,25 +472,45 @@ public class DiscordCommandListener extends ListenerAdapter {
             event.deferReply(true).queue();
             String playerName = event.getOption("player").getAsString();
             net.dv8tion.jda.api.entities.User discordUser = event.getOption("user").getAsUser();
+
+            if (discordUser.isBot() || discordUser.isSystem()) {
+                event.getHook().sendMessage("❌ Не можна прив'язувати Minecraft-акаунт до бота! Будь ласка, оберіть реального користувача Discord.").setEphemeral(true).queue();
+                return;
+            }
             
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     org.bukkit.OfflinePlayer offlinePlayer = plugin.getPlayerCacheManager() != null 
                             ? plugin.getPlayerCacheManager().resolvePlayerWithData(playerName, (java.util.List<java.util.UUID>) null) 
                             : plugin.getServer().getOfflinePlayer(playerName);
+                    boolean isWhitelisted = (offlinePlayer != null && offlinePlayer.isWhitelisted()) ||
+                            (plugin.getPlayerCacheManager() != null && plugin.getPlayerCacheManager().isWhitelisted(playerName));
                     boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
                     if (!hasPlayed && offlinePlayer != null && plugin.getPlayerCacheManager() != null) {
                         hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(offlinePlayer);
                     }
-                    if (offlinePlayer == null || !hasPlayed) {
-                        event.getHook().sendMessage("❌ Гравця **" + playerName + "** не знайдено на сервері.").setEphemeral(true).queue();
+                    if (offlinePlayer == null || (!hasPlayed && !isWhitelisted)) {
+                        event.getHook().sendMessage("❌ Гравця **" + playerName + "** не знайдено на сервері та у вайтлісті.").setEphemeral(true).queue();
                         return;
                     }
-                    
-                    plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
+
                     String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId()) : null;
                     String name = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : playerName);
-                    event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
+
+                    String currentDiscordId = plugin.getLinkManager().getDiscordId(offlinePlayer.getUniqueId());
+                    if (currentDiscordId != null && currentDiscordId.equals(discordUser.getId())) {
+                        event.getHook().sendMessage("ℹ️ Акаунт Minecraft **" + name + "** вже прив'язаний до користувача Discord " + discordUser.getAsMention() + "!").queue();
+                        return;
+                    }
+
+                    boolean wasReLinked = currentDiscordId != null;
+                    plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
+
+                    if (wasReLinked) {
+                        event.getHook().sendMessage("🔄 Акаунт Minecraft **" + name + "** переприв'язано на нового користувача Discord " + discordUser.getAsMention() + "!").queue();
+                    } else {
+                        event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
+                    }
 
                     if (plugin.getRoleSyncManager() != null) {
                         Player onlineP = plugin.getServer().getPlayer(offlinePlayer.getUniqueId());
@@ -497,6 +522,50 @@ public class DiscordCommandListener extends ListenerAdapter {
                 } catch (Throwable t) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка linkadmin: " + t.getMessage(), t);
                     event.getHook().sendMessage("❌ Помилка прив'язки акаунта.").setEphemeral(true).queue();
+                }
+            });
+        }
+        else if (event.getName().equals("links")) {
+            if (!isAdmin(event)) return;
+            event.deferReply(true).queue();
+
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    java.util.Map<java.util.UUID, String> allLinks = plugin.getLinkManager().getAllLinks();
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    embed.setTitle("🔗 Список прив'язаних акаунтів (" + allLinks.size() + ")");
+                    embed.setColor(0x5865F2);
+
+                    if (allLinks.isEmpty()) {
+                        embed.setDescription("*Прив'язаних акаунтів поки немає.*");
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        int count = 0;
+                        for (java.util.Map.Entry<java.util.UUID, String> entry : allLinks.entrySet()) {
+                            java.util.UUID uuid = entry.getKey();
+                            String discordId = entry.getValue();
+                            String pName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(uuid) : null;
+                            if (pName == null) {
+                                org.bukkit.OfflinePlayer op = plugin.getServer().getOfflinePlayer(uuid);
+                                pName = op.getName() != null ? op.getName() : uuid.toString().substring(0, 8);
+                            }
+                            boolean adminLinked = plugin.getLinkManager().isAdminLinked(uuid);
+                            String line = "• **" + pName + "** ⮀ <@" + discordId + ">" + (adminLinked ? " `👑 linkadmin`" : "") + "\n";
+
+                            if (sb.length() + line.length() > 3800) {
+                                sb.append("\n*...і ще ").append(allLinks.size() - count).append(" акаунтів.*");
+                                break;
+                            }
+                            sb.append(line);
+                            count++;
+                        }
+                        embed.setDescription(sb.toString());
+                    }
+                    embed.setFooter("MineCord • Прив'язки акаунтів");
+                    event.getHook().sendMessageEmbeds(embed.build()).queue();
+                } catch (Throwable t) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка /links: " + t.getMessage(), t);
+                    event.getHook().sendMessage("❌ Не вдалося отримати список прив'язаних акаунтів.").setEphemeral(true).queue();
                 }
             });
         }
