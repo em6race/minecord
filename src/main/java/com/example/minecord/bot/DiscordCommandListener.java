@@ -154,9 +154,9 @@ public class DiscordCommandListener extends ListenerAdapter {
                             kickedCount++;
                         }
                     }
-                    event.reply("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).queue();
+                    event.reply("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).setEphemeral(true).queue();
                 } else {
-                    event.reply("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").queue();
+                    event.reply("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").setEphemeral(true).queue();
                 }
             });
         }
@@ -171,7 +171,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                 String time = event.getOption("time").getAsString();
                 if (time.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
                     manager.addTime(time);
-                    event.reply("✅ Час `" + time + "` успішно додано до авторестартів.").queue();
+                    event.reply("✅ Час `" + time + "` успішно додано до авторестартів.").setEphemeral(true).queue();
                 } else {
                     event.reply("❌ Невірний формат часу! Використовуйте HH:mm (наприклад, 04:00 або 15:30)").setEphemeral(true).queue();
                 }
@@ -179,7 +179,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             else if (sub.equals("remove")) {
                 String time = event.getOption("time").getAsString();
                 if (manager.removeTime(time)) {
-                    event.reply("✅ Час `" + time + "` видалено з розкладу.").queue();
+                    event.reply("✅ Час `" + time + "` видалено з розкладу.").setEphemeral(true).queue();
                 } else {
                     event.reply("❌ Такого часу немає в списку авторестартів.").setEphemeral(true).queue();
                 }
@@ -187,7 +187,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             else if (sub.equals("list")) {
                 java.util.List<String> times = manager.getTimes();
                 if (times.isEmpty()) {
-                    event.reply("ℹ️ Список авторестартів порожній.").queue();
+                    event.reply("ℹ️ Список авторестартів порожній.").setEphemeral(true).queue();
                 } else {
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                     embed.setTitle("⏰ Заплановані авторестарти");
@@ -199,20 +199,20 @@ public class DiscordCommandListener extends ListenerAdapter {
                     embed.setDescription(sb.toString());
                     embed.setFooter("Час вказано за Києвом");
 
-                    event.replyEmbeds(embed.build()).queue();
+                    event.replyEmbeds(embed.build()).setEphemeral(true).queue();
                 }
             }
             else if (sub.equals("clear")) {
                 manager.clearTimes();
-                event.reply("🗑️ Всі авторестарти повністю видалено.").queue();
+                event.reply("🗑️ Всі авторестарти повністю видалено.").setEphemeral(true).queue();
             }
             else if (sub.equals("toggle")) {
                 boolean isPaused = !manager.isPaused();
                 manager.setPaused(isPaused);
                 if (isPaused) {
-                    event.reply("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").queue();
+                    event.reply("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").setEphemeral(true).queue();
                 } else {
-                    event.reply("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").queue();
+                    event.reply("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").setEphemeral(true).queue();
                 }
             }
         }
@@ -225,14 +225,14 @@ public class DiscordCommandListener extends ListenerAdapter {
             boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
             if (isPending) {
                 if (plugin.getServer().getOnlinePlayers().isEmpty()) {
-                    event.reply("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за мить!").queue();
+                    event.reply("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за мить!").setEphemeral(true).queue();
                 } else {
                     event.reply("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
                             "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
-                            "*(Повторний виклик команди скасує чергу)*").queue();
+                            "*(Повторний виклик команди скасує чергу)*").setEphemeral(true).queue();
                 }
             } else {
-                event.reply("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").queue();
+                event.reply("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").setEphemeral(true).queue();
             }
         }
 
