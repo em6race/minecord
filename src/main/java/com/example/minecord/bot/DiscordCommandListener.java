@@ -117,10 +117,13 @@ public class DiscordCommandListener extends ListenerAdapter {
 
                     event.reply("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").setEphemeral(true).queue();
 
-                    // Notify player directly in-game if online
+                    // Notify player directly in-game if online and trigger role sync
                     Player onlinePlayer = plugin.getServer().getPlayer(uuid);
                     if (onlinePlayer != null) {
                         onlinePlayer.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт успішно прив'язано до Discord (" + event.getUser().getName() + ")!");
+                        if (plugin.getRoleSyncManager() != null) {
+                            plugin.getRoleSyncManager().syncPlayer(onlinePlayer);
+                        }
                     }
                 });
             }
@@ -483,6 +486,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                     String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId()) : null;
                     String name = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : playerName);
                     event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
+
+                    if (plugin.getRoleSyncManager() != null) {
+                        Player onlineP = plugin.getServer().getPlayer(offlinePlayer.getUniqueId());
+                        if (onlineP != null && onlineP.isOnline()) {
+                            plugin.getRoleSyncManager().syncPlayer(onlineP);
+                            onlineP.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт прив'язано до Discord адміністратором! Ролі синхронізовано.");
+                        }
+                    }
                 } catch (Throwable t) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка linkadmin: " + t.getMessage(), t);
                     event.getHook().sendMessage("❌ Помилка прив'язки акаунта.").setEphemeral(true).queue();

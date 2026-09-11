@@ -191,3 +191,64 @@ technical:
 sentry:
   enabled: false
   dsn: ""
+
+# Синхронізація ролей з Discord до Minecraft (TAB, чат, кольори нікнеймів та сортування)
+role-sync:
+  # Чи ввімкнено синхронізацію ролей
+  enabled: true
+  # Відображати префікс ролі у TAB-листі
+  tab-prefix: true
+  # Сортувати гравців у TAB за ієрархією ролей (через Scoreboard Teams)
+  tab-sorting: true
+  # Фарбувати нікнейм над головою гравця у колір його ролі
+  nametag-color: true
+  # Додавати префікс ролі перед повідомленнями гравця у внутрішньоігровому чаті
+  chat-prefix: true
+  # Періодичний інтервал перевірки та синхронізації ролей у секундах (за замовчуванням 60)
+  sync-interval-seconds: 60
+
+  # Налаштування ролей за ієрархією (пріоритет: 1 - найвищий)
+  # Можна вказувати role-id (ID ролі в Discord) та/або role-name (назву ролі в Discord, ігнорує регістр)
+  roles:
+    developer:
+      role-id: ""
+      role-name: "розробник"
+      prefix: "&c&l[Розробник] &r"
+      color: "DARK_RED"
+      priority: 1
+    senior_moderator:
+      role-id: ""
+      role-name: "старший модератор"
+      prefix: "&9&l[Ст. Модератор] &r"
+      color: "BLUE"
+      priority: 2
+    moderator:
+      role-id: ""
+      role-name: "модератор"
+      prefix: "&b&l[Модератор] &r"
+      color: "AQUA"
+      priority: 3
+    vip_sponsor:
+      role-id: ""
+      role-name: "VIP спонсор"
+      prefix: "&d&l[VIP Спонсор] &r"
+      color: "LIGHT_PURPLE"
+      priority: 4
+    sponsor:
+      role-id: ""
+      role-name: "спонсор"
+      prefix: "&6&l[Спонсор] &r"
+      color: "GOLD"
+      priority: 5
+    player:
+      role-id: ""
+      role-name: "гравець"
+      prefix: "&a[Гравець] &r"
+      color: "GREEN"
+      priority: 6
+
+  # Налаштування для гравців без прив'язаного акаунта до Discord
+  unlinked:
+    prefix: "&7"
+    color: "GRAY"
+    priority: 99

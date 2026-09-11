@@ -133,6 +133,11 @@ public class PlayerEventListener implements Listener {
                 plugin.getPlayerTipManager().startForPlayer(player);
             }
 
+            // Synchronize Discord role, TAB prefix, and nametag
+            if (plugin.getRoleSyncManager() != null) {
+                plugin.getRoleSyncManager().syncPlayer(player);
+            }
+
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerJoin", e);
         }
@@ -143,6 +148,10 @@ public class PlayerEventListener implements Listener {
         try {
             if (plugin.getPlayerTipManager() != null) {
                 plugin.getPlayerTipManager().stopForPlayer(event.getPlayer().getUniqueId());
+            }
+
+            if (plugin.getRoleSyncManager() != null) {
+                plugin.getRoleSyncManager().clearPlayer(event.getPlayer());
             }
 
             if (plugin.getPlayerCacheManager() != null) {

@@ -111,7 +111,11 @@ public class AfkManager implements Listener {
             Player p = Bukkit.getPlayer(entry.getKey());
             if (p != null && p.isOnline()) {
                 p.setCollidable(true);
-                p.setPlayerListName(p.getName());
+                if (plugin.getRoleSyncManager() != null) {
+                    p.setPlayerListName(plugin.getRoleSyncManager().formatPlayerListName(p, false));
+                } else {
+                    p.setPlayerListName(p.getName());
+                }
             }
         }
         afkDataMap.clear();
@@ -145,7 +149,7 @@ public class AfkManager implements Listener {
             // Reset targets of nearby mobs so they ignore the AFK player
             if (isMobInvulnerableEnabled()) {
                 try {
-                    for (Entity entity : player.getNearbyEntities(32, 32, 32)) {
+                    for (Entity entity : player.getNearbyEntities(16, 16, 16)) {
                         if (entity instanceof Mob) {
                             Mob mob = (Mob) entity;
                             if (player.equals(mob.getTarget())) {
@@ -157,7 +161,11 @@ public class AfkManager implements Listener {
             }
             
             // Update tab list name
-            player.setPlayerListName(ChatColor.GRAY + "[АФК] " + ChatColor.RESET + player.getName());
+            if (plugin.getRoleSyncManager() != null) {
+                player.setPlayerListName(plugin.getRoleSyncManager().formatPlayerListName(player, true));
+            } else {
+                player.setPlayerListName(ChatColor.GRAY + "[АФК] " + ChatColor.RESET + player.getName());
+            }
             
             player.sendMessage(ChatColor.GRAY + "Ви перейшли в режим АФК" + (isMobInvulnerableEnabled() ? " (захист та фіксація позиції увімкнені)." : "."));
         } else {
@@ -167,7 +175,11 @@ public class AfkManager implements Listener {
                 data.display = null;
             }
             // Restore tab list name
-            player.setPlayerListName(player.getName());
+            if (plugin.getRoleSyncManager() != null) {
+                player.setPlayerListName(plugin.getRoleSyncManager().formatPlayerListName(player, false));
+            } else {
+                player.setPlayerListName(player.getName());
+            }
             
             player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");
         }
