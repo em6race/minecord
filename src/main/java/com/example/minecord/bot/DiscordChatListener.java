@@ -149,123 +149,159 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
-        // Use effective guild nickname if available, else global username
-        String author = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
-        // Use display text (replaces <@id> mentions with names)
-        String message = event.getMessage().getContentDisplay();
-        
-        java.util.Set<java.util.UUID> pingedPlayers = new java.util.HashSet<>();
+        try {
+            // Use effective guild nickname if available, else global username
+            String author = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
+            // Use display text (replaces <@id> mentions with names)
+            String message = event.getMessage().getContentDisplay();
 
-        // 1. Process genuine Discord mentions
-        for (net.dv8tion.jda.api.entities.Member mentionedMember : event.getMessage().getMentions().getMembers()) {
-            java.util.UUID uuid = plugin.getLinkManager().getUUIDFromDiscordId(mentionedMember.getId());
-            if (uuid != null) {
-                org.bukkit.entity.Player p = plugin.getServer().getPlayer(uuid);
-                if (p != null) {
-                    message = message.replace("@" + mentionedMember.getEffectiveName(), org.bukkit.ChatColor.YELLOW + "@" + p.getName() + org.bukkit.ChatColor.GRAY);
-                    pingedPlayers.add(uuid);
-                }
+            List<String> pingedNames = new ArrayList<>();
+            List<String> mentionedDiscordUserIds = new ArrayList<>();
+
+            // 1. Process genuine Discord mentions
+            for (net.dv8tion.jda.api.entities.Member mentionedMember : event.getMessage().getMentions().getMembers()) {
+                mentionedDiscordUserIds.add(mentionedMember.getId());
+                String effectiveName = mentionedMember.getEffectiveName();
+                java.util.UUID uuid = plugin.getLinkManager().getUUIDFromDiscordId(mentionedMember.getId());
+                String mcName = (uuid != null && plugin.getPlayerCacheManager() != null) ? plugin.getPlayerCacheManager().resolvePlayerName(uuid) : null;
+                String replaceWith = (mcName != null) ? mcName : effectiveName;
+                message = message.replace("@" + effectiveName, org.bukkit.ChatColor.YELLOW + "@" + replaceWith + org.bukkit.ChatColor.GRAY);
             }
-        }
 
-        // 2. Process text-based mentions (@PlayerName)
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9_]{3,16})");
-        java.util.regex.Matcher matcher = pattern.matcher(message);
-        while (matcher.find()) {
-            String targetName = matcher.group(1);
-            org.bukkit.entity.Player targetPlayer = plugin.getServer().getPlayerExact(targetName);
-            if (targetPlayer != null) {
+            // 2. Process text-based mentions (@PlayerName)
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9_]{3,16})");
+            java.util.regex.Matcher matcher = pattern.matcher(message);
+            while (matcher.find()) {
+                String targetName = matcher.group(1);
+                pingedNames.add(targetName);
                 message = message.replace("@" + targetName, org.bukkit.ChatColor.YELLOW + "@" + targetName + org.bukkit.ChatColor.GRAY);
-                pingedPlayers.add(targetPlayer.getUniqueId());
-            }
-        }
-
-        // 3. Check if message is a reply to another message
-        net.dv8tion.jda.api.entities.Message refMsg = event.getMessage().getReferencedMessage();
-        TextComponent replyComponent = null;
-
-        if (refMsg != null) {
-            String refAuthor;
-            if (refMsg.isWebhookMessage()) {
-                refAuthor = refMsg.getAuthor().getName();
-                Player mcTarget = plugin.getServer().getPlayerExact(refAuthor);
-                if (mcTarget != null && mcTarget.isOnline()) {
-                    pingedPlayers.add(mcTarget.getUniqueId());
-                }
-            } else if (refMsg.getMember() != null) {
-                refAuthor = refMsg.getMember().getEffectiveName();
-            } else if (refMsg.getAuthor() != null) {
-                refAuthor = refMsg.getAuthor().getName();
-            } else {
-                refAuthor = "Хтось";
             }
 
-            String refContent = refMsg.getContentDisplay();
-            if (refContent == null || refContent.trim().isEmpty()) {
-                if (!refMsg.getAttachments().isEmpty()) {
-                    refContent = "[Вкладення]";
-                } else if (!refMsg.getEmbeds().isEmpty()) {
-                    refContent = "[Вбудоване повідомлення]";
+            // 3. Check if message is a reply to another message
+            net.dv8tion.jda.api.entities.Message refMsg = event.getMessage().getReferencedMessage();
+            TextComponent replyComponent = null;
+
+            if (refMsg != null) {
+                String refAuthor;
+                if (refMsg.isWebhookMessage()) {
+                    refAuthor = refMsg.getAuthor().getName();
+                    pingedNames.add(refAuthor);
+                } else if (refMsg.getMember() != null) {
+                    refAuthor = refMsg.getMember().getEffectiveName();
+                    mentionedDiscordUserIds.add(refMsg.getAuthor().getId());
+                } else if (refMsg.getAuthor() != null) {
+                    refAuthor = refMsg.getAuthor().getName();
+                    mentionedDiscordUserIds.add(refMsg.getAuthor().getId());
                 } else {
-                    refContent = "...";
+                    refAuthor = "Хтось";
+                }
+
+                String refContent = refMsg.getContentDisplay();
+                if (refContent == null || refContent.trim().isEmpty()) {
+                    if (!refMsg.getAttachments().isEmpty()) {
+                        refContent = "[Вкладення]";
+                    } else if (!refMsg.getEmbeds().isEmpty()) {
+                        refContent = "[Вбудоване повідомлення]";
+                    } else {
+                        refContent = "...";
+                    }
+                }
+                if (refContent.length() > 150) {
+                    refContent = refContent.substring(0, 147) + "...";
+                }
+
+                replyComponent = new TextComponent(" §8[§b↩ §7" + refAuthor + "§8]");
+                String hoverText = "§eВідповідь на повідомлення від §b@" + refAuthor + "§7:\n§f" + refContent;
+                try {
+                    String jumpUrl = refMsg.getJumpUrl();
+                    replyComponent.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, jumpUrl));
+                    hoverText += "\n\n§8(Клікніть, щоб відкрити в Discord)";
+                } catch (Throwable ignored) {}
+
+                try {
+                    replyComponent.setHoverEvent(new HoverEvent(
+                            HoverEvent.Action.SHOW_TEXT,
+                            TextComponent.fromLegacyText(hoverText)
+                    ));
+                } catch (Throwable ignored) {}
+            }
+
+            // Role prefix for the Discord author
+            String rolePrefix = "";
+            if (plugin.getConfig().getBoolean("role-sync.chat-prefix", true) && plugin.getRoleSyncManager() != null) {
+                if (event.getMember() != null) {
+                    rolePrefix = plugin.getRoleSyncManager().getRolePrefixForMember(event.getMember());
                 }
             }
-            if (refContent.length() > 150) {
-                refContent = refContent.substring(0, 147) + "...";
+
+            // Construct interactive component message for Minecraft chat
+            TextComponent rootComponent = new TextComponent("§9[Discord] " + (rolePrefix != null ? rolePrefix : "") + "§f" + author);
+            if (replyComponent != null) {
+                rootComponent.addExtra(replyComponent);
+            }
+            rootComponent.addExtra(new TextComponent("§f: §7" + message));
+
+            // Append attachment indicator if attachments are present
+            if (!event.getMessage().getAttachments().isEmpty()) {
+                TextComponent attachComp = new TextComponent(" §b[Вкладення]");
+                try {
+                    String attachUrl = event.getMessage().getAttachments().get(0).getUrl();
+                    attachComp.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, attachUrl));
+                    attachComp.setHoverEvent(new HoverEvent(
+                            HoverEvent.Action.SHOW_TEXT,
+                            TextComponent.fromLegacyText("§eНатисніть, щоб відкрити вкладення в браузері")
+                    ));
+                } catch (Throwable ignored) {}
+                rootComponent.addExtra(attachComp);
             }
 
-            replyComponent = new TextComponent(" §8[§b↩ §7" + refAuthor + "§8]");
-            String hoverText = "§eВідповідь на повідомлення від §b@" + refAuthor + "§7:\n§f" + refContent;
-            try {
-                String jumpUrl = refMsg.getJumpUrl();
-                replyComponent.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, jumpUrl));
-                hoverText += "\n\n§8(Клікніть, щоб відкрити в Discord)";
-            } catch (Throwable ignored) {}
+            // Broadcast to all online players and play sounds safely on the main thread
+            final TextComponent finalRoot = rootComponent;
+            final List<String> finalPingNames = pingedNames;
+            final List<String> finalDiscordIds = mentionedDiscordUserIds;
 
-            replyComponent.setHoverEvent(new HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    new Text(hoverText)
-            ));
-        }
-
-        // 4. Play notification sound for all mentioned players
-        for (java.util.UUID uuid : pingedPlayers) {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
-                Player p = plugin.getServer().getPlayer(uuid);
-                if (p != null) {
-                    p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+                try {
+                    // Play notification sound for mentioned / replied players
+                    java.util.Set<Player> alertedPlayers = new java.util.HashSet<>();
+                    for (String name : finalPingNames) {
+                        Player p = plugin.getServer().getPlayerExact(name);
+                        if (p != null && p.isOnline()) {
+                            alertedPlayers.add(p);
+                        }
+                    }
+                    for (String dId : finalDiscordIds) {
+                        java.util.UUID uuid = plugin.getLinkManager().getUUIDFromDiscordId(dId);
+                        if (uuid != null) {
+                            Player p = plugin.getServer().getPlayer(uuid);
+                            if (p != null && p.isOnline()) {
+                                alertedPlayers.add(p);
+                            }
+                        }
+                    }
+                    for (Player p : alertedPlayers) {
+                        try {
+                            p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+                        } catch (Throwable ignored) {}
+                    }
+
+                    // Send message to all players
+                    for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        try {
+                            p.spigot().sendMessage(finalRoot);
+                        } catch (Throwable t) {
+                            // Fallback to legacy text if Spigot component fails
+                            p.sendMessage(finalRoot.toLegacyText());
+                        }
+                    }
+                    plugin.getServer().getConsoleSender().sendMessage(finalRoot.toLegacyText());
+                } catch (Throwable t) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка доставки Discord-повідомлення в чат: " + t.getMessage(), t);
                 }
             });
+        } catch (Throwable t) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка обробки повідомлення Discord -> Minecraft: " + t.getMessage(), t);
         }
-
-        // Construct interactive component message for Minecraft chat
-        TextComponent rootComponent = new TextComponent("§9[Discord] §f" + author);
-        if (replyComponent != null) {
-            rootComponent.addExtra(replyComponent);
-        }
-        rootComponent.addExtra(new TextComponent("§f: §7" + message));
-
-        // Append attachment indicator if attachments are present
-        if (!event.getMessage().getAttachments().isEmpty()) {
-            TextComponent attachComp = new TextComponent(" §b[Вкладення]");
-            try {
-                String attachUrl = event.getMessage().getAttachments().get(0).getUrl();
-                attachComp.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, attachUrl));
-                attachComp.setHoverEvent(new HoverEvent(
-                        HoverEvent.Action.SHOW_TEXT,
-                        new Text("§eНатисніть, щоб відкрити вкладення в браузері")
-                ));
-            } catch (Throwable ignored) {}
-            rootComponent.addExtra(attachComp);
-        }
-
-        // Broadcast to all online players on the main thread
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
-            for (Player p : plugin.getServer().getOnlinePlayers()) {
-                p.spigot().sendMessage(rootComponent);
-            }
-            plugin.getServer().getConsoleSender().sendMessage(rootComponent.toLegacyText());
-        });
     }
 
     private ConsoleCommandSender createWrappedConsoleSender(
