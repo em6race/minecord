@@ -95,7 +95,9 @@ public class BotManager {
                         Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
                                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                                 .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true, true)
-                                .addOption(OptionType.USER, "user", "Користувач Discord", true)
+                                .addOption(OptionType.USER, "user", "Користувач Discord", true),
+                        Commands.slash("links", "Переглянути список усіх прив'язаних акаунтів (адміни)")
+                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
                 ).queue();
 
                 // Initialize Webhook for chat bridge
