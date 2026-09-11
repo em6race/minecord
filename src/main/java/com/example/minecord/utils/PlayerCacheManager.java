@@ -419,13 +419,16 @@ public class PlayerCacheManager {
             isOnlineMode = Bukkit.getOnlineMode();
         } catch (Throwable ignored) {}
 
+        UUID knownCachedUuid = (cleanName != null) ? playerNameToUuid.get(cleanName.toLowerCase()) : null;
         if (isOnlineMode) {
             if (mojangUuid != null) fallbackUuid = mojangUuid;
+            else if (knownCachedUuid != null) fallbackUuid = knownCachedUuid;
             else if (!candidates.isEmpty()) fallbackUuid = candidates.iterator().next();
             else if (offlineUuid != null) fallbackUuid = offlineUuid;
         } else {
-            // In offline-mode server, default to standard offline UUID
-            if (offlineUuid != null) fallbackUuid = offlineUuid;
+            // In offline-mode server, prefer known UUID from whitelist/cache, then offline UUID
+            if (knownCachedUuid != null) fallbackUuid = knownCachedUuid;
+            else if (offlineUuid != null) fallbackUuid = offlineUuid;
             else if (!candidates.isEmpty()) fallbackUuid = candidates.iterator().next();
         }
 
