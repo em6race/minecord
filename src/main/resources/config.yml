@@ -210,17 +210,17 @@ role-sync:
   # Налаштування ролей за ієрархією (пріоритет: 1 - найвищий)
   # Можна вказувати role-id (ID ролі в Discord) та/або role-name (назву ролі в Discord, ігнорує регістр)
   roles:
-    developer:
-      role-id: ""
-      role-name: "розробник"
-      prefix: "&c&l[Розробник] &r"
-      color: "DARK_RED"
-      priority: 1
     senior_moderator:
       role-id: ""
       role-name: "старший модератор"
       prefix: "&9&l[Ст. Модератор] &r"
       color: "BLUE"
+      priority: 1
+    developer:
+      role-id: ""
+      role-name: "розробник"
+      prefix: "&c&l[Розробник] &r"
+      color: "DARK_RED"
       priority: 2
     moderator:
       role-id: ""
