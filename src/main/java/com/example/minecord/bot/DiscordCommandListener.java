@@ -645,12 +645,17 @@ public class DiscordCommandListener extends ListenerAdapter {
                     String partialName = event.getFocusedOption().getValue();
                     List<String> matches;
                     if (plugin.getPlayerCacheManager() != null) {
-                        matches = plugin.getPlayerCacheManager().getMatchingPlayers(partialName);
+                        if (event.getName().equals("linkadmin")) {
+                            matches = plugin.getPlayerCacheManager().getMatchingWhitelistedPlayers(partialName);
+                        } else {
+                            matches = plugin.getPlayerCacheManager().getMatchingPlayers(partialName);
+                        }
                     } else {
                         matches = new ArrayList<>();
                         for (Player p : plugin.getServer().getOnlinePlayers()) {
-                            if (p.getName().toLowerCase().startsWith(partialName.toLowerCase())) {
-                                matches.add(p.getName());
+                            String name = p.getName();
+                            if (com.example.minecord.utils.PlayerCacheManager.isValidMinecraftUsername(name) && name.toLowerCase().startsWith(partialName.toLowerCase())) {
+                                matches.add(name);
                                 if (matches.size() >= 25) break;
                             }
                         }
