@@ -6,6 +6,7 @@ import com.example.minecord.utils.ConsoleManager;
 import com.example.minecord.utils.SkinHelper;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -37,6 +38,8 @@ public class BotManager {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 jda = JDABuilder.createDefault(token)
+                        .setStatus(OnlineStatus.ONLINE)
+                        .setActivity(Activity.playing("Minecraft"))
                         .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
                         .addEventListeners(new DiscordCommandListener(plugin))
                         .addEventListeners(new DiscordChatListener(plugin))
