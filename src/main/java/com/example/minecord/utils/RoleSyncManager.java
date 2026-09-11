@@ -266,7 +266,12 @@ public class RoleSyncManager {
                 } catch (Throwable ignored) {}
             }
 
-            team.setPrefix("");
+            boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
+            if (nametagPrefix && role.prefix != null && !role.prefix.isEmpty()) {
+                team.setPrefix(role.prefix);
+            } else {
+                team.setPrefix("");
+            }
             team.setSuffix("");
 
             // Remove from any other mc_* teams
@@ -297,7 +302,8 @@ public class RoleSyncManager {
 
     public String formatPlayerListName(Player player, RoleDefinition role, boolean isAfk) {
         String pName = player.getName();
-        String pfx = (role != null && role.prefix != null) ? role.prefix : "";
+        boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
+        String pfx = (nametagPrefix || role == null || role.prefix == null) ? "" : role.prefix;
 
         if (isAfk) {
             return ChatColor.GRAY + "[АФК] " + ChatColor.RESET + pfx + pName;
