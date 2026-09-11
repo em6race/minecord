@@ -40,6 +40,7 @@ public class BotManager {
                         .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
                         .addEventListeners(new DiscordCommandListener(plugin))
                         .addEventListeners(new DiscordChatListener(plugin))
+                        .addEventListeners(new com.example.minecord.listeners.DiscordRoleListener(plugin))
                         //.addEventListeners(new DiscordTicketListener(plugin))
                         .build();
                 

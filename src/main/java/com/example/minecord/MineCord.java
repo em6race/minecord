@@ -29,6 +29,7 @@ public final class MineCord extends JavaPlugin {
     private com.example.minecord.utils.LeaderboardManager leaderboardManager;
     private com.example.minecord.utils.PlayerCacheManager playerCacheManager;
     private com.example.minecord.utils.PlayerTipManager playerTipManager;
+    private com.example.minecord.utils.RoleSyncManager roleSyncManager;
 
     @Override
     public void onEnable() {
@@ -66,6 +67,10 @@ public final class MineCord extends JavaPlugin {
         // Initialize tab list manager
         this.tabManager = new com.example.minecord.utils.TabManager(this);
         this.tabManager.start();
+        
+        // Initialize Discord role sync manager
+        this.roleSyncManager = new com.example.minecord.utils.RoleSyncManager(this);
+        this.roleSyncManager.start();
         
         // Initialize AFK manager
         this.afkManager = new AfkManager(this);
@@ -196,6 +201,9 @@ public final class MineCord extends JavaPlugin {
         if (playerTipManager != null) {
             playerTipManager.stop();
         }
+        if (roleSyncManager != null) {
+            roleSyncManager.stop();
+        }
     }
     
     public void reloadPlugin() {
@@ -210,6 +218,11 @@ public final class MineCord extends JavaPlugin {
             tabManager.stop();
             this.tabManager = new com.example.minecord.utils.TabManager(this);
             this.tabManager.start();
+        }
+        
+        if (roleSyncManager != null) {
+            roleSyncManager.reloadConfig();
+            roleSyncManager.syncAllOnlinePlayers();
         }
         
         if (afkManager != null) {
@@ -298,5 +311,9 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.PlayerTipManager getPlayerTipManager() {
         return playerTipManager;
+    }
+
+    public com.example.minecord.utils.RoleSyncManager getRoleSyncManager() {
+        return roleSyncManager;
     }
 }

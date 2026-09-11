@@ -133,6 +133,13 @@ public class ChatListener implements Listener {
         
         event.setMessage(minecraftMessage);
 
+        if (!event.isCancelled() && plugin.getConfig().getBoolean("role-sync.chat-prefix", true)) {
+            String rolePrefix = (plugin.getRoleSyncManager() != null) ? plugin.getRoleSyncManager().getRolePrefix(event.getPlayer()) : "";
+            if (!rolePrefix.isEmpty()) {
+                event.setFormat(rolePrefix + "%1$s" + org.bukkit.ChatColor.GRAY + ": " + org.bukkit.ChatColor.WHITE + "%2$s");
+            }
+        }
+
         // Send to Discord
         if (plugin.getBotManager() != null && plugin.getBotManager().getWebhookManager() != null) {
             plugin.getBotManager().getWebhookManager().sendMessage(playerName, discordMessage);
