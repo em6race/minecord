@@ -30,7 +30,7 @@ public class RoleSyncManager {
             this.key = key;
             this.roleId = roleId != null ? roleId.trim() : "";
             this.roleName = roleName != null ? roleName.trim().toLowerCase() : "";
-            this.prefix = prefix != null ? ChatColor.translateAlternateColorCodes('&', prefix) : "";
+            this.prefix = colorize(prefix);
             this.color = color;
             this.priority = priority;
         }
@@ -120,6 +120,19 @@ public class RoleSyncManager {
         } catch (IllegalArgumentException e) {
             return fallback;
         }
+    }
+
+    public static String colorize(String text) {
+        if (text == null || text.isEmpty()) return "";
+        java.util.regex.Pattern hexPattern = java.util.regex.Pattern.compile("&#([A-Fa-f0-9]{6})");
+        java.util.regex.Matcher matcher = hexPattern.matcher(text);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String hex = matcher.group(1);
+            matcher.appendReplacement(buffer, net.md_5.bungee.api.ChatColor.of("#" + hex).toString());
+        }
+        matcher.appendTail(buffer);
+        return org.bukkit.ChatColor.translateAlternateColorCodes('&', buffer.toString());
     }
 
     public void syncAllOnlinePlayers() {

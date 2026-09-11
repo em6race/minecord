@@ -213,31 +213,31 @@ role-sync:
     senior_moderator:
       role-id: ""
       role-name: "старший модератор"
-      prefix: "&9&l[Ст. Модератор] &r"
+      prefix: "&9&l[🛡 Ст. Модератор] &r"
       color: "BLUE"
       priority: 1
     developer:
       role-id: ""
       role-name: "розробник"
-      prefix: "&c&l[Розробник] &r"
+      prefix: "&c&l[⚙ Розробник] &r"
       color: "DARK_RED"
       priority: 2
     moderator:
       role-id: ""
       role-name: "модератор"
-      prefix: "&b&l[Модератор] &r"
+      prefix: "&b&l[⚔ Модератор] &r"
       color: "AQUA"
       priority: 3
     vip_sponsor:
       role-id: ""
       role-name: "VIP спонсор"
-      prefix: "&d&l[VIP Спонсор] &r"
+      prefix: "&d&l[👑 VIP Спонсор] &r"
       color: "LIGHT_PURPLE"
       priority: 4
     sponsor:
       role-id: ""
       role-name: "спонсор"
-      prefix: "&6&l[Спонсор] &r"
+      prefix: "&6&l[💎 Спонсор] &r"
       color: "GOLD"
       priority: 5
     player:
