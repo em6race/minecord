@@ -215,43 +215,43 @@ role-sync:
   roles:
     senior_moderator:
       role-id: ""
-      role-name: "старший модератор"
-      prefix: "&#0072ff&l[🛡 &#00c6ff&lСт. Модератор&#0072ff&l] &r"
-      color: "BLUE"
+      role-name: "⚔️ Ст.Модератор"
+      prefix: "&#9305DC&l[⚔ &#b832f5&lСт. Модератор&#9305DC&l] &r"
+      color: "DARK_PURPLE"
       priority: 1
     developer:
       role-id: ""
-      role-name: "розробник"
-      prefix: "&#ff416c&l[⚙ &#ff4b2b&lРозробник&#ff416c&l] &r"
-      color: "DARK_RED"
+      role-name: "💻 Розробник"
+      prefix: "&#ffffff&l[💻 &#e0e0e0&lРозробник&#ffffff&l] &r"
+      color: "WHITE"
       priority: 2
     moderator:
       role-id: ""
-      role-name: "модератор"
-      prefix: "&#00b4db&l[⚔ &#0083b0&lМодератор&#00b4db&l] &r"
+      role-name: "🛡️ Модератор"
+      prefix: "&#3CB5E9&l[🛡 &#6ed0fc&lМодератор&#3CB5E9&l] &r"
       color: "AQUA"
       priority: 3
     vip_sponsor:
       role-id: ""
-      role-name: "VIP спонсор"
-      prefix: "&#da22ff&l[👑 &#9733ee&lVIP Спонсор&#da22ff&l] &r"
-      color: "LIGHT_PURPLE"
+      role-name: "👑 VIP Спонсор"
+      prefix: "&#EEAC1C&l[👑 &#f7c95e&lVIP Спонсор&#EEAC1C&l] &r"
+      color: "GOLD"
       priority: 4
     sponsor:
       role-id: ""
-      role-name: "спонсор"
-      prefix: "&#f7971e&l[💎 &#ffd200&lСпонсор&#f7971e&l] &r"
-      color: "GOLD"
+      role-name: "💵 Спонсор"
+      prefix: "&#31CA6C&l[💵 &#57e68e&lСпонсор&#31CA6C&l] &r"
+      color: "GREEN"
       priority: 5
     player:
       role-id: ""
-      role-name: "гравець"
-      prefix: "&#56ab2f[&#a8e063Гравець&#56ab2f] &r"
-      color: "GREEN"
+      role-name: "⛏️ Гравець"
+      prefix: "&#8A7E7E[⛏ Гравець] &r"
+      color: "GRAY"
       priority: 6
 
   # Налаштування для гравців без прив'язаного акаунта до Discord
   unlinked:
-    prefix: "&#757f9a"
+    prefix: "&#706868"
     color: "GRAY"
     priority: 99
