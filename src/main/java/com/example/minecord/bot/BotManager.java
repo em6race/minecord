@@ -44,6 +44,27 @@ public class BotManager {
                         .addEventListeners(new DiscordCommandListener(plugin))
                         .addEventListeners(new DiscordChatListener(plugin))
                         .addEventListeners(new com.example.minecord.listeners.DiscordRoleListener(plugin))
+                        .addEventListeners(new net.dv8tion.jda.api.hooks.ListenerAdapter() {
+                            @Override
+                            public void onReady(@org.jetbrains.annotations.NotNull net.dv8tion.jda.api.events.session.ReadyEvent event) {
+                                plugin.logPink("Discord Gateway: Підключено та онлайн як " + event.getJDA().getSelfUser().getName());
+                            }
+
+                            @Override
+                            public void onSessionResume(@org.jetbrains.annotations.NotNull net.dv8tion.jda.api.events.session.SessionResumeEvent event) {
+                                plugin.getLogger().info("[MineCord] Discord Gateway: Сесію відновлено (Resume).");
+                            }
+
+                            @Override
+                            public void onSessionDisconnect(@org.jetbrains.annotations.NotNull net.dv8tion.jda.api.events.session.SessionDisconnectEvent event) {
+                                plugin.getLogger().warning("[MineCord] Discord Gateway: З'єднання втрачено (" + event.getCloseCode() + "). Очікування відновлення...");
+                            }
+
+                            @Override
+                            public void onSessionInvalidate(@org.jetbrains.annotations.NotNull net.dv8tion.jda.api.events.session.SessionInvalidateEvent event) {
+                                plugin.getLogger().warning("[MineCord] Discord Gateway: Сесію інвалідовано Discord. Виконується новий вхід.");
+                            }
+                        })
                         //.addEventListeners(new DiscordTicketListener(plugin))
                         .build();
                 
@@ -164,6 +185,15 @@ public class BotManager {
             try {
                 jda.shutdown();
                 try {
+                    if (!jda.awaitShutdown(java.time.Duration.ofSeconds(3))) {
+                        jda.shutdownNow();
+                    }
+                } catch (Throwable ignored) {
+                    try {
+                        jda.shutdownNow();
+                    } catch (Throwable ignored2) {}
+                }
+                try {
                     jda.getHttpClient().connectionPool().evictAll();
                 } catch (Throwable ignored) {}
             } catch (Throwable e) {
@@ -189,7 +219,7 @@ public class BotManager {
         if (interval < 5) interval = 5;
 
         statusTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-            if (jda == null) return;
+            if (jda == null || jda.getStatus() != JDA.Status.CONNECTED) return;
             
             boolean isMaintenance = plugin.getConfig().getBoolean("maintenance.enabled", false);
             String statusText;
@@ -229,7 +259,7 @@ public class BotManager {
             
             // Update presence only if changed to avoid Discord rate limits
             if (!statusText.equals(lastStatusText)) {
-                jda.getPresence().setActivity(Activity.playing(statusText));
+                jda.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing(statusText));
                 lastStatusText = statusText;
             }
         }, 0L, interval * 20L); // 20 ticks = 1 second
