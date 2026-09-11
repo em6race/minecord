@@ -160,6 +160,9 @@ public class BotManager {
         if (jda != null) {
             try {
                 jda.shutdown();
+                try {
+                    jda.getHttpClient().connectionPool().evictAll();
+                } catch (Throwable ignored) {}
             } catch (Throwable e) {
                 try {
                     jda.shutdownNow();
