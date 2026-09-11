@@ -148,6 +148,21 @@ public class RoleSyncManager {
                 .filter(r -> r.key.equalsIgnoreCase("player") || r.roleName.equalsIgnoreCase("гравець"))
                 .findFirst()
                 .orElse(null);
+
+        // Reset team colors if nametag-color is false so compass/locator bar dots remain multicolored (UUID-based)
+        try {
+            Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
+            boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", false);
+            if (!nametagColor) {
+                for (Team t : sb.getTeams()) {
+                    if (t.getName().startsWith("mc_")) {
+                        try {
+                            t.setColor(ChatColor.RESET);
+                        } catch (Throwable ignored) {}
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     private ChatColor parseChatColor(String name, ChatColor fallback) {
@@ -273,11 +288,12 @@ public class RoleSyncManager {
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline()) return;
 
-            // 1. Update Scoreboard Team (for sorting in TAB and nametag color)
+            // 1. Update Scoreboard Team (for sorting in TAB and nametag prefix)
             boolean tabSorting = plugin.getConfig().getBoolean("role-sync.tab-sorting", true);
-            boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", true);
+            boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", false);
+            boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
 
-            if (tabSorting || nametagColor) {
+            if (tabSorting || nametagColor || nametagPrefix) {
                 applyScoreboardTeam(player, role);
             }
 
@@ -303,9 +319,14 @@ public class RoleSyncManager {
                 team = sb.registerNewTeam(teamName);
             }
 
-            if (role.color != null) {
+            boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", false);
+            if (nametagColor && role.color != null) {
                 try {
                     team.setColor(role.color);
+                } catch (Throwable ignored) {}
+            } else {
+                try {
+                    team.setColor(ChatColor.RESET);
                 } catch (Throwable ignored) {}
             }
 
