@@ -79,6 +79,11 @@ public class WebhookManager {
                 if (responseCode >= 400) {
                     plugin.getLogger().warning("[Webhook] Discord повернув помилку: " + responseCode);
                 }
+                try (java.io.InputStream is = (responseCode >= 400 ? con.getErrorStream() : con.getInputStream())) {
+                    if (is != null) {
+                        is.transferTo(java.io.OutputStream.nullOutputStream());
+                    }
+                } catch (Exception ignored) {}
                 con.disconnect();
             } catch (Exception e) {
                 plugin.getLogger().warning("[Webhook] Помилка відправки: " + e.getMessage());
