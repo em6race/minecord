@@ -84,7 +84,11 @@ public class DiscordCommandListener extends ListenerAdapter {
                 java.util.UUID existingUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
                 if (existingUuid != null) {
                     org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
-                    String pName = linkedPlayer.getName() != null ? linkedPlayer.getName() : "Гравець";
+                    String pName = linkedPlayer.getName();
+                    if (pName == null && plugin.getPlayerCacheManager() != null) {
+                        pName = plugin.getPlayerCacheManager().resolvePlayerName(existingUuid);
+                    }
+                    if (pName == null) pName = "Гравець";
                     event.reply("✅ Ваш Discord акаунт вже прив'язано до Minecraft-акаунта **" + pName + "**!\n" +
                             "💡 Якщо ви бажаєте прив'язати інший акаунт, отримайте новий код у грі (`/discord link`) та введіть: `/link code: <новий_код>`")
                             .setEphemeral(true)
@@ -256,40 +260,44 @@ public class DiscordCommandListener extends ListenerAdapter {
         else if (event.getName().equals("stats")) {
             net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");
 
-            String resolvedPlayerName = null;
-            java.util.UUID resolvedUuid = null;
+            String inputPlayerName = null;
+            java.util.List<java.util.UUID> candidateUuids = null;
+            boolean isSelfStats = false;
+            final String discordUserId = event.getUser().getId();
 
             if (playerOpt != null) {
-                resolvedPlayerName = playerOpt.getAsString();
+                inputPlayerName = playerOpt.getAsString();
             } else {
-                java.util.UUID linkedUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
-                if (linkedUuid == null) {
+                isSelfStats = true;
+                candidateUuids = plugin.getLinkManager().getAllUUIDsFromDiscordId(discordUserId);
+                if (candidateUuids.isEmpty()) {
                     event.replyEmbeds(createLinkGuideEmbed("Щоб переглядати **власну статистику** без введення нікнейма, прив'яжіть свій Minecraft акаунт до Discord."))
                             .setEphemeral(true)
                             .queue();
                     return;
                 }
-                resolvedUuid = linkedUuid;
             }
 
             event.deferReply().queue();
 
-            final String targetName = resolvedPlayerName;
-            final java.util.UUID targetUuid = resolvedUuid;
+            final String targetName = inputPlayerName;
+            final java.util.List<java.util.UUID> preferredUuids = candidateUuids;
+            final boolean selfStats = isSelfStats;
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     org.bukkit.OfflinePlayer offlinePlayer = null;
-                    java.util.UUID targetUuidResolved = targetUuid;
 
-                    if (targetUuidResolved == null && targetName != null && plugin.getPlayerCacheManager() != null) {
-                        targetUuidResolved = plugin.getPlayerCacheManager().resolveExistingPlayerUuid(targetName);
+                    if (plugin.getPlayerCacheManager() != null) {
+                        offlinePlayer = plugin.getPlayerCacheManager().resolvePlayerWithData(targetName, preferredUuids);
                     }
 
-                    if (targetUuidResolved != null) {
-                        offlinePlayer = plugin.getServer().getOfflinePlayer(targetUuidResolved);
-                    } else if (targetName != null) {
-                        offlinePlayer = plugin.getServer().getOfflinePlayer(targetName);
+                    if (offlinePlayer == null) {
+                        if (preferredUuids != null && !preferredUuids.isEmpty()) {
+                            offlinePlayer = plugin.getServer().getOfflinePlayer(preferredUuids.get(0));
+                        } else if (targetName != null) {
+                            offlinePlayer = plugin.getServer().getOfflinePlayer(targetName);
+                        }
                     }
 
                     boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
@@ -298,13 +306,32 @@ public class DiscordCommandListener extends ListenerAdapter {
                     }
 
                     if (offlinePlayer == null || !hasPlayed) {
-                        String nameToShow = targetName != null ? targetName : (offlinePlayer != null && offlinePlayer.getName() != null ? offlinePlayer.getName() : "невідомий");
+                        String nameToShow = targetName;
+                        if (nameToShow == null && offlinePlayer != null) {
+                            nameToShow = offlinePlayer.getName();
+                            if (nameToShow == null && plugin.getPlayerCacheManager() != null) {
+                                nameToShow = plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId());
+                            }
+                        }
+                        if (nameToShow == null && preferredUuids != null && !preferredUuids.isEmpty() && plugin.getPlayerCacheManager() != null) {
+                            nameToShow = plugin.getPlayerCacheManager().resolvePlayerName(preferredUuids.get(0));
+                        }
+                        if (nameToShow == null) nameToShow = "невідомий";
+
                         event.getHook().sendMessage("❌ Гравця з ніком **" + nameToShow + "** не знайдено на сервері (або він ніколи не заходив).").setEphemeral(true).queue();
                         return;
                     }
 
+                    // Auto-heal links.yml if this was self-stats and the working UUID differs from the primary linked UUID
+                    if (selfStats && offlinePlayer.getUniqueId() != null) {
+                        java.util.UUID activeLinked = plugin.getLinkManager().getUUIDFromDiscordId(discordUserId);
+                        if (activeLinked == null || !activeLinked.equals(offlinePlayer.getUniqueId())) {
+                            plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUserId);
+                        }
+                    }
+
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                    String cachedName = (plugin.getPlayerCacheManager() != null && offlinePlayer != null) ? plugin.getPlayerCacheManager().getPlayerNameByUuid(offlinePlayer.getUniqueId()) : null;
+                    String cachedName = (plugin.getPlayerCacheManager() != null && offlinePlayer != null) ? plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId()) : null;
                     String displayName = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : (targetName != null ? targetName : "Гравець"));
                     embed.setTitle("📊 Статистика гравця " + displayName);
                     embed.setThumbnail(com.example.minecord.utils.SkinHelper.getAvatarUrl(displayName));
@@ -440,8 +467,9 @@ public class DiscordCommandListener extends ListenerAdapter {
             
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
-                    java.util.UUID resolved = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolveExistingPlayerUuid(playerName) : null;
-                    org.bukkit.OfflinePlayer offlinePlayer = resolved != null ? plugin.getServer().getOfflinePlayer(resolved) : plugin.getServer().getOfflinePlayer(playerName);
+                    org.bukkit.OfflinePlayer offlinePlayer = plugin.getPlayerCacheManager() != null 
+                            ? plugin.getPlayerCacheManager().resolvePlayerWithData(playerName, (java.util.List<java.util.UUID>) null) 
+                            : plugin.getServer().getOfflinePlayer(playerName);
                     boolean hasPlayed = offlinePlayer != null && (offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline() || offlinePlayer.getLastPlayed() > 0);
                     if (!hasPlayed && offlinePlayer != null && plugin.getPlayerCacheManager() != null) {
                         hasPlayed = plugin.getPlayerCacheManager().hasPlayerData(offlinePlayer);
@@ -452,7 +480,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                     }
                     
                     plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
-                    String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().getPlayerNameByUuid(offlinePlayer.getUniqueId()) : null;
+                    String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId()) : null;
                     String name = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : playerName);
                     event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
                 } catch (Throwable t) {

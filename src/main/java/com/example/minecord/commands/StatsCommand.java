@@ -39,8 +39,9 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
 
         String targetName = args[0];
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            java.util.UUID resolvedUuid = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolveExistingPlayerUuid(targetName) : null;
-            OfflinePlayer target = resolvedUuid != null ? plugin.getServer().getOfflinePlayer(resolvedUuid) : plugin.getServer().getOfflinePlayer(targetName);
+            OfflinePlayer target = plugin.getPlayerCacheManager() != null 
+                    ? plugin.getPlayerCacheManager().resolvePlayerWithData(targetName, (java.util.List<java.util.UUID>) null) 
+                    : plugin.getServer().getOfflinePlayer(targetName);
 
             boolean hasPlayed = target != null && (target.hasPlayedBefore() || target.isOnline() || target.getLastPlayed() > 0);
             if (!hasPlayed && target != null && plugin.getPlayerCacheManager() != null) {
@@ -76,7 +77,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
     }
 
     private void showStats(CommandSender viewer, OfflinePlayer target) {
-        String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().getPlayerNameByUuid(target.getUniqueId()) : null;
+        String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(target.getUniqueId()) : null;
         String displayName = (target.getName() != null) ? target.getName() : (cachedName != null ? cachedName : "Гравець");
         viewer.sendMessage(ChatColor.YELLOW + "=== Статистика гравця " + ChatColor.GOLD + displayName + ChatColor.YELLOW + " ===");
 
