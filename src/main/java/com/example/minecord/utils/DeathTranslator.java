@@ -443,6 +443,7 @@ public class DeathTranslator {
     }
     public static String translate(String message) {
         if (message == null) return null;
+        message = RoleSyncManager.stripRoleTags(message);
         for (TranslationRule rule : rules) {
             Matcher m = rule.pattern.matcher(message);
             if (m.find()) {
@@ -453,9 +454,9 @@ public class DeathTranslator {
                         translated = mobM.replaceAll(mobRule.replacement);
                     }
                 }
-                return translated;
+                return RoleSyncManager.stripRoleTags(translated);
             }
         }
-        return message;
+        return RoleSyncManager.stripRoleTags(message);
     }
 }
