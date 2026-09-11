@@ -40,9 +40,29 @@ public class RoleSyncManager {
             if (!roleId.isEmpty() && roleId.equals(discordRole.getId())) {
                 return true;
             }
-            if (!roleName.isEmpty() && discordRole.getName() != null) {
-                return roleName.equalsIgnoreCase(discordRole.getName().trim());
+            if (discordRole.getName() == null) return false;
+            String dName = discordRole.getName().trim().toLowerCase();
+
+            if (!roleName.isEmpty()) {
+                if (roleName.equalsIgnoreCase(dName)) {
+                    return true;
+                }
+                // Strip emojis/symbols: keep only letters and digits
+                String cleanDName = dName.replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+                String cleanTarget = roleName.replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+                if (!cleanTarget.isEmpty() && (cleanDName.equals(cleanTarget) || cleanDName.contains(cleanTarget) || cleanTarget.contains(cleanDName))) {
+                    return true;
+                }
             }
+
+            // Fallback keyword matching
+            if (key.equalsIgnoreCase("senior_moderator") && dName.contains("ст") && dName.contains("модер")) return true;
+            if (key.equalsIgnoreCase("developer") && dName.contains("розроб")) return true;
+            if (key.equalsIgnoreCase("moderator") && !dName.contains("ст") && dName.contains("модер")) return true;
+            if (key.equalsIgnoreCase("vip_sponsor") && (dName.contains("vip") || dName.contains("віп")) && dName.contains("спонсор")) return true;
+            if (key.equalsIgnoreCase("sponsor") && !dName.contains("vip") && !dName.contains("віп") && dName.contains("спонсор")) return true;
+            if (key.equalsIgnoreCase("player") && dName.contains("грав")) return true;
+
             return false;
         }
     }
