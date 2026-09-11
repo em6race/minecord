@@ -197,83 +197,254 @@ public class PlayerCacheManager {
     }
 
     /**
-     * Resolves the actual UUID used by this player on the server.
-     * Checks:
-     * 1. Currently online player.
-     * 2. Cached UUID in memory.
-     * 3. Mojang Online UUID (for licensed players).
-     * 4. Offline UUID.
-     * Checks files on disk (.dat in playerdata or .json in stats).
-     * If multiple candidates have files on disk, picks candidate with newest file lastModified timestamp.
+     * Resolves a player nickname for a given UUID across memory cache, online players,
+     * Bukkit OfflinePlayer, disk NBT (lastKnownName), and Mojang Session API (async only).
      */
-    public UUID resolveExistingPlayerUuid(String playerName) {
-        if (playerName == null || playerName.trim().isEmpty()) return null;
-        String cleanName = playerName.trim();
-        String lowerName = cleanName.toLowerCase();
+    public String resolvePlayerName(UUID uuid) {
+        if (uuid == null) return null;
 
-        // 1. Online player
+        // 1. Check in-memory cache
+        String cached = uuidToPlayerName.get(uuid);
+        if (cached != null && !cached.trim().isEmpty()) {
+            return cached.trim();
+        }
+
+        // 2. Check currently online player
         try {
-            Player online = Bukkit.getPlayerExact(cleanName);
-            if (online != null) {
-                UUID u = online.getUniqueId();
-                addPlayer(cleanName, u);
-                return u;
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null && p.getName() != null && !p.getName().trim().isEmpty()) {
+                String name = p.getName().trim();
+                addPlayer(name, uuid);
+                return name;
             }
         } catch (Throwable ignored) {}
 
-        // Collect candidates
-        List<UUID> candidates = new ArrayList<>();
+        // 3. Check Bukkit OfflinePlayer
+        try {
+            OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+            if (op != null && op.getName() != null && !op.getName().trim().isEmpty()) {
+                String name = op.getName().trim();
+                addPlayer(name, uuid);
+                return name;
+            }
+        } catch (Throwable ignored) {}
 
-        UUID cachedUuid = playerNameToUuid.get(lowerName);
-        if (cachedUuid != null && !candidates.contains(cachedUuid)) {
-            candidates.add(cachedUuid);
+        // 4. Check playerdata file NBT lastKnownName
+        try {
+            File dat = findExactUserDataFile("playerdata", ".dat", uuid);
+            if (dat != null && dat.exists()) {
+                byte[] nbt = readDecompressedNbt(dat);
+                if (nbt != null) {
+                    String lastKnown = findTagString(nbt, "lastKnownName");
+                    if (lastKnown != null && !lastKnown.trim().isEmpty()) {
+                        String name = lastKnown.trim();
+                        addPlayer(name, uuid);
+                        return name;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 5. Query Mojang Session API for official player name if on async thread
+        if (!Bukkit.isPrimaryThread()) {
+            try {
+                String noDash = uuid.toString().replace("-", "");
+                java.net.URI uri = java.net.URI.create("https://sessionserver.mojang.com/session/minecraft/profile/" + noDash);
+                java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                        .connectTimeout(java.time.Duration.ofSeconds(3))
+                        .build();
+                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                        .uri(uri)
+                        .timeout(java.time.Duration.ofSeconds(3))
+                        .header("User-Agent", "MineCord-Minecraft-Bot")
+                        .GET()
+                        .build();
+                java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
+                    JsonObject obj = JsonParser.parseString(response.body()).getAsJsonObject();
+                    if (obj.has("name")) {
+                        String name = obj.get("name").getAsString();
+                        if (name != null && !name.trim().isEmpty()) {
+                            name = name.trim();
+                            addPlayer(name, uuid);
+                            return name;
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
         }
 
-        UUID mojangUuid = fetchMojangUuid(cleanName);
-        if (mojangUuid != null && !candidates.contains(mojangUuid)) {
-            candidates.add(mojangUuid);
+        return null;
+    }
+
+    /**
+     * Resolves the OfflinePlayer candidate with the most recent actual data on this server.
+     * Evaluates online status, Bukkit statistics, playerdata .dat, stats .json, and advancements .json.
+     * Safely handles differences between online-mode (Mojang UUID) and offline-mode (OfflinePlayer hash).
+     */
+    public OfflinePlayer resolvePlayerWithData(String targetName, List<UUID> preferredUuids) {
+        String cleanName = (targetName != null) ? targetName.trim() : null;
+        if (cleanName != null && cleanName.isEmpty()) cleanName = null;
+
+        // If targetName is not provided, try to resolve player name from preferred UUIDs
+        if (cleanName == null && preferredUuids != null) {
+            for (UUID u : preferredUuids) {
+                if (u != null) {
+                    String resolved = resolvePlayerName(u);
+                    if (resolved != null && !resolved.trim().isEmpty()) {
+                        cleanName = resolved.trim();
+                        break;
+                    }
+                }
+            }
         }
 
-        UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + cleanName).getBytes(StandardCharsets.UTF_8));
-        if (!candidates.contains(offlineUuid)) {
+        // 1. Check if player is currently online by nickname
+        if (cleanName != null) {
+            try {
+                Player online = Bukkit.getPlayerExact(cleanName);
+                if (online != null) {
+                    addPlayer(online.getName(), online.getUniqueId());
+                    return online;
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 2. Check if player is currently online by preferred UUIDs
+        if (preferredUuids != null) {
+            for (UUID u : preferredUuids) {
+                if (u != null) {
+                    try {
+                        Player online = Bukkit.getPlayer(u);
+                        if (online != null) {
+                            addPlayer(online.getName(), online.getUniqueId());
+                            return online;
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }
+
+        // Collect candidate UUIDs
+        LinkedHashSet<UUID> candidates = new LinkedHashSet<>();
+        if (preferredUuids != null) {
+            for (UUID u : preferredUuids) {
+                if (u != null) candidates.add(u);
+            }
+        }
+
+        UUID mojangUuid = null;
+        UUID offlineUuid = null;
+        UUID offlineLowerUuid = null;
+
+        if (cleanName != null) {
+            UUID cached = playerNameToUuid.get(cleanName.toLowerCase());
+            if (cached != null) candidates.add(cached);
+
+            mojangUuid = fetchMojangUuid(cleanName);
+            if (mojangUuid != null) candidates.add(mojangUuid);
+
+            offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + cleanName).getBytes(StandardCharsets.UTF_8));
             candidates.add(offlineUuid);
+
+            offlineLowerUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + cleanName.toLowerCase()).getBytes(StandardCharsets.UTF_8));
+            candidates.add(offlineLowerUuid);
         }
 
-        // Check which candidate has files on disk
+        // Score each candidate based on evidence on disk or in Bukkit
         UUID bestUuid = null;
-        long bestTimestamp = -1;
+        long bestScore = -1;
 
         for (UUID cand : candidates) {
-            File datFile = findUserDataFile("playerdata", ".dat", cand, null);
-            File jsonFile = findUserDataFile("stats", ".json", cand, null);
+            if (cand == null) continue;
+            long score = 0;
 
-            long datTime = (datFile != null && datFile.exists()) ? datFile.lastModified() : -1;
-            long jsonTime = (jsonFile != null && jsonFile.exists()) ? jsonFile.lastModified() : -1;
-            long maxTime = Math.max(datTime, jsonTime);
+            OfflinePlayer op = Bukkit.getOfflinePlayer(cand);
+            if (op.isOnline()) {
+                score = Long.MAX_VALUE;
+            } else {
+                if (op.hasPlayedBefore() || op.getLastPlayed() > 0) {
+                    score = Math.max(score, Math.max(1000L, op.getLastPlayed()));
+                }
 
-            if (maxTime > 0 && maxTime > bestTimestamp) {
-                bestTimestamp = maxTime;
+                File dat = findExactUserDataFile("playerdata", ".dat", cand);
+                if (dat != null && dat.exists() && dat.length() > 0) {
+                    score = Math.max(score, dat.lastModified());
+                }
+
+                File json = findExactUserDataFile("stats", ".json", cand);
+                if (json != null && json.exists() && json.length() > 0) {
+                    score = Math.max(score, json.lastModified());
+                }
+
+                File adv = findExactUserDataFile("advancements", ".json", cand);
+                if (adv != null && adv.exists() && adv.length() > 0) {
+                    score = Math.max(score, adv.lastModified());
+                }
+            }
+
+            if (score > 0 && score > bestScore) {
+                bestScore = score;
                 bestUuid = cand;
             }
         }
 
+        // If candidate with actual data found
         if (bestUuid != null) {
-            playerNameToUuid.put(lowerName, bestUuid);
-            uuidToPlayerName.put(bestUuid, cleanName);
-            cachedPlayerNames.add(cleanName);
-            return bestUuid;
+            if (cleanName != null) {
+                playerNameToUuid.put(cleanName.toLowerCase(), bestUuid);
+                uuidToPlayerName.put(bestUuid, cleanName);
+                cachedPlayerNames.add(cleanName);
+            }
+            return Bukkit.getOfflinePlayer(bestUuid);
         }
 
-        // Fallbacks if no data files found on disk yet
-        if (cachedUuid != null) return cachedUuid;
-        if (mojangUuid != null) {
-            playerNameToUuid.put(lowerName, mojangUuid);
-            uuidToPlayerName.put(mojangUuid, cleanName);
-            cachedPlayerNames.add(cleanName);
-            return mojangUuid;
+        // Fallback when no data exists on disk
+        UUID fallbackUuid = null;
+        boolean isOnlineMode = false;
+        try {
+            isOnlineMode = Bukkit.getOnlineMode();
+        } catch (Throwable ignored) {}
+
+        if (isOnlineMode) {
+            if (mojangUuid != null) fallbackUuid = mojangUuid;
+            else if (!candidates.isEmpty()) fallbackUuid = candidates.iterator().next();
+            else if (offlineUuid != null) fallbackUuid = offlineUuid;
+        } else {
+            // In offline-mode server, default to standard offline UUID
+            if (offlineUuid != null) fallbackUuid = offlineUuid;
+            else if (!candidates.isEmpty()) fallbackUuid = candidates.iterator().next();
         }
 
-        return offlineUuid;
+        if (fallbackUuid != null) {
+            if (cleanName != null) {
+                playerNameToUuid.put(cleanName.toLowerCase(), fallbackUuid);
+                uuidToPlayerName.put(fallbackUuid, cleanName);
+                cachedPlayerNames.add(cleanName);
+            }
+            return Bukkit.getOfflinePlayer(fallbackUuid);
+        }
+
+        if (cleanName != null) {
+            return Bukkit.getOfflinePlayer(cleanName);
+        }
+
+        return null;
+    }
+
+    public OfflinePlayer resolvePlayerWithData(String targetName, UUID preferredUuid) {
+        List<UUID> list = (preferredUuid != null) ? Collections.singletonList(preferredUuid) : null;
+        return resolvePlayerWithData(targetName, list);
+    }
+
+    /**
+     * Resolves the actual UUID used by this player on the server.
+     * Delegates to resolvePlayerWithData for robust candidate selection.
+     */
+    public UUID resolveExistingPlayerUuid(String playerName) {
+        if (playerName == null || playerName.trim().isEmpty()) return null;
+        OfflinePlayer op = resolvePlayerWithData(playerName, (List<UUID>) null);
+        return (op != null) ? op.getUniqueId() : null;
     }
 
     /**
@@ -468,14 +639,19 @@ public class PlayerCacheManager {
     public boolean hasPlayerData(OfflinePlayer player) {
         if (player == null) return false;
         if (player.isOnline() || player.hasPlayedBefore() || player.getLastPlayed() > 0) return true;
+        UUID uuid = player.getUniqueId();
         String name = player.getName();
-        if (name == null && player.getUniqueId() != null) {
-            name = uuidToPlayerName.get(player.getUniqueId());
+        if (name == null && uuid != null) {
+            name = resolvePlayerName(uuid);
         }
-        if (findPlayerDataFile(player.getUniqueId(), name) != null) {
+        if (uuid != null) {
+            if (findExactUserDataFile("playerdata", ".dat", uuid) != null) return true;
+            if (findExactUserDataFile("stats", ".json", uuid) != null) return true;
+        }
+        if (findPlayerDataFile(uuid, name) != null) {
             return true;
         }
-        return findUserDataFile("stats", ".json", player.getUniqueId(), name) != null;
+        return findUserDataFile("stats", ".json", uuid, name) != null;
     }
 
     public File findPlayerDataFile(UUID uuid, String playerName) {
@@ -484,6 +660,35 @@ public class PlayerCacheManager {
 
     public File findAdvancementsFile(UUID uuid, String playerName) {
         return findUserDataFile("advancements", ".json", uuid, playerName);
+    }
+
+    public File findExactUserDataFile(String subDir, String extension, UUID uuid) {
+        if (uuid == null) return null;
+
+        List<File> searchDirs = getPossibleWorldDirs(subDir);
+        Set<String> seenDirs = new HashSet<>();
+        for (File dir : searchDirs) {
+            if (dir == null) continue;
+            try {
+                String canonical = dir.getCanonicalPath();
+                if (!seenDirs.add(canonical)) continue;
+            } catch (Exception e) {
+                if (!seenDirs.add(dir.getAbsolutePath())) continue;
+            }
+
+            if (!dir.exists() || !dir.isDirectory()) continue;
+
+            File f = new File(dir, uuid.toString() + extension);
+            if (f.exists() && f.canRead() && f.length() > 0) {
+                return f;
+            }
+            File fNoDash = new File(dir, uuid.toString().replace("-", "") + extension);
+            if (fNoDash.exists() && fNoDash.canRead() && fNoDash.length() > 0) {
+                return fNoDash;
+            }
+        }
+
+        return null;
     }
 
     public File findUserDataFile(String subDir, String extension, UUID uuid, String playerName) {

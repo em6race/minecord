@@ -6,6 +6,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Random;
@@ -99,7 +101,8 @@ public class AccountLinkManager {
     public void linkAccount(String code, String discordId) {
         UUID uuid = pendingCodes.remove(code);
         codeExpiry.remove(code);
-        if (uuid != null) {
+        if (uuid != null && discordId != null) {
+            linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
             linkedAccounts.put(uuid, discordId);
             saveLinks();
         }
@@ -107,6 +110,8 @@ public class AccountLinkManager {
 
     // Direct account linking
     public void linkAccountDirectly(UUID uuid, String discordId) {
+        if (uuid == null || discordId == null) return;
+        linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
         linkedAccounts.put(uuid, discordId);
         saveLinks();
     }
@@ -120,11 +125,23 @@ public class AccountLinkManager {
     }
 
     public UUID getUUIDFromDiscordId(String discordId) {
+        if (discordId == null) return null;
         for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
-            if (entry.getValue().equals(discordId)) {
+            if (discordId.equals(entry.getValue())) {
                 return entry.getKey();
             }
         }
         return null;
+    }
+
+    public List<UUID> getAllUUIDsFromDiscordId(String discordId) {
+        List<UUID> list = new ArrayList<>();
+        if (discordId == null) return list;
+        for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
+            if (discordId.equals(entry.getValue())) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
     }
 }

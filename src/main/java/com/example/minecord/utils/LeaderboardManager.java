@@ -100,7 +100,7 @@ public class LeaderboardManager {
 
             String name = p.getName();
             if ((name == null || name.isEmpty()) && plugin.getPlayerCacheManager() != null) {
-                name = plugin.getPlayerCacheManager().getPlayerNameByUuid(p.getUniqueId());
+                name = plugin.getPlayerCacheManager().resolvePlayerName(p.getUniqueId());
             }
             if (name == null || name.isEmpty()) continue;
 
