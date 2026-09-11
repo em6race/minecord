@@ -87,10 +87,23 @@ public class PlayerCacheManager {
     }
 
     /**
+     * Checks whether a string is a valid Minecraft username.
+     * Java Edition usernames: 3-16 characters [a-zA-Z0-9_].
+     * Geyser/Floodgate Bedrock usernames: can start with prefix '.' or '*' followed by 3-16 chars.
+     * Filters out server hostnames (like kozlomine.join-server.online), slash characters, bot scanners, etc.
+     */
+    public static boolean isValidMinecraftUsername(String name) {
+        if (name == null) return false;
+        String trimmed = name.trim();
+        if (trimmed.length() < 3 || trimmed.length() > 17) return false;
+        return trimmed.matches("^[.*]?[a-zA-Z0-9_]{3,16}$");
+    }
+
+    /**
      * Add a player name to the cache.
      */
     public void addPlayer(String name) {
-        if (name != null && !name.trim().isEmpty()) {
+        if (isValidMinecraftUsername(name)) {
             cachedPlayerNames.add(name.trim());
         }
     }
@@ -99,7 +112,7 @@ public class PlayerCacheManager {
      * Add a player name and UUID to the cache.
      */
     public void addPlayer(String name, UUID uuid) {
-        if (name != null && !name.trim().isEmpty()) {
+        if (isValidMinecraftUsername(name)) {
             String trimmed = name.trim();
             cachedPlayerNames.add(trimmed);
             if (uuid != null) {
@@ -447,52 +460,72 @@ public class PlayerCacheManager {
         return (op != null) ? op.getUniqueId() : null;
     }
 
-    /**
-     * Reads the current live whitelist from whitelist.json and Bukkit whitelist.
-     * Always returns up-to-date names so removed players are instantly omitted from autocomplete.
-     */
-    public Set<String> getCurrentWhitelistedPlayers() {
-        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    private List<File> getPossibleWhitelistFiles() {
+        List<File> files = new ArrayList<>();
+        files.add(new File("whitelist.json"));
+        try {
+            if (plugin.getServer().getWorldContainer() != null) {
+                files.add(new File(plugin.getServer().getWorldContainer(), "whitelist.json"));
+            }
+        } catch (Throwable ignored) {}
+        try {
+            if (plugin.getDataFolder() != null && plugin.getDataFolder().getParentFile() != null && plugin.getDataFolder().getParentFile().getParentFile() != null) {
+                files.add(new File(plugin.getDataFolder().getParentFile().getParentFile(), "whitelist.json"));
+            }
+        } catch (Throwable ignored) {}
+        try {
+            String userDir = System.getProperty("user.dir");
+            if (userDir != null) {
+                files.add(new File(userDir, "whitelist.json"));
+            }
+        } catch (Throwable ignored) {}
+        return files;
+    }
 
-        // 1. From whitelist.json directly
-        File[] possibleFiles = new File[] {
-                new File("whitelist.json"),
-                new File(plugin.getServer().getWorldContainer(), "whitelist.json")
-        };
-        for (File file : possibleFiles) {
-            if (file.exists() && file.canRead()) {
+    public Set<String> readWhitelistFile() {
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (File file : getPossibleWhitelistFiles()) {
+            if (file != null && file.exists() && file.canRead()) {
                 try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line);
-                    }
-                    Matcher entryMatcher = Pattern.compile("\"uuid\"\\s*:\\s*\"([0-9a-fA-F-]+)\"\\s*,\\s*\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(sb.toString());
-                    while (entryMatcher.find()) {
-                        String uStr = entryMatcher.group(1).trim();
-                        String n = entryMatcher.group(2).trim();
-                        if (!n.isEmpty()) {
-                            names.add(n);
-                            try {
-                                addPlayer(n, UUID.fromString(uStr));
-                            } catch (Exception ignored) {}
-                        }
-                    }
-                    if (names.isEmpty()) {
-                        Matcher nameMatcher = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(sb.toString());
-                        while (nameMatcher.find()) {
-                            String n = nameMatcher.group(1).trim();
-                            if (!n.isEmpty()) {
-                                names.add(n);
+                    JsonElement parsed = JsonParser.parseReader(reader);
+                    if (parsed != null && parsed.isJsonArray()) {
+                        for (JsonElement el : parsed.getAsJsonArray()) {
+                            if (el.isJsonObject()) {
+                                JsonObject obj = el.getAsJsonObject();
+                                String n = obj.has("name") && !obj.get("name").isJsonNull() ? obj.get("name").getAsString().trim() : null;
+                                String u = obj.has("uuid") && !obj.get("uuid").isJsonNull() ? obj.get("uuid").getAsString().trim() : null;
+                                if (isValidMinecraftUsername(n)) {
+                                    names.add(n);
+                                    if (u != null) {
+                                        try {
+                                            UUID uuid = UUID.fromString(u);
+                                            addPlayer(n, uuid);
+                                        } catch (Exception ignored) {}
+                                    }
+                                }
                             }
                         }
                     }
                     if (!names.isEmpty()) {
                         break;
                     }
-                } catch (Exception ignored) {}
+                } catch (Throwable t) {
+                    plugin.getLogger().warning("[MineCord] Помилка зчитування whitelist.json: " + t.getMessage());
+                }
             }
         }
+        return names;
+    }
+
+    /**
+     * Reads the current live whitelist from whitelist.json and Bukkit whitelist.
+     * Always returns up-to-date names so removed players and invalid entries are omitted from autocomplete.
+     */
+    public Set<String> getCurrentWhitelistedPlayers() {
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+        // 1. From whitelist.json directly
+        names.addAll(readWhitelistFile());
 
         // 2. From Bukkit whitelist API
         try {
@@ -501,7 +534,7 @@ public class PlayerCacheManager {
                 if (n == null && op.getUniqueId() != null) {
                     n = resolvePlayerName(op.getUniqueId());
                 }
-                if (n != null && !n.trim().isEmpty()) {
+                if (isValidMinecraftUsername(n)) {
                     names.add(n.trim());
                     if (op.getUniqueId() != null) {
                         addPlayer(n.trim(), op.getUniqueId());
@@ -514,25 +547,27 @@ public class PlayerCacheManager {
     }
 
     public boolean isWhitelisted(String playerName) {
-        if (playerName == null || playerName.trim().isEmpty()) return false;
+        if (!isValidMinecraftUsername(playerName)) return false;
         return getCurrentWhitelistedPlayers().contains(playerName.trim());
     }
 
     /**
-     * Returns matching player suggestions for Discord autocomplete (max 25).
-     * Online players are prioritized at the top of the list, followed by the current live whitelist.
-     * Removed whitelist players are automatically excluded.
+     * Returns matching whitelisted player suggestions for Discord /linkadmin autocomplete (max 25).
+     * Only whitelisted players are returned, prioritizing currently online players, then alphabetically.
+     * Non-whitelisted and invalid names (bots, scanners, hostnames) are strictly excluded.
      */
-    public List<String> getMatchingPlayers(String partial) {
+    public List<String> getMatchingWhitelistedPlayers(String partial) {
         String prefix = (partial == null) ? "" : partial.trim().toLowerCase();
         List<String> results = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        // 1. First priority: currently online players
+        Set<String> liveWhitelist = getCurrentWhitelistedPlayers();
+
+        // 1. First priority: whitelisted players who are currently online
         try {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 String name = p.getName();
-                if (name != null && name.toLowerCase().startsWith(prefix)) {
+                if (isValidMinecraftUsername(name) && (liveWhitelist.isEmpty() || liveWhitelist.contains(name)) && name.toLowerCase().startsWith(prefix)) {
                     results.add(name);
                     seen.add(name.toLowerCase());
                     if (results.size() >= 25) {
@@ -542,8 +577,7 @@ public class PlayerCacheManager {
             }
         } catch (Throwable ignored) {}
 
-        // 2. Second priority: current live whitelist (excludes removed players!)
-        Set<String> liveWhitelist = getCurrentWhitelistedPlayers();
+        // 2. Second priority: remaining whitelisted players (sorted alphabetically)
         if (!liveWhitelist.isEmpty()) {
             List<String> sortedWhitelist = new ArrayList<>(liveWhitelist);
             Collections.sort(sortedWhitelist, String.CASE_INSENSITIVE_ORDER);
@@ -560,8 +594,76 @@ public class PlayerCacheManager {
             return results;
         }
 
-        // 3. Fallback (if server doesn't use whitelist): cached players
-        List<String> sortedCached = new ArrayList<>(cachedPlayerNames);
+        // 3. Fallback only if whitelist is empty / disabled: valid cached players
+        List<String> sortedCached = new ArrayList<>();
+        for (String name : cachedPlayerNames) {
+            if (isValidMinecraftUsername(name)) {
+                sortedCached.add(name);
+            }
+        }
+        Collections.sort(sortedCached, String.CASE_INSENSITIVE_ORDER);
+
+        for (String name : sortedCached) {
+            if (!seen.contains(name.toLowerCase()) && name.toLowerCase().startsWith(prefix)) {
+                results.add(name);
+                seen.add(name.toLowerCase());
+                if (results.size() >= 25) {
+                    break;
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Returns matching player suggestions for commands like /stats (max 25).
+     * Online players and whitelisted players are prioritized at the top, followed by other valid cached players.
+     * Strictly filters out invalid Minecraft usernames.
+     */
+    public List<String> getMatchingPlayers(String partial) {
+        String prefix = (partial == null) ? "" : partial.trim().toLowerCase();
+        List<String> results = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        // 1. First priority: currently online players
+        try {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                String name = p.getName();
+                if (isValidMinecraftUsername(name) && name.toLowerCase().startsWith(prefix)) {
+                    results.add(name);
+                    seen.add(name.toLowerCase());
+                    if (results.size() >= 25) {
+                        return results;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Second priority: current live whitelist
+        Set<String> liveWhitelist = getCurrentWhitelistedPlayers();
+        if (!liveWhitelist.isEmpty()) {
+            List<String> sortedWhitelist = new ArrayList<>(liveWhitelist);
+            Collections.sort(sortedWhitelist, String.CASE_INSENSITIVE_ORDER);
+
+            for (String name : sortedWhitelist) {
+                if (isValidMinecraftUsername(name) && !seen.contains(name.toLowerCase()) && name.toLowerCase().startsWith(prefix)) {
+                    results.add(name);
+                    seen.add(name.toLowerCase());
+                    if (results.size() >= 25) {
+                        return results;
+                    }
+                }
+            }
+        }
+
+        // 3. Additional players from cache (only valid usernames)
+        List<String> sortedCached = new ArrayList<>();
+        for (String name : cachedPlayerNames) {
+            if (isValidMinecraftUsername(name)) {
+                sortedCached.add(name);
+            }
+        }
         Collections.sort(sortedCached, String.CASE_INSENSITIVE_ORDER);
 
         for (String name : sortedCached) {
@@ -586,38 +688,24 @@ public class PlayerCacheManager {
             Matcher uuidMatcher = Pattern.compile("\"uuid\"\\s*:\\s*\"([^\"]+)\"").matcher(obj);
             if (nameMatcher.find()) {
                 String name = nameMatcher.group(1).trim();
-                if (!name.isEmpty()) {
-                    cachedPlayerNames.add(name);
+                if (isValidMinecraftUsername(name)) {
+                    UUID uuid = null;
                     if (uuidMatcher.find()) {
                         try {
-                            UUID uuid = UUID.fromString(uuidMatcher.group(1).trim());
-                            playerNameToUuid.put(name.toLowerCase(), uuid);
-                            uuidToPlayerName.put(uuid, name);
+                            uuid = UUID.fromString(uuidMatcher.group(1).trim());
                         } catch (Exception ignored) {}
                     }
+                    addPlayer(name, uuid);
                 }
             }
         }
     }
 
     private void loadWhitelistFile() {
-        File[] possibleFiles = new File[] {
-                new File("whitelist.json"),
-                new File(plugin.getServer().getWorldContainer(), "whitelist.json")
-        };
-        for (File file : possibleFiles) {
-            if (file.exists() && file.canRead()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line);
-                    }
-                    parseJsonForPlayers(sb.toString());
-                    break;
-                } catch (Exception e) {
-                    plugin.getLogger().warning("[MineCord] Не вдалося зчитати whitelist.json: " + e.getMessage());
-                }
+        Set<String> whitelisted = readWhitelistFile();
+        for (String name : whitelisted) {
+            if (isValidMinecraftUsername(name)) {
+                cachedPlayerNames.add(name);
             }
         }
     }
@@ -627,12 +715,8 @@ public class PlayerCacheManager {
             for (OfflinePlayer op : Bukkit.getWhitelistedPlayers()) {
                 String name = op.getName();
                 UUID uuid = op.getUniqueId();
-                if (name != null && !name.trim().isEmpty()) {
-                    cachedPlayerNames.add(name.trim());
-                    if (uuid != null) {
-                        playerNameToUuid.put(name.trim().toLowerCase(), uuid);
-                        uuidToPlayerName.put(uuid, name.trim());
-                    }
+                if (isValidMinecraftUsername(name)) {
+                    addPlayer(name.trim(), uuid);
                 }
             }
         } catch (Throwable ignored) {}
@@ -663,11 +747,9 @@ public class PlayerCacheManager {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 String name = p.getName();
                 UUID uuid = p.getUniqueId();
-                if (name != null && !name.trim().isEmpty()) {
-                    cachedPlayerNames.add(name.trim());
+                if (isValidMinecraftUsername(name)) {
+                    addPlayer(name.trim(), uuid);
                     if (uuid != null) {
-                        playerNameToUuid.put(name.trim().toLowerCase(), uuid);
-                        uuidToPlayerName.put(uuid, name.trim());
                         playerXpCache.put(uuid, new PlayerXpData(p.getLevel(), p.getTotalExperience()));
                     }
                 }
