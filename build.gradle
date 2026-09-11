@@ -119,12 +119,9 @@ processResources {
 
 // Налаштовуємо shadowJar для збірки
 shadowJar {
-    // DO NOT relocate net.dv8tion, it breaks JDA internally!
-    // DO NOT relocate okhttp3/okio — Shadow plugin cannot handle Kotlin $$inlined$ classes
-    relocate 'com.fasterxml.jackson', 'com.example.minecord.libs.com.fasterxml.jackson'
-    relocate 'org.apache.commons.collections4', 'com.example.minecord.libs.org.apache.commons.collections4'
-    relocate 'gnu.trove', 'com.example.minecord.libs.gnu.trove'
-    relocate 'com.neovisionaries.ws.client', 'com.example.minecord.libs.com.neovisionaries.ws.client'
-    relocate 'io.sentry', 'com.example.minecord.libs.io.sentry'
+    archiveClassifier.set('all')
 }
+
+tasks.build.dependsOn tasks.shadowJar
+
 

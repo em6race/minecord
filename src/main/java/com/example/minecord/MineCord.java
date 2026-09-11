@@ -37,9 +37,12 @@ public final class MineCord extends JavaPlugin {
         
         String sentryDsn = getConfig().getString("sentry.dsn");
         if (getConfig().getBoolean("sentry.enabled", false) && sentryDsn != null && !sentryDsn.isEmpty()) {
-            io.sentry.Sentry.init(options -> {
-                options.setDsn(sentryDsn);
-                options.setTracesSampleRate(1.0);
+            io.sentry.Sentry.init(new io.sentry.Sentry.OptionsConfiguration<io.sentry.SentryOptions>() {
+                @Override
+                public void configure(io.sentry.SentryOptions options) {
+                    options.setDsn(sentryDsn);
+                    options.setTracesSampleRate(1.0);
+                }
             });
             logPink("Sentry integration enabled!");
         }
