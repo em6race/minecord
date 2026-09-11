@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.ArrayList;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.jetbrains.annotations.NotNull;
 
 public class DiscordChatListener extends ListenerAdapter {
@@ -175,30 +180,91 @@ public class DiscordChatListener extends ListenerAdapter {
             }
         }
 
-        // 3. Play notification sound for all mentioned players
+        // 3. Check if message is a reply to another message
+        net.dv8tion.jda.api.entities.Message refMsg = event.getMessage().getReferencedMessage();
+        TextComponent replyComponent = null;
+
+        if (refMsg != null) {
+            String refAuthor;
+            if (refMsg.isWebhookMessage()) {
+                refAuthor = refMsg.getAuthor().getName();
+                Player mcTarget = plugin.getServer().getPlayerExact(refAuthor);
+                if (mcTarget != null && mcTarget.isOnline()) {
+                    pingedPlayers.add(mcTarget.getUniqueId());
+                }
+            } else if (refMsg.getMember() != null) {
+                refAuthor = refMsg.getMember().getEffectiveName();
+            } else if (refMsg.getAuthor() != null) {
+                refAuthor = refMsg.getAuthor().getName();
+            } else {
+                refAuthor = "Хтось";
+            }
+
+            String refContent = refMsg.getContentDisplay();
+            if (refContent == null || refContent.trim().isEmpty()) {
+                if (!refMsg.getAttachments().isEmpty()) {
+                    refContent = "[Вкладення]";
+                } else if (!refMsg.getEmbeds().isEmpty()) {
+                    refContent = "[Вбудоване повідомлення]";
+                } else {
+                    refContent = "...";
+                }
+            }
+            if (refContent.length() > 150) {
+                refContent = refContent.substring(0, 147) + "...";
+            }
+
+            replyComponent = new TextComponent(" §8[§b↩ §7" + refAuthor + "§8]");
+            String hoverText = "§eВідповідь на повідомлення від §b@" + refAuthor + "§7:\n§f" + refContent;
+            try {
+                String jumpUrl = refMsg.getJumpUrl();
+                replyComponent.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, jumpUrl));
+                hoverText += "\n\n§8(Клікніть, щоб відкрити в Discord)";
+            } catch (Throwable ignored) {}
+
+            replyComponent.setHoverEvent(new HoverEvent(
+                    HoverEvent.Action.SHOW_TEXT,
+                    new Text(hoverText)
+            ));
+        }
+
+        // 4. Play notification sound for all mentioned players
         for (java.util.UUID uuid : pingedPlayers) {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
-                org.bukkit.entity.Player p = plugin.getServer().getPlayer(uuid);
+                Player p = plugin.getServer().getPlayer(uuid);
                 if (p != null) {
                     p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
                 }
             });
         }
 
-        // Construct formatted message for Minecraft chat
-        String formattedMessage = ChatColor.BLUE + "[Discord] " 
-                + ChatColor.WHITE + author + ": " 
-                + ChatColor.GRAY + message;
+        // Construct interactive component message for Minecraft chat
+        TextComponent rootComponent = new TextComponent("§9[Discord] §f" + author);
+        if (replyComponent != null) {
+            rootComponent.addExtra(replyComponent);
+        }
+        rootComponent.addExtra(new TextComponent("§f: §7" + message));
 
         // Append attachment indicator if attachments are present
         if (!event.getMessage().getAttachments().isEmpty()) {
-            formattedMessage += ChatColor.AQUA + " [Вкладення]";
+            TextComponent attachComp = new TextComponent(" §b[Вкладення]");
+            try {
+                String attachUrl = event.getMessage().getAttachments().get(0).getUrl();
+                attachComp.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, attachUrl));
+                attachComp.setHoverEvent(new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new Text("§eНатисніть, щоб відкрити вкладення в браузері")
+                ));
+            } catch (Throwable ignored) {}
+            rootComponent.addExtra(attachComp);
         }
 
         // Broadcast to all online players on the main thread
-        String finalMessage = formattedMessage;
         plugin.getServer().getScheduler().runTask(plugin, () -> {
-            plugin.getServer().broadcastMessage(finalMessage);
+            for (Player p : plugin.getServer().getOnlinePlayers()) {
+                p.spigot().sendMessage(rootComponent);
+            }
+            plugin.getServer().getConsoleSender().sendMessage(rootComponent.toLegacyText());
         });
     }
 
