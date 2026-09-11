@@ -207,7 +207,7 @@ public class RoleSyncManager {
         }
     }
 
-    private RoleDefinition findHighestRole(Member member) {
+    public RoleDefinition findHighestRole(Member member) {
         if (member == null) return null;
         List<Role> memberRoles = member.getRoles();
         if (memberRoles.isEmpty()) return null;
@@ -221,6 +221,12 @@ public class RoleSyncManager {
         }
 
         return null;
+    }
+
+    public String getRolePrefixForMember(Member member) {
+        if (member == null) return "";
+        RoleDefinition def = findHighestRole(member);
+        return def != null ? def.prefix : "";
     }
 
     private void applyRole(Player player, RoleDefinition role) {
