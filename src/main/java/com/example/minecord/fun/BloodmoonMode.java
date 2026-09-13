@@ -1642,9 +1642,11 @@ public class BloodmoonMode implements FunMode, Listener {
             }
             eb.setDescription(desc);
             eb.setTimestamp(Instant.now());
-            eb.setFooter("MineCord Bloodmoon Event", null);
+            eb.setFooter("MineCord Bloodmoon Event");
 
-            channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {});
+            channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
+                plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду початку в Discord API: " + err.getMessage());
+            });
         } catch (Throwable t) {
             plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду початку в Discord: " + t.getMessage());
         }
@@ -1669,9 +1671,11 @@ public class BloodmoonMode implements FunMode, Listener {
                     "• Знищено кривавих монстрів: `" + mobsKilled + "`"
             );
             eb.setTimestamp(Instant.now());
-            eb.setFooter("MineCord Bloodmoon Event", null);
+            eb.setFooter("MineCord Bloodmoon Event");
 
-            channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {});
+            channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
+                plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду світанку в Discord API: " + err.getMessage());
+            });
         } catch (Throwable t) {
             plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду світанку в Discord: " + t.getMessage());
         }
