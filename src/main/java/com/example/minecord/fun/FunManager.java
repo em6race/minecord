@@ -15,6 +15,7 @@ public class FunManager {
         registerMode(new RiptideMode(plugin));
         registerMode(new SpearHungerMode(plugin));
         registerMode(new SmartAnvilMode(plugin));
+        registerMode(new BloodmoonMode(plugin));
     }
 
     /**

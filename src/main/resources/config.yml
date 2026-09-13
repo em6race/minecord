@@ -309,4 +309,76 @@ fun:
       # Максимальна вартість ремонту (за замовчуванням 2147483647 — практично без обмежень)
       max_repair_cost: 2147483647
       # Відображати точну кількість необхідного досвіду в Action Bar (бо ванільний клієнт при >= 40 пише "Занадто дорого")
-      show_actionbar_info: true
+      show_actionbar_info: true
+
+    # 4. Кривавий Місяць (Bloodmoon Event)
+    # Періодична ніч кошмарів із 5% шансом щовечора, ванільним червоним небом/віньєткою,
+    # 3 рівнями складності, посиленими мобами, ордами, міні-босами, збереженням при рестарті та сповіщеннями в Discord.
+    bloodmoon:
+      enabled: true
+      # Шанс настання Кривавого Місяця кожного заходу сонця (у відсотках, 5.0 = 5%)
+      chance_percent: 5.0
+      # Чи блокувати сон у ліжках під час Кривавого Місяця
+      block_beds: true
+      # Чи вмикати червону віньєтку, дощ та червоні частинки попелу (працює без жодних ресурспаків)
+      red_sky_effects: true
+      # Чи спавнити періодичні орди агресивних мобів біля гравців
+      hordes_enabled: true
+      # Інтервал між спавном орд (у секундах, за замовчуванням 120 = 2 хвилини)
+      horde_interval_seconds: 120
+      # Чи надсилати ембеди про початок та кінець (підсумки) ночі в Discord
+      discord_announcements: true
+      # Світи, в яких активний Кривавий Місяць
+      worlds:
+        - "world"
+      # Рівні загрози (Tiers)
+      # Вага (weight) визначає ймовірність вибору рівня (рівень 2: 55%, рівень 3: 25%, рівень 1: 20%)
+      tiers:
+        tier_1:
+          level: 1
+          name: "Багряний Сутінок"
+          weight: 20
+          health_multiplier: 1.3
+          speed_level: 0
+          strength_level: 0
+          resistance_level: 0
+          armor_chance: 20
+          exp_multiplier: 1.5
+          boss_chance: 0.0
+          horde_min: 2
+          horde_max: 4
+          boss_name: "§c§lБагряний Страж"
+          bar_color: "YELLOW"
+          discord_color: 16753920 # 0xFFA500
+        tier_2:
+          level: 2
+          name: "Кривавий Місяць"
+          weight: 55
+          health_multiplier: 1.7
+          speed_level: 1
+          strength_level: 1
+          resistance_level: 0
+          armor_chance: 45
+          exp_multiplier: 2.0
+          boss_chance: 15.0
+          horde_min: 4
+          horde_max: 6
+          boss_name: "§4§lКривавий Лицар"
+          bar_color: "RED"
+          discord_color: 14483456 # 0xDD0000
+        tier_3:
+          level: 3
+          name: "Затемнення Апокаліпсису"
+          weight: 25
+          health_multiplier: 2.5
+          speed_level: 2
+          strength_level: 2
+          resistance_level: 1
+          armor_chance: 75
+          exp_multiplier: 3.0
+          boss_chance: 40.0
+          horde_min: 6
+          horde_max: 10
+          boss_name: "§5§lКривавий Жнець"
+          bar_color: "PURPLE"
+          discord_color: 6701875 # 0x660033
