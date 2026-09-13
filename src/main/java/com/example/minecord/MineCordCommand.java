@@ -115,7 +115,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
 
             if (args[1].equalsIgnoreCase("start")) {
-                int tier = 2; // За замовчуванням рівень 2 (найбільш збалансований)
+                int tier = 1; // За замовчуванням рівень 1 (Кривавий Місяць)
                 if (args.length >= 3) {
                     try {
                         tier = Integer.parseInt(args[2]);
@@ -125,7 +125,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     }
                 }
                 if (tier < 1 || tier > 4) {
-                    sender.sendMessage(ChatColor.RED + "Некоректний рівень! Доступні рівні: 1 (Багряний Сутінок), 2 (Кривавий Місяць), 3 (Затемнення Апокаліпсису), 4 (Кривавий Армагеддон).");
+                    sender.sendMessage(ChatColor.RED + "Некоректний рівень! Доступні рівні: 1 (Кривавий Місяць), 2 (Кривавий Армагеддон), 3 (Пекельний Катаклізм), 4 (☠ Судний День / Раґнарок ☠).");
                     return true;
                 }
 

@@ -108,28 +108,28 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void registerDefaultTiers() {
         tiers.put(1, new BloodmoonTier(
-                1, "tier_1", "Багряний Сутінок", 25,
-                1.3, 0, 0, 0, 20,
-                1.5, 0.0, 2, 4,
-                "§c§lБагряний Страж", BarColor.YELLOW, 0xFFA500
+                1, "tier_1", "Кривавий Місяць", 40,
+                2.5, 1, 1, 1, 70,
+                2.5, 30.0, 6, 12,
+                "§5§lКривавий Жнець", BarColor.RED, 0xDD0000
         ));
         tiers.put(2, new BloodmoonTier(
-                2, "tier_2", "Кривавий Місяць", 50,
-                1.7, 1, 1, 0, 45,
-                2.0, 15.0, 4, 6,
-                "§4§lКривавий Лицар", BarColor.RED, 0xDD0000
+                2, "tier_2", "Кривавий Армагеддон", 35,
+                4.5, 2, 2, 1, 85,
+                4.0, 50.0, 10, 18,
+                "§4§l☠ Володар Безодні ☠", BarColor.RED, 0xAA0000
         ));
         tiers.put(3, new BloodmoonTier(
-                3, "tier_3", "Затемнення Апокаліпсису", 20,
-                2.5, 2, 2, 1, 75,
-                3.0, 40.0, 6, 10,
-                "§5§lКривавий Жнець", BarColor.PURPLE, 0x660033
+                3, "tier_3", "Пекельний Катаклізм", 18,
+                6.5, 2, 3, 2, 95,
+                6.0, 65.0, 16, 26,
+                "§4§l☠ Архідемон Смерті ☠", BarColor.PURPLE, 0x660033
         ));
         tiers.put(4, new BloodmoonTier(
-                4, "tier_4", "Кривавий Армагеддон", 5,
-                4.0, 2, 3, 2, 95,
-                5.0, 60.0, 8, 14,
-                "§4§l☠ Володар Безодні ☠", BarColor.RED, 0x2A0000
+                4, "tier_4", "☠ Судний День (Раґнарок) ☠", 7,
+                10.0, 3, 4, 2, 100,
+                10.0, 80.0, 22, 36,
+                "§0§l☠ §4§lТИТАН ХАОСУ §0§l☠", BarColor.PURPLE, 0x2A0000
         ));
     }
 
@@ -397,15 +397,30 @@ public class BloodmoonMode implements FunMode, Listener {
                 p.playSound(p.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1.0f, 0.9f);
             } else if (tier.getLevel() >= 4) {
                 p.sendTitle(
-                        "§4§l☠ КРИВАВИЙ АРМАГЕДДОН ☠",
+                        "§4§l☠ СУДНИЙ ДЕНЬ (РАҐНАРОК) ☠",
                         "§cРівень загрози: §4§l" + tier.getName() + " (MAX)",
                         10, 100, 30
                 );
                 p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.2f, 0.7f);
                 p.getWorld().strikeLightningEffect(p.getLocation());
+            } else if (tier.getLevel() == 3) {
+                p.sendTitle(
+                        "§c§l🔥 ПЕКЕЛЬНИЙ КАТАКЛІЗМ 🔥",
+                        "§cРівень загрози: §e" + tier.getName(),
+                        10, 90, 25
+                );
+                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.6f);
+                p.getWorld().strikeLightningEffect(p.getLocation());
+            } else if (tier.getLevel() == 2) {
+                p.sendTitle(
+                        "§4§l☠ КРИВАВИЙ АРМАГЕДДОН ☠",
+                        "§cРівень загрози: §e" + tier.getName(),
+                        10, 85, 25
+                );
+                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.8f);
             } else {
                 p.sendTitle(
-                        "§4§lКРИВАВИЙ МІСЯЦЬ",
+                        "§4§l🩸 КРИВАВИЙ МІСЯЦЬ 🩸",
                         "§cРівень загрози: §f" + tier.getName(),
                         10, 80, 20
                 );
@@ -419,17 +434,31 @@ public class BloodmoonMode implements FunMode, Listener {
         String chatMsg;
         if (tier.getLevel() >= 4) {
             chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
-                    "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН (РІВЕНЬ IV)! ☠\n" +
-                    "  §cБЕЗОДНЯ ПОГЛИНУЛА СВІТ! ПОВСТАВ ВОЛОДАР СМЕРТІ!\n" +
-                    "  §cМонстри смертоносні, орди невблаганні, сон заблоковано!\n" +
-                    "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ЗА ВИЖИВАННЯ!\n" +
+                    "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — РІВЕНЬ IV! ☠\n" +
+                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
+                    "  §c10x HP, повний незерит, смертельні орди до 36 мобів!\n" +
+                    "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
+                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
+        } else if (tier.getLevel() == 3) {
+            chatMsg = "\n§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
+                    "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ (РІВЕНЬ III)! 🔥\n" +
+                    "  §cАРХІДЕМОНИ СМЕРТІ ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
+                    "  §c6.5x HP, незеритова броня, гігантські орди та заряджені кріпери!\n" +
+                    "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕСЯ ДО БОЮ!\n" +
+                    "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n";
+        } else if (tier.getLevel() == 2) {
+            chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
+                    "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН (РІВЕНЬ II)! ☠\n" +
+                    "  §cВОЛОДАРІ БЕЗОДНІ ТА ЗАХИСНІ ЧАРИ ЗАХОПИЛИ СВІТ!\n" +
+                    "  §c4.5x HP, діамантове спорядження, орди до 18 монстрів!\n" +
+                    "  §4§lТРИМАЙТЕ ОБОРОНУ ДО СВІТАНКУ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
         } else {
             chatMsg = "\n§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                    "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸\n" +
-                    "  §cРівень загрози: §e" + tier.getName() + " §7(Рівень " + tier.getLevel() + ")\n" +
-                    "  §cМонстри посилені! Сон у ліжках заблоковано!\n" +
-                    "  §cТримайте оборону баз до світанку!\n" +
+                    "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ (РІВЕНЬ I)! 🩸\n" +
+                    "  §cКривавий Жнець та орди кровожерливих мерців вийшли на полювання!\n" +
+                    "  §c2.5x HP, діамантова броня! Сон у ліжках заблоковано!\n" +
+                    "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕ ЗБРОЮ!\n" +
                     "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         }
         Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(chatMsg));
@@ -736,29 +765,68 @@ public class BloodmoonMode implements FunMode, Listener {
                 followAttr.setBaseValue(64.0);
             }
 
-            double bossHp = (currentTier.getLevel() >= 4) ? 500.0 : ((currentTier.getLevel() >= 3) ? 300.0 : 150.0);
+            double bossHp;
+            if (currentTier.getLevel() >= 4) {
+                bossHp = 1400.0;
+            } else if (currentTier.getLevel() == 3) {
+                bossHp = 850.0;
+            } else if (currentTier.getLevel() == 2) {
+                bossHp = 550.0;
+            } else {
+                bossHp = 300.0;
+            }
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
                 hpAttr.setBaseValue(bossHp);
                 boss.setHealth(bossHp);
             }
 
-            int speedAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
-            int strAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
-            int resAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
+            int speedAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 2 ? 2 : 1);
+            int strAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : 1);
+            int resAmp = (currentTier.getLevel() >= 3) ? 2 : 1;
 
             int bDuration = (durationMinutes + 5) * 60 * 20;
             boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, bDuration, speedAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, bDuration, strAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, bDuration, resAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, bDuration, 0, false, false));
-            if (currentTier.getLevel() >= 4) {
+            if (currentTier.getLevel() >= 3) {
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 1, false, false));
             }
 
             EntityEquipment eq = boss.getEquipment();
             if (eq != null) {
+                eq.setHelmetDropChance(0.0f);
+                eq.setChestplateDropChance(0.0f);
+                eq.setLeggingsDropChance(0.0f);
+                eq.setBootsDropChance(0.0f);
+                eq.setItemInMainHandDropChance(0.0f);
+                eq.setItemInOffHandDropChance(0.0f);
+
                 if (currentTier.getLevel() >= 4) {
+                    ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setHelmet(helm);
+
+                    ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    chest.addEnchantment(Enchantment.THORNS, 3);
+                    eq.setChestplate(chest);
+
+                    ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setLeggings(legs);
+
+                    ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setBoots(boots);
+
+                    ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 5);
+                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
+                    weapon.addEnchantment(Enchantment.KNOCKBACK, 2);
+                    eq.setItemInMainHand(weapon);
+                } else if (currentTier.getLevel() == 3) {
                     ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
                     helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
                     eq.setHelmet(helm);
@@ -779,13 +847,24 @@ public class BloodmoonMode implements FunMode, Listener {
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
                     weapon.addEnchantment(Enchantment.DAMAGE_ALL, 5);
                     weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
-                    weapon.addEnchantment(Enchantment.KNOCKBACK, 2);
                     eq.setItemInMainHand(weapon);
-                } else if (currentTier.getLevel() >= 3) {
-                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
-                    eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
-                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+                } else if (currentTier.getLevel() == 2) {
+                    ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    eq.setHelmet(helm);
+
+                    ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    eq.setChestplate(chest);
+
+                    ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    eq.setLeggings(legs);
+
+                    ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    eq.setBoots(boots);
+
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
                     weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
                     eq.setItemInMainHand(weapon);
@@ -798,7 +877,6 @@ public class BloodmoonMode implements FunMode, Listener {
                     weapon.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                     eq.setItemInMainHand(weapon);
                 }
-                eq.setItemInMainHandDropChance(0.0f);
             }
 
             // Візуальні ефекти та звук появи прямо біля гравця
@@ -809,13 +887,25 @@ public class BloodmoonMode implements FunMode, Listener {
             player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
                     "§4§l☠ БОС " + currentTier.getBossName() + " §4§lПОВСТАВ ПОРУЧ! (" + distInt + "м) ☠"
             ));
-            player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.8f);
 
             if (currentTier.getLevel() >= 4) {
                 Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l☠☠☠ [АРМАГЕДДОН] ВОЛОДАР БЕЗОДНІ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠☠☠"
+                        "§0§l☠§4§l☠§0§l☠ [СУДНИЙ ДЕНЬ] ТИТАН ХАОСУ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ХАЙ ДОПОМОЖУТЬ ВАМ БОГИ! ☠"
                 ));
-                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.7f);
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 0.5f);
+                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.5f);
+            } else if (currentTier.getLevel() == 3) {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l☠ [КАТАКЛІЗМ] ПОВСТАВ АРХІДЕМОН СМЕРТІ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠"
+                ));
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.8f);
+                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.7f);
+            } else if (currentTier.getLevel() == 2) {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l☠ [АРМАГЕДДОН] ВОЛОДАР БЕЗОДНІ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠"
+                ));
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.8f);
+                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.8f);
             } else {
                 Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
                         "§4§l[!] §cСходження Боса: §r" + currentTier.getBossName() + "§c біля гравця §e" + player.getName() + "§c!"
@@ -842,16 +932,16 @@ public class BloodmoonMode implements FunMode, Listener {
         // У ванільному Майнкрафті, якщо кріпер із зіллям вибухає, він створює
         // AreaEffectCloud (хмару осідання зілля) з цими ефектами, і гравці отримують бафи на роки.
         if (monster instanceof Creeper creeper) {
-            if (tier.getLevel() >= 4) {
+            if (tier.getLevel() >= 2) {
                 creeper.setPowered(true);
             }
             if (tier.getSpeedLevel() > 0) {
                 AttributeInstance spd = creeper.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
                 if (spd != null) {
-                    spd.setBaseValue(spd.getBaseValue() * (1.0 + 0.15 * tier.getSpeedLevel()));
+                    spd.setBaseValue(spd.getBaseValue() * (1.0 + 0.18 * tier.getSpeedLevel()));
                 }
             }
-            if (tier.getLevel() >= 3) {
+            if (tier.getLevel() >= 2) {
                 creeper.setGlowing(true);
             }
             return;
@@ -869,7 +959,7 @@ public class BloodmoonMode implements FunMode, Listener {
             monster.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, effectDurationTicks, tier.getResistanceLevel() - 1, false, false));
         }
 
-        if (tier.getLevel() >= 3) {
+        if (tier.getLevel() >= 2) {
             monster.setGlowing(true);
         }
 
@@ -888,6 +978,7 @@ public class BloodmoonMode implements FunMode, Listener {
                 eq.setItemInOffHandDropChance(0.0f);
 
                 if (tier.getLevel() >= 4) {
+                    // Рівень 4 (Раґнарок): Повний незерит, максимальні чари
                     eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
                     eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
                     eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
@@ -895,16 +986,54 @@ public class BloodmoonMode implements FunMode, Listener {
                     if (monster instanceof Skeleton) {
                         ItemStack bow = new ItemStack(Material.BOW);
                         bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
-                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 3);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 5);
+                        bow.addEnchantment(Enchantment.ARROW_KNOCKBACK, 2);
                         eq.setItemInMainHand(bow);
                     } else {
                         ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
-                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 3);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 5);
+                        sword.addEnchantment(Enchantment.FIRE_ASPECT, 2);
+                        sword.addEnchantment(Enchantment.KNOCKBACK, 2);
+                        eq.setItemInMainHand(sword);
+                    }
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
+                } else if (tier.getLevel() == 3) {
+                    // Рівень 3 (Катаклізм): Повний незерит, потужні чари
+                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+                    eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+                    if (monster instanceof Skeleton) {
+                        ItemStack bow = new ItemStack(Material.BOW);
+                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 4);
+                        eq.setItemInMainHand(bow);
+                    } else {
+                        ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 4);
                         sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                         eq.setItemInMainHand(sword);
                     }
                     monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
-                } else if (tier.getLevel() >= 3) {
+                } else if (tier.getLevel() == 2) {
+                    // Рівень 2 (Армагеддон): Діамант + Незерит
+                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+                    if (monster instanceof Skeleton) {
+                        ItemStack bow = new ItemStack(Material.BOW);
+                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 3);
+                        eq.setItemInMainHand(bow);
+                    } else {
+                        ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 3);
+                        sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
+                        eq.setItemInMainHand(sword);
+                    }
+                } else {
+                    // Рівень 1 (Кривавий Місяць): Повний діамантовий сет
                     eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
                     eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
                     eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
@@ -913,15 +1042,11 @@ public class BloodmoonMode implements FunMode, Listener {
                         ItemStack bow = new ItemStack(Material.BOW);
                         bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
                         eq.setItemInMainHand(bow);
+                    } else {
+                        ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 2);
+                        eq.setItemInMainHand(sword);
                     }
-                } else if (tier.getLevel() == 2) {
-                    eq.setHelmet(new ItemStack(Material.IRON_HELMET));
-                    eq.setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.IRON_LEGGINGS));
-                    eq.setBoots(new ItemStack(Material.IRON_BOOTS));
-                } else {
-                    eq.setHelmet(new ItemStack(Material.LEATHER_HELMET));
-                    eq.setBoots(new ItemStack(Material.LEATHER_BOOTS));
                 }
             }
         }
@@ -1020,7 +1145,11 @@ public class BloodmoonMode implements FunMode, Listener {
 
             EmbedBuilder eb = new EmbedBuilder();
             if (tier.getLevel() >= 4) {
-                eb.setTitle("☠️ [АРМАГЕДДОН] КРИВАВИЙ МІСЯЦЬ РІВНЯ IV! ☠️");
+                eb.setTitle("☠️ [РАҐНАРОК] СУДНИЙ ДЕНЬ — РІВЕНЬ IV! ☠️");
+            } else if (tier.getLevel() == 3) {
+                eb.setTitle("🔥 [КАТАКЛІЗМ] ПЕКЕЛЬНИЙ КАТАКЛІЗМ — РІВЕНЬ III! 🔥");
+            } else if (tier.getLevel() == 2) {
+                eb.setTitle("☠️ [АРМАГЕДДОН] КРИВАВИЙ АРМАГЕДДОН — РІВЕНЬ II! ☠️");
             } else {
                 eb.setTitle("🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸");
             }
@@ -1028,20 +1157,41 @@ public class BloodmoonMode implements FunMode, Listener {
             String desc;
             if (tier.getLevel() >= 4) {
                 desc = "**Рівень загрози:** `☠ " + tier.getName() + " ☠` (МАКСИМАЛЬНИЙ РІВЕНЬ 4)\n\n" +
-                        "🔥 **БЕЗОДНЯ ПОГЛИНУЛА СВІТ — НАЙКОШМАРНІША НІЧ:**\n" +
+                        "🔥 **ТИХИЙ ЖАХ І ТИТАНИ ХАОСУ ПОГЛИНУЛИ СВІТ:**\n" +
                         "• Сон у ліжках повністю унеможливлено!\n" +
-                        "• Монстри посилені у **" + tier.getHealthMultiplier() + " рази**, екіпіровані незеритом та смертельними чарами!\n" +
-                        "• Заряджені кріпери та невпинні гігантські орди монстрів.\n" +
-                        "• З високим шансом повстане **Володар Безодні**!\n" +
-                        "• За перемогу над босом: Зірка Незеру, незерит, зачаровані золоті яблука та **x" + tier.getExpMultiplier() + "** досвіду!\n\n" +
-                        "⚰️ *Шанси пережити цю ніч вкрай малі. Хай допоможуть вам небеса!*";
-            } else {
-                desc = "**Рівень загрози:** `" + tier.getName() + "` (Рівень " + tier.getLevel() + ")\n\n" +
-                        "⚠️ **Увага всім гравцям на сервері:**\n" +
+                        "• Монстри посилені у **10.0 разів** (10x HP, Сила IV, Опір II, Швидкість III)!\n" +
+                        "• 100% захист: повні комплекти зачарованого незериту (Захист IV, Шипи III)!\n" +
+                        "• Гігантські орди до 36 монстрів та швидкісні заряджені кріпери!\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (1400 HP)!\n" +
+                        "• За перемогу над босом: **3-4 Зірки Незеру, Блок Незериту, 3-4 Тотеми, Блоки Діамантів, Яблука Нотча та 10000 EXP**!\n\n" +
+                        "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
+            } else if (tier.getLevel() == 3) {
+                desc = "**Рівень загрози:** `🔥 " + tier.getName() + " 🔥` (РІВЕНЬ 3)\n\n" +
+                        "⚔️ **ПЕКЕЛЬНІ ЛЕГІОНИ ТА АРХІДЕМОНИ СМЕРТІ:**\n" +
                         "• Сон у ліжках заблоковано до настання світанку!\n" +
-                        "• Монстри отримали додаткове здоров'я (+" + (int)((tier.getHealthMultiplier() - 1.0) * 100) + "%) та бафи швидкості/сили.\n" +
-                        "• Очікуються хвилі орд монстрів та можлива поява босів.\n" +
-                        "• За знищення мобів видається **x" + tier.getExpMultiplier() + "** досвіду та рідкісний лут!\n\n" +
+                        "• Монстри посилені у **6.5 разів** (6.5x HP, Сила III, Опір II)!\n" +
+                        "• 95% монстрів у зачарованому незериті з гострими мечами!\n" +
+                        "• Заряджені кріпери та невпинні орди до 26 монстрів!\n" +
+                        "• Повстає **☠ Архідемон Смерті ☠** (850 HP)!\n" +
+                        "• За перемогу над босом: **2 Зірки Незеру, 2-4 незеритові зливки, 2-3 Тотеми, Блоки Діамантів та 6000 EXP**!\n\n" +
+                        "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
+            } else if (tier.getLevel() == 2) {
+                desc = "**Рівень загрози:** `☠ " + tier.getName() + " ☠` (РІВЕНЬ 2)\n\n" +
+                        "⚡ **АРМАГЕДДОН ПРИЙШОВ НА СЕРВЕР:**\n" +
+                        "• Сон у ліжках заблоковано!\n" +
+                        "• Монстри посилені у **4.5 рази** (4.5x HP, Сила II, Опір I)!\n" +
+                        "• Незеритова й діамантова броня, заряджені кріпери та орди до 18 монстрів!\n" +
+                        "• Повстає **Володар Безодні** (550 HP)!\n" +
+                        "• За перемогу над босом: **1 Зірка Незеру, 2-3 незеритові зливки, 2 Тотеми, Блоки Діамантів та 4000 EXP**!\n\n" +
+                        "⚔️ *Приготуйтеся до важкої битви!*";
+            } else {
+                desc = "**Рівень загрози:** `" + tier.getName() + "` (РІВЕНЬ 1)\n\n" +
+                        "⚠️ **Увага всім гравцям на сервері:**\n" +
+                        "• Сон у ліжках заблоковано до світанку!\n" +
+                        "• Монстри отримали **2.5x здоров'я**, бафи Швидкості та Сили!\n" +
+                        "• Орди монстрів до 12 створінь у діамантовому спорядженні!\n" +
+                        "• Повстає бос **«Кривавий Жнець»** (300 HP)!\n" +
+                        "• За перемогу над босом: **100% Тотем Безсмертя, Незеритовий зливок, Зачароване Золоте Яблуко, Блок Діамантів та 2000 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
             }
             eb.setDescription(desc);
@@ -1200,51 +1350,52 @@ public class BloodmoonMode implements FunMode, Listener {
                 w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 500);
 
                 if (currentTier.getLevel() >= 4) {
-                    // Рівень 4: Кривавий Армагеддон (Легендарний дроп)
+                    // Рівень 4: Судний День (Раґнарок) — Божественний дроп
+                    w.spawn(loc, ExperienceOrb.class).setExperience(10000);
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(3, 5)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_BLOCK, 1));
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(4, 7)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(3, 5)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 7)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(4, 7)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(8, 13)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(10, 17)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 64));
+                } else if (currentTier.getLevel() == 3) {
+                    // Рівень 3: Пекельний Катаклізм — Міфічний дроп
+                    w.spawn(loc, ExperienceOrb.class).setExperience(6000);
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, 2));
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 5)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(2, 4)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 5)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 3));
+                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(5, 9)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(6, 11)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 48));
+                } else if (currentTier.getLevel() == 2) {
+                    // Рівень 2: Кривавий Армагеддон — Легендарний дроп
+                    w.spawn(loc, ExperienceOrb.class).setExperience(4000);
                     w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, 1));
                     w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4)));
                     w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 2));
                     w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 8)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 2));
+                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 9)));
                     w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
-                } else if (currentTier.getLevel() == 3) {
-                    // Рівень 3: Затемнення Апокаліпсису (Щедрий гарантований ендгейм-лут!)
+                } else {
+                    // Рівень 1: Кривавий Місяць — Епічний гарантований дроп
+                    w.spawn(loc, ExperienceOrb.class).setExperience(2000);
                     w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 1));
-                    if (ThreadLocalRandom.current().nextBoolean()) {
-                        w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 50% шанс на 2-й тотем
-                    }
                     w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(2, 4)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(2, 5)));
                     w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
                     w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 1));
                     w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(12, 21)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 8)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 9)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
+                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
                     w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
-                } else if (currentTier.getLevel() == 2) {
-                    // Рівень 2: Кривавий Місяць
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(6, 13)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(12, 25)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(24, 49)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
-                    if (ThreadLocalRandom.current().nextInt(100) < 60) {
-                        w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 1));
-                    }
-                    if (ThreadLocalRandom.current().nextInt(100) < 30) {
-                        w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                    }
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 12));
-                } else {
-                    // Рівень 1: Багряний Сутінок
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(3, 6)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(16, 33)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(8, 17)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 6));
                 }
 
                 // Святковий феєрверк тріумфу при падінні боса
@@ -1254,69 +1405,80 @@ public class BloodmoonMode implements FunMode, Listener {
                 String killerName = (killer != null) ? killer.getName() : "Герої";
                 if (currentTier.getLevel() >= 4) {
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Зірка Незеру та незерит випали на землю! ☠"
+                            "§4§l☠ [БОЖЕСТВЕННА ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ТИТАНА ХАОСУ §r" + entity.getCustomName() + "§4§l! 4 Зірки Незеру, Блок Незериту та тотеми випали на землю! ☠"
                     ));
                 } else if (currentTier.getLevel() == 3) {
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§5§l☠ [ЕПОС] Гравець §e" + killerName + " §5§lпереміг ЖНЕЦЯ АПОКАЛІПСИСУ §r" + entity.getCustomName() + "§5§l! Тотем, незерит та скарби випали на землю! ☠"
+                            "§c§l☠ [МІФІЧНИЙ ПОДВИГ] Гравець §e" + killerName + " §c§lвигнав АРХІДЕМОНА СМЕРТІ §r" + entity.getCustomName() + "§c§l! 2 Зірки Незеру, незерит та тотеми випали на землю! ☠"
+                    ));
+                } else if (currentTier.getLevel() == 2) {
+                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                            "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Зірка Незеру та незерит випали на землю! ☠"
                     ));
                 } else {
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§6§l[!] Гравець §e" + killerName + " §6переміг боса §r" + entity.getCustomName() + "§6! Трофеї випали на землю!"
+                            "§5§l☠ [ЕПОС] Гравець §e" + killerName + " §5§lпереміг КРИВАВОГО ЖНЕЦЯ §r" + entity.getCustomName() + "§5§l! Тотем, незерит та скарби випали на землю! ☠"
                     ));
                 }
             } else {
-                // Дроп зі звичайних мобів (за принципом BloodmoonReloaded: 1-3 пачки луту)
+                // Дроп зі звичайних мобів (за принципом BloodmoonReloaded: 1-5 пачок луту залежно від рівня)
                 int lvl = currentTier.getLevel();
-                int rolls = (lvl >= 3) ? ThreadLocalRandom.current().nextInt(1, 4) : 1;
+                int rolls = (lvl >= 4) ? ThreadLocalRandom.current().nextInt(2, 6)
+                        : (lvl == 3) ? ThreadLocalRandom.current().nextInt(1, 5)
+                        : (lvl == 2) ? ThreadLocalRandom.current().nextInt(1, 4)
+                        : ThreadLocalRandom.current().nextInt(1, 3);
 
                 for (int i = 0; i < rolls; i++) {
                     int roll = ThreadLocalRandom.current().nextInt(100);
                     if (lvl >= 4) {
-                        if (roll < 8) {
+                        if (roll < 12) {
                             w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                        } else if (roll < 20) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3)));
-                        } else if (roll < 40) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(3, 7)));
-                        } else if (roll < 65) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(4, 9)));
-                        } else if (roll < 80) {
+                        } else if (roll < 28) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(2, 5)));
+                        } else if (roll < 48) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
+                        } else if (roll < 70) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(1, 4)));
+                        } else if (roll < 88) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
+                        } else {
+                            w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
+                        }
+                    } else if (lvl == 3) {
+                        if (roll < 10) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
+                        } else if (roll < 28) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 4)));
+                        } else if (roll < 52) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(4, 9)));
+                        } else if (roll < 76) {
                             w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, 1));
+                        } else if (roll < 90) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, 1));
+                        } else {
+                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(2, 6)));
+                        }
+                    } else if (lvl == 2) {
+                        if (roll < 7) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
+                        } else if (roll < 25) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3)));
+                        } else if (roll < 55) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(3, 7)));
+                        } else if (roll < 80) {
+                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(4, 10)));
                         } else {
                             w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, 1));
                         }
-                    } else if (lvl >= 3) {
-                        if (roll < 6) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                        } else if (roll < 22) {
+                    } else {
+                        if (roll < 15) {
                             w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, 1));
                         } else if (roll < 45) {
                             w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(2, 6)));
-                        } else if (roll < 75) {
+                        } else if (roll < 80) {
                             w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(3, 8)));
-                        } else if (roll < 88) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 4)));
                         } else {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, 1));
-                        }
-                    } else if (lvl == 2) {
-                        if (roll < 12) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, 1));
-                        } else if (roll < 35) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(1, 4)));
-                        } else if (roll < 70) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(2, 6)));
-                        } else if (roll < 85) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, 1));
-                        }
-                    } else {
-                        if (roll < 5) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, 1));
-                        } else if (roll < 30) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, 1));
-                        } else if (roll < 70) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(1, 3)));
+                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 4)));
                         }
                     }
                 }
