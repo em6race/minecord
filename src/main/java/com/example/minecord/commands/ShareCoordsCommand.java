@@ -124,7 +124,10 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             dimension = "Верхній світ";
         }
 
-        String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
+        String mapUrl = plugin.getConfig().getString("discord.map-url", "http://ge-r2.eternalhosting.cloud:27218/");
+        if (mapUrl == null || mapUrl.trim().isEmpty() || mapUrl.contains("localhost")) {
+            mapUrl = "http://ge-r2.eternalhosting.cloud:27218/";
+        }
         if (!mapUrl.endsWith("/")) mapUrl += "/";
 
         // BlueMap URL format
