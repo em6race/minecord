@@ -94,6 +94,84 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
         }
 
+        if (args.length > 0 && args[0].equalsIgnoreCase("bloodmoon")) {
+            if (!sender.hasPermission("minecord.admin") && !sender.isOp()) {
+                sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
+                return true;
+            }
+            if (args.length < 2) {
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-3]|stop|status>");
+                return true;
+            }
+            if (plugin.getFunManager() == null) {
+                sender.sendMessage(ChatColor.RED + "FunManager не ініціалізовано.");
+                return true;
+            }
+            com.example.minecord.fun.BloodmoonMode bloodmoon = (com.example.minecord.fun.BloodmoonMode) plugin.getFunManager().getMode("bloodmoon");
+            if (bloodmoon == null) {
+                sender.sendMessage(ChatColor.RED + "Режим Bloodmoon не знайдено або не завантажено!");
+                return true;
+            }
+
+            if (args[1].equalsIgnoreCase("start")) {
+                int tier = 2; // За замовчуванням рівень 2 (найбільш збалансований)
+                if (args.length >= 3) {
+                    try {
+                        tier = Integer.parseInt(args[2]);
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(ChatColor.RED + "Некоректний рівень! Використовуйте 1, 2 або 3.");
+                        return true;
+                    }
+                }
+                if (tier < 1 || tier > 3) {
+                    sender.sendMessage(ChatColor.RED + "Некоректний рівень! Доступні рівні: 1 (Багряний Сутінок), 2 (Кривавий Місяць), 3 (Затемнення Апокаліпсису).");
+                    return true;
+                }
+
+                org.bukkit.World world;
+                if (sender instanceof Player player) {
+                    world = player.getWorld();
+                } else {
+                    world = plugin.getServer().getWorlds().isEmpty() ? null : plugin.getServer().getWorlds().get(0);
+                }
+
+                if (world == null) {
+                    sender.sendMessage(ChatColor.RED + "Світ для запуску не знайдено.");
+                    return true;
+                }
+
+                boolean started = bloodmoon.startBloodmoon(world, tier, true);
+                if (started) {
+                    sender.sendMessage(ChatColor.GREEN + "Кривавий Місяць (Рівень " + tier + ") успішно активовано у світі " + world.getName() + "!");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Не вдалося запустити Кривавий Місяць.");
+                }
+                return true;
+            } else if (args[1].equalsIgnoreCase("stop")) {
+                if (!bloodmoon.isActive()) {
+                    sender.sendMessage(ChatColor.YELLOW + "Кривавий Місяць наразі не активний.");
+                    return true;
+                }
+                bloodmoon.stopBloodmoon(false);
+                sender.sendMessage(ChatColor.GREEN + "Кривавий Місяць було примусово зупинено.");
+                return true;
+            } else if (args[1].equalsIgnoreCase("status")) {
+                if (bloodmoon.isActive()) {
+                    com.example.minecord.fun.BloodmoonTier t = bloodmoon.getCurrentTier();
+                    String tName = (t != null) ? t.getName() + " (Рівень " + t.getLevel() + ")" : "невідомо";
+                    sender.sendMessage(ChatColor.RED + "Кривавий Місяць АКТИВНИЙ! " + ChatColor.YELLOW + "Рівень: " + ChatColor.WHITE + tName + 
+                            ChatColor.YELLOW + " | Знищено мобів: " + ChatColor.WHITE + bloodmoon.getMobsKilledTonight() + 
+                            ChatColor.YELLOW + " | Хвиль орд: " + ChatColor.WHITE + bloodmoon.getHordesSpawnedTonight());
+                } else {
+                    sender.sendMessage(ChatColor.GRAY + "Кривавий Місяць наразі не активний.");
+                }
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-3]|stop|status>");
+                return true;
+            }
+        }
+
         if (command.getName().equalsIgnoreCase("unmute") || (args.length > 0 && args[0].equalsIgnoreCase("unmute"))) {
             if (!sender.hasPermission("minecord.admin") && !sender.isOp()) {
                 sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
@@ -341,6 +419,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     available.add("reload");
                     available.add("links");
+                    available.add("bloodmoon");
                 }
                 for (String s : available) {
                     if (s.startsWith(args[0].toLowerCase())) {
@@ -348,6 +427,26 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     }
                 }
                 return sub;
+            } else if (args.length == 2 && args[0].equalsIgnoreCase("bloodmoon")) {
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    List<String> sub = new ArrayList<>();
+                    for (String s : List.of("start", "stop", "status")) {
+                        if (s.startsWith(args[1].toLowerCase())) {
+                            sub.add(s);
+                        }
+                    }
+                    return sub;
+                }
+            } else if (args.length == 3 && args[0].equalsIgnoreCase("bloodmoon") && args[1].equalsIgnoreCase("start")) {
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    List<String> sub = new ArrayList<>();
+                    for (String s : List.of("1", "2", "3")) {
+                        if (s.startsWith(args[2].toLowerCase())) {
+                            sub.add(s);
+                        }
+                    }
+                    return sub;
+                }
             }
         } else if (command.getName().equalsIgnoreCase("ticket")) {
             if (args.length == 1) {
