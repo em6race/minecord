@@ -12,23 +12,17 @@ import java.util.function.Consumer;
 
 public class LeaderboardManager {
 
-    public static class TopEntry {
-        private final String name;
-        private final UUID uuid;
-        private final long value;
-        private final String formattedValue;
-
+    public static class TopEntry extends com.example.minecord.utils.TopEntry {
         public TopEntry(String name, UUID uuid, long value, String formattedValue) {
-            this.name = name != null ? name : "Гравець";
-            this.uuid = uuid;
-            this.value = value;
-            this.formattedValue = formattedValue;
+            super(name, uuid, value, formattedValue);
         }
+    }
 
-        public String getName() { return name; }
-        public UUID getUuid() { return uuid; }
-        public long getValue() { return value; }
-        public String getFormattedValue() { return formattedValue; }
+    static {
+        try {
+            Class.forName("com.example.minecord.utils.TopEntry");
+            Class.forName("com.example.minecord.utils.LeaderboardManager$TopEntry");
+        } catch (Throwable ignored) {}
     }
 
     private final MineCord plugin;
@@ -38,6 +32,10 @@ public class LeaderboardManager {
 
     public LeaderboardManager(MineCord plugin) {
         this.plugin = plugin;
+        try {
+            Class.forName("com.example.minecord.utils.TopEntry");
+            Class.forName("com.example.minecord.utils.LeaderboardManager$TopEntry");
+        } catch (Throwable ignored) {}
     }
 
     public void getTopAsync(String category, int limit, Consumer<List<TopEntry>> callback) {
