@@ -19,26 +19,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RoleSyncManager {
 
-    private static final NamedTextColor[] COMPASS_PALETTE = {
-        NamedTextColor.AQUA,
-        NamedTextColor.YELLOW,
-        NamedTextColor.LIGHT_PURPLE,
-        NamedTextColor.GREEN,
-        NamedTextColor.GOLD,
-        NamedTextColor.RED,
-        NamedTextColor.BLUE,
-        NamedTextColor.DARK_AQUA,
-        NamedTextColor.DARK_PURPLE,
-        NamedTextColor.DARK_GREEN,
-        NamedTextColor.WHITE
-    };
-
-    public static NamedTextColor getPlayerPaletteColor(UUID uuid) {
-        if (uuid == null) return NamedTextColor.WHITE;
-        int idx = Math.abs(uuid.hashCode()) % COMPASS_PALETTE.length;
-        return COMPASS_PALETTE[idx];
-    }
-
     public static class RoleDefinition {
         public final String key;
         public final String roleId;
@@ -318,11 +298,11 @@ public class RoleSyncManager {
     private void applyScoreboardTeam(Player player, RoleDefinition role) {
         try {
             Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
-            // Prefix with role priority so TAB list is sorted by role hierarchy (01_Mod, 04_VIP, etc.),
-            // followed by player name so each player has their own individual team and distinct palette color.
-            String teamName = String.format("mc_%02d_%s", Math.min(99, role.priority), player.getName());
-            if (teamName.length() > 64) {
-                teamName = teamName.substring(0, 64);
+            // Maximum team name length in Minecraft protocol is 16 characters!
+            // Exceeding 16 characters causes Network protocol errors (DecoderException) and kicks clients.
+            String teamName = String.format("mc_%02d_%s", Math.min(99, role.priority), role.key);
+            if (teamName.length() > 16) {
+                teamName = teamName.substring(0, 16);
             }
 
             Team team = sb.getTeam(teamName);
@@ -330,17 +310,11 @@ public class RoleSyncManager {
                 team = sb.registerNewTeam(teamName);
             }
 
-            // Assign unique palette color to each player's team so the locator compass dot is bright & multicolored
-            NamedTextColor paletteColor = getPlayerPaletteColor(player.getUniqueId());
-            try {
-                team.color(paletteColor);
-            } catch (Throwable ignored) {
-                try {
-                    ChatColor cc = ChatColor.valueOf(paletteColor.toString().toUpperCase(Locale.ROOT));
-                    if (cc.isColor()) {
-                        team.setColor(cc);
-                    }
-                } catch (Throwable ignored2) {}
+            boolean nametagColor = plugin.getConfig().getBoolean("role-sync.nametag-color", false);
+            if (nametagColor && role.color != null) {
+                applyTeamColor(team, role.color);
+            } else {
+                clearTeamColor(team);
             }
 
             boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
@@ -351,16 +325,11 @@ public class RoleSyncManager {
             }
             team.setSuffix("");
 
-            // Remove from any other mc_* teams and clean up empty ones
+            // Remove player from other mc_* teams
             for (Team t : sb.getTeams()) {
                 if (t.getName().startsWith("mc_") && !t.getName().equals(teamName)) {
                     if (t.hasEntry(player.getName())) {
                         t.removeEntry(player.getName());
-                    }
-                    if (t.getEntries().isEmpty()) {
-                        try {
-                            t.unregister();
-                        } catch (Throwable ignored) {}
                     }
                 }
             }
@@ -417,11 +386,6 @@ public class RoleSyncManager {
                 if (t.getName().startsWith("mc_")) {
                     if (t.hasEntry(player.getName())) {
                         t.removeEntry(player.getName());
-                    }
-                    if (t.getEntries().isEmpty()) {
-                        try {
-                            t.unregister();
-                        } catch (Throwable ignored) {}
                     }
                 }
             }
