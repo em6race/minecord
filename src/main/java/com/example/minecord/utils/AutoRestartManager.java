@@ -48,12 +48,17 @@ public class AutoRestartManager implements CommandExecutor {
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
                 smartRestartPending = false;
-                plugin.getLogger().info("Онлайн дорівнює 0: виконую відкладений одноразовий рестарт.");
-                List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
-                if (commands.isEmpty()) commands.add("restart");
-                for (String cmd : commands) {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                plugin.getLogger().info("Онлайн дорівнює 0: одноразовий рестарт сервера розпочнеться через 5 секунд.");
+                if (plugin.getBotManager() != null) {
+                    plugin.getBotManager().sendSystemEmbed("⏱ Онлайн 0 гравців: одноразовий рестарт сервера розпочнеться через 5 секунд...", 0xFFA500, null);
                 }
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
+                    if (commands.isEmpty()) commands.add("restart");
+                    for (String cmd : commands) {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                    }
+                }, 100L);
                 return;
             }
 
