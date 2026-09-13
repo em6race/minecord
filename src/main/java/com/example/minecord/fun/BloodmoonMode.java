@@ -606,12 +606,14 @@ public class BloodmoonMode implements FunMode, Listener {
                         bWorld.playSound(bLoc, Sound.ENTITY_WITCH_CELEBRATE, 1.8f, 0.8f);
                         bWorld.playSound(bLoc, Sound.ENTITY_WITHER_DEATH, 1.2f, 0.5f);
                     }
-                    String bName = entity.getCustomName() != null ? entity.getCustomName() : "Титан";
+                    String bName = entity.getCustomName() != null ? entity.getCustomName() : "Бос";
+                    String bossWord = (bName.toLowerCase().contains("титан")) ? "титана" : "боса";
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§c«Ви не встигли подолати титана до світанку!» §r" + bName + " §cзник у кривавому тумані"
+                            "§c«Ви не встигли подолати " + bossWord + " до світанку!» §r" + bName + " §cзник у кривавому тумані"
                     ));
                     entity.remove();
                     continue;
+
 
                 }
 
@@ -1070,30 +1072,14 @@ public class BloodmoonMode implements FunMode, Listener {
                     "§4§l☠ БОС " + currentTier.getBossName() + " §4§lПОВСТАВ ПОРУЧ! (" + distInt + "м) ☠"
             ));
 
-            if (currentTier.getLevel() >= 4) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§0§l☠§4§l☠§0§l☠ [СУДНИЙ ДЕНЬ] ТИТАН ХАОСУ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ХАЙ ДОПОМОЖУТЬ ВАМ БОГИ! ☠"
-                ));
-                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 0.5f);
-                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.5f);
-            } else if (currentTier.getLevel() == 3) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l☠ [КАТАКЛІЗМ] ПОВСТАВ АРХІДЕМОН СМЕРТІ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠"
-                ));
-                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.8f);
-                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.7f);
-            } else if (currentTier.getLevel() == 2) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l☠ [АРМАГЕДДОН] ВОЛОДАР БЕЗОДНІ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠"
-                ));
-                player.getWorld().playSound(spawnLoc, Sound.ENTITY_WITHER_SPAWN, 1.5f, 0.8f);
-                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.8f);
-            } else {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l[!] §cСходження Боса: §r" + currentTier.getBossName() + "§c біля гравця §e" + player.getName() + "§c!"
-                ));
-                player.getWorld().playSound(spawnLoc, Sound.ENTITY_WITHER_SPAWN, 1.2f, 1.0f);
+            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                    "§cПовстав §r" + currentTier.getBossName() + " §cбіля гравця §e" + player.getName()
+            ));
+            if (currentTier.getLevel() >= 3) {
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.8f, 0.6f);
             }
+            player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.4f, 0.7f);
+
         }
     }
 
@@ -1934,23 +1920,10 @@ public class BloodmoonMode implements FunMode, Listener {
 
 
             String killerName = killer.getName();
-            if (currentTier.getLevel() >= 4) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l☠ [БОЖЕСТВЕННА ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ТИТАНА ХАОСУ §r" + entity.getCustomName() + "§4§l! Зірки Незеру, незерит та тотеми випали на землю! ☠"
-                ));
-            } else if (currentTier.getLevel() == 3) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§c§l☠ [МІФІЧНИЙ ПОДВИГ] Гравець §e" + killerName + " §c§lвигнав АРХІДЕМОНА СМЕРТІ §r" + entity.getCustomName() + "§c§l! Зірка Незеру, незерит та тотеми випали на землю! ☠"
-                ));
-            } else if (currentTier.getLevel() == 2) {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Незерит, тотем та скарби випали на землю! ☠"
-                ));
-            } else {
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§5§l☠ [ЕПОС] Гравець §e" + killerName + " §5§lпереміг КРИВАВОГО ЖНЕЦЯ §r" + entity.getCustomName() + "§5§l! Незерит, алмази та скарби випали на землю! ☠"
-                ));
-            }
+            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                    "§aГравець §e" + killerName + " §aздолав §r" + entity.getCustomName()
+            ));
+
         } else {
             // Дроп зі звичайних мобів (збалансований лут без ламання економіки)
             int lvl = currentTier.getLevel();
