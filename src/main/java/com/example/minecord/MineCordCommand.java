@@ -95,6 +95,27 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
         }
 
+        if (args.length > 0 && args[0].equalsIgnoreCase("bot")) {
+            if (!sender.hasPermission("minecord.admin") && !sender.isOp()) {
+                sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
+                return true;
+            }
+            if (plugin.getBotManager() == null) {
+                sender.sendMessage(ChatColor.RED + "Менеджер бота не ініціалізовано.");
+                return true;
+            }
+            if (args.length > 1 && args[1].equalsIgnoreCase("reconnect")) {
+                sender.sendMessage(ChatColor.YELLOW + "Перепідключення Discord бота...");
+                plugin.getBotManager().reconnect();
+                sender.sendMessage(ChatColor.GREEN + "Команду перепідключення успішно надіслано!");
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.GOLD + "=== [MineCord] Стан Discord Бота ===");
+                sender.sendMessage(ChatColor.GRAY + "Стан: " + plugin.getBotManager().getStatusInfo());
+                return true;
+            }
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("bloodmoon")) {
             if (!sender.hasPermission("minecord.admin") && !sender.isOp()) {
                 sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
@@ -447,6 +468,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     available.add("reload");
                     available.add("links");
+                    available.add("bot");
                     available.add("bloodmoon");
                 }
                 for (String s : available) {
@@ -455,6 +477,16 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     }
                 }
                 return sub;
+            } else if (args.length == 2 && args[0].equalsIgnoreCase("bot")) {
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    List<String> sub = new ArrayList<>();
+                    for (String s : List.of("status", "reconnect")) {
+                        if (s.startsWith(args[1].toLowerCase())) {
+                            sub.add(s);
+                        }
+                    }
+                    return sub;
+                }
             } else if (args.length == 2 && args[0].equalsIgnoreCase("bloodmoon")) {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     List<String> sub = new ArrayList<>();

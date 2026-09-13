@@ -152,9 +152,8 @@ public class BotManager {
                 if (startMsg != null && !startMsg.isEmpty()) {
                     sendSystemEmbed(startMsg, 0x00FF00, null);
                 }
-            } catch (Exception e) {
-                plugin.getLogger().severe("Помилка бота: " + e.getMessage());
-                e.printStackTrace();
+            } catch (Throwable e) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Помилка бота: " + e.getMessage(), e);
             }
         });
     }
@@ -205,8 +204,38 @@ public class BotManager {
                 if (!(e instanceof NoClassDefFoundError)) {
                     plugin.getLogger().warning("Помилка під час вимкнення JDA: " + e.getMessage());
                 }
+            } finally {
+                jda = null;
             }
         }
+    }
+
+    public String getStatusInfo() {
+        if (jda == null) {
+            return "§cВИМКНЕНО (не ініціалізовано)";
+        }
+        JDA.Status status = jda.getStatus();
+        String statusColor = status == JDA.Status.CONNECTED ? "§a" : "§e";
+        long ping = jda.getGatewayPing();
+        String selfName = jda.getSelfUser() != null ? jda.getSelfUser().getAsTag() : "Невідомо";
+        int guilds = jda.getGuilds().size();
+        return String.format("%s%s §7| Пінг: §f%d ms §7| Бот: §b%s §7| Серверів Discord: §f%d",
+                statusColor, status.name(), ping, selfName, guilds);
+    }
+
+    public void reconnect() {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getLogger().info("[MineCord] Запуск перепідключення Discord бота...");
+            try {
+                stop();
+            } catch (Throwable t) {
+                plugin.getLogger().warning("[MineCord] Помилка зупинки бота перед перепідключенням: " + t.getMessage());
+            }
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException ignored) {}
+            start();
+        });
     }
 
     public JDA getJda() { return jda; }

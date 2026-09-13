@@ -30,214 +30,214 @@ public class DiscordCommandListener extends ListenerAdapter {
             plugin.getLogger().info("[Discord] Користувач " + event.getUser().getName() + " використав команду: /" + event.getName());
             
             if (event.getName().equals("help")) {
+                event.deferReply(true).queue();
                 net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                 embed.setTitle("📚 Доступні команди бота MineCord:");
                 embed.setColor(0x5865F2); // Discord blurple
 
-            String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
-                              "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
-                              "🔹 `/link [code]` — Прив'язати акаунт Minecraft до Discord (або інструкція)\n" +
-                              "🔹 `/help` — Показує це повідомлення\n" +
-                              "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
-                              "🔹 `/serverinfo` — Інформація та стан сервера (TPS, RAM, онлайн)\n" +
-                              "🔹 `/top [категорія]` — Топ-10 гравців (абсолютний, час, відстань, вбивства, смерті, алмази, блоки)\n\n" +
-                              "👑 **Команди адміністратора:**\n" +
-                              "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
-                              "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
-                              "🔸 `/queuerestart` — Одноразовий розумний рестарт при 0 онлайну\n" +
-                              "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord\n" +
-                              "🔸 `/links` — Список усіх прив'язаних акаунтів (Minecraft ⮀ Discord)";
-            embed.setDescription(commands);
+                String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
+                                  "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
+                                  "🔹 `/link [code]` — Прив'язати акаунт Minecraft до Discord (або інструкція)\n" +
+                                  "🔹 `/help` — Показує це повідомлення\n" +
+                                  "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
+                                  "🔹 `/serverinfo` — Інформація та стан сервера (TPS, RAM, онлайн)\n" +
+                                  "🔹 `/top [категорія]` — Топ-10 гравців (абсолютний, час, відстань, вбивства, смерті, алмази, блоки)\n\n" +
+                                  "👑 **Команди адміністратора:**\n" +
+                                  "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
+                                  "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
+                                  "🔸 `/queuerestart` — Одноразовий розумний рестарт при 0 онлайну\n" +
+                                  "🔸 `/linkadmin <гравець> <користувач>` — Примусово прив'язати гравця до Discord\n" +
+                                  "🔸 `/links` — Список усіх прив'язаних акаунтів (Minecraft ⮀ Discord)";
+                embed.setDescription(commands);
 
-            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
-        }
-        else if (event.getName().equals("online")) {
-            int onlineCount = plugin.getServer().getOnlinePlayers().size();
-            int maxPlayers = plugin.getServer().getMaxPlayers();
-
-            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-
-            if (onlineCount == 0) {
-                embed.setTitle("🔴 Наразі на сервері немає гравців (0/" + maxPlayers + ")");
-                embed.setColor(0xFF0000);
-            } else {
-                embed.setTitle("🟢 Онлайн (" + onlineCount + "/" + maxPlayers + "):");
-                embed.setColor(0x00FF00);
-
-                StringBuilder playersList = new StringBuilder();
-                for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
-                    playersList.append("`").append(player.getName()).append("` ");
-                }
-                embed.setDescription(playersList.toString());
+                event.getHook().sendMessageEmbeds(embed.build()).queue();
             }
+            else if (event.getName().equals("online")) {
+                event.deferReply().queue();
+                int onlineCount = plugin.getServer().getOnlinePlayers().size();
+                int maxPlayers = plugin.getServer().getMaxPlayers();
 
-            event.replyEmbeds(embed.build()).queue();
-        }
-        else if (event.getName().equals("map")) {
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
-            if (!mapUrl.endsWith("/")) mapUrl += "/";
-            String fullUrl = mapUrl.contains("#") ? mapUrl : (mapUrl + "#world:0:0:0:1500:0:0:0:0:flat");
-            event.reply("🗺️ **Веб-мапа сервера (2D Flat):**\n[Натисніть тут, щоб відкрити мапу](" + fullUrl + ")").setEphemeral(true).queue();
-        }
-        else if (event.getName().equals("link")) {
-            net.dv8tion.jda.api.interactions.commands.OptionMapping codeOpt = event.getOption("code");
-            if (codeOpt == null || codeOpt.getAsString().trim().isEmpty()) {
-                java.util.UUID existingUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
-                if (existingUuid != null) {
-                    org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
-                    String pName = linkedPlayer.getName();
-                    if (pName == null && plugin.getPlayerCacheManager() != null) {
-                        pName = plugin.getPlayerCacheManager().resolvePlayerName(existingUuid);
+                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+
+                if (onlineCount == 0) {
+                    embed.setTitle("🔴 Наразі на сервері немає гравців (0/" + maxPlayers + ")");
+                    embed.setColor(0xFF0000);
+                } else {
+                    embed.setTitle("🟢 Онлайн (" + onlineCount + "/" + maxPlayers + "):");
+                    embed.setColor(0x00FF00);
+
+                    StringBuilder playersList = new StringBuilder();
+                    for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
+                        playersList.append("`").append(player.getName()).append("` ");
                     }
-                    if (pName == null) pName = "Гравець";
-                    event.reply("✅ Ваш Discord акаунт вже прив'язано до Minecraft-акаунта **" + pName + "**!\n" +
-                            "💡 Якщо ви бажаєте прив'язати інший акаунт, отримайте новий код у грі (`/discord link`) та введіть: `/link code: <новий_код>`")
-                            .setEphemeral(true)
+                    embed.setDescription(playersList.toString());
+                }
+
+                event.getHook().sendMessageEmbeds(embed.build()).queue();
+            }
+            else if (event.getName().equals("map")) {
+                event.deferReply(true).queue();
+                String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
+                if (!mapUrl.endsWith("/")) mapUrl += "/";
+                String fullUrl = mapUrl.contains("#") ? mapUrl : (mapUrl + "#world:0:0:0:1500:0:0:0:0:flat");
+                event.getHook().sendMessage("🗺️ **Веб-мапа сервера (2D Flat):**\n[Натисніть тут, щоб відкрити мапу](" + fullUrl + ")").queue();
+            }
+            else if (event.getName().equals("link")) {
+                event.deferReply(true).queue();
+                net.dv8tion.jda.api.interactions.commands.OptionMapping codeOpt = event.getOption("code");
+                if (codeOpt == null || codeOpt.getAsString().trim().isEmpty()) {
+                    java.util.UUID existingUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
+                    if (existingUuid != null) {
+                        org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
+                        String pName = linkedPlayer.getName();
+                        if (pName == null && plugin.getPlayerCacheManager() != null) {
+                            pName = plugin.getPlayerCacheManager().resolvePlayerName(existingUuid);
+                        }
+                        if (pName == null) pName = "Гравець";
+                        event.getHook().sendMessage("✅ Ваш Discord акаунт вже прив'язано до Minecraft-акаунта **" + pName + "**!\n" +
+                                "💡 Якщо ви бажаєте прив'язати інший акаунт, отримайте новий код у грі (`/discord link`) та введіть: `/link code: <новий_код>`")
+                                .queue();
+                        return;
+                    }
+                    event.getHook().sendMessageEmbeds(createLinkGuideEmbed("Щоб прив'язати свій Minecraft акаунт до Discord, виконайте прості дії:", false))
                             .queue();
                     return;
                 }
-                event.replyEmbeds(createLinkGuideEmbed("Щоб прив'язати свій Minecraft акаунт до Discord, виконайте прості дії:", false))
-                        .setEphemeral(true)
-                        .queue();
-                return;
-            }
 
-            String code = codeOpt.getAsString().trim();
-            java.util.UUID uuid = plugin.getLinkManager().getUUIDFromCode(code);
+                String code = codeOpt.getAsString().trim();
+                java.util.UUID uuid = plugin.getLinkManager().getUUIDFromCode(code);
 
-            if (uuid == null) {
-                event.replyEmbeds(createLinkGuideEmbed("❌ **Невірний або застарілий код!**\nКод діє обмежений час (10 хвилин). Переконайтеся, що ви отримали актуальний код у грі через `/discord link` та ввели його без помилок.", false))
-                        .setEphemeral(true)
-                        .queue();
-            } else if (plugin.getLinkManager().isAdminLinked(uuid)) {
-                event.reply("❌ Цей Minecraft-акаунт було прив'язано адміністратором (`/linkadmin`). Ви не можете самостійно змінити або перезаписати прив'язку. Зверніться до адміністратора сервера.")
-                        .setEphemeral(true)
-                        .queue();
-            } else {
-                event.deferReply(true).queue();
-                plugin.getLinkManager().linkAccount(code, event.getUser().getId());
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    // Get player name (even if offline)
-                    org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(uuid);
-                    String playerName = offlinePlayer.getName() != null ? offlinePlayer.getName() : "Гравця";
+                if (uuid == null) {
+                    event.getHook().sendMessageEmbeds(createLinkGuideEmbed("❌ **Невірний або застарілий код!**\nКод діє обмежений час (10 хвилин). Переконайтеся, що ви отримали актуальний код у грі через `/discord link` та ввели його без помилок.", false))
+                            .queue();
+                } else if (plugin.getLinkManager().isAdminLinked(uuid)) {
+                    event.getHook().sendMessage("❌ Цей Minecraft-акаунт було прив'язано адміністратором (`/linkadmin`). Ви не можете самостійно змінити або перезаписати прив'язку. Зверніться до адміністратора сервера.")
+                            .queue();
+                } else {
+                    plugin.getLinkManager().linkAccount(code, event.getUser().getId());
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        // Get player name (even if offline)
+                        org.bukkit.OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(uuid);
+                        String playerName = offlinePlayer.getName() != null ? offlinePlayer.getName() : "Гравця";
 
-                    event.getHook().sendMessage("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").queue();
+                        event.getHook().sendMessage("✅ Успіх! Ваш Discord акаунт успішно прив'язано до Minecraft-акаунта **" + playerName + "**.").queue();
 
-                    // Notify player directly in-game if online and trigger role sync
-                    Player onlinePlayer = plugin.getServer().getPlayer(uuid);
-                    if (onlinePlayer != null) {
-                        onlinePlayer.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт успішно прив'язано до Discord (" + event.getUser().getName() + ")!");
-                        if (plugin.getRoleSyncManager() != null) {
-                            plugin.getRoleSyncManager().syncPlayer(onlinePlayer);
+                        // Notify player directly in-game if online and trigger role sync
+                        Player onlinePlayer = plugin.getServer().getPlayer(uuid);
+                        if (onlinePlayer != null) {
+                            onlinePlayer.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт успішно прив'язано до Discord (" + event.getUser().getName() + ")!");
+                            if (plugin.getRoleSyncManager() != null) {
+                                plugin.getRoleSyncManager().syncPlayer(onlinePlayer);
+                            }
                         }
+                    });
+                }
+            }
+            else if (event.getName().equals("maintenance")) {
+                event.deferReply(true).queue();
+                if (!isAdmin(event)) return;
+                boolean enable = event.getOption("enabled").getAsBoolean();
+
+                // Perform all server state changes on the main Minecraft thread
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    plugin.getConfig().set("maintenance.enabled", enable);
+                    plugin.saveConfig();
+
+                    if (enable) {
+                        String kickMsg = plugin.getConfig().getString("maintenance.message", "🛠️ Сервер на тестуванні.");
+                        kickMsg = org.bukkit.ChatColor.translateAlternateColorCodes('&', kickMsg);
+
+                        int kickedCount = 0;
+                        for (Player p : plugin.getServer().getOnlinePlayers()) {
+                            // Kick players who are not OP and lack bypass permission
+                            if (!p.isOp() && !p.hasPermission("minecord.maintenance.bypass")) {
+                                p.kickPlayer(kickMsg);
+                                kickedCount++;
+                            }
+                        }
+                        event.getHook().sendMessage("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).queue();
+                    } else {
+                        event.getHook().sendMessage("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").queue();
                     }
                 });
             }
-        }
-        else if (event.getName().equals("maintenance")) {
-            if (!isAdmin(event)) return;
-            boolean enable = event.getOption("enabled").getAsBoolean();
+            else if (event.getName().equals("autorestart")) {
+                event.deferReply(true).queue();
+                if (!isAdmin(event)) return;
+                String sub = event.getSubcommandName();
+                if (sub == null) return;
 
-            event.deferReply(true).queue();
+                com.example.minecord.utils.AutoRestartManager manager = plugin.getAutoRestartManager();
 
-            // Perform all server state changes on the main Minecraft thread
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                plugin.getConfig().set("maintenance.enabled", enable);
-                plugin.saveConfig();
-
-                if (enable) {
-                    String kickMsg = plugin.getConfig().getString("maintenance.message", "🛠️ Сервер на тестуванні.");
-                    kickMsg = org.bukkit.ChatColor.translateAlternateColorCodes('&', kickMsg);
-
-                    int kickedCount = 0;
-                    for (Player p : plugin.getServer().getOnlinePlayers()) {
-                        // Kick players who are not OP and lack bypass permission
-                        if (!p.isOp() && !p.hasPermission("minecord.maintenance.bypass")) {
-                            p.kickPlayer(kickMsg);
-                            kickedCount++;
+                if (sub.equals("add")) {
+                    String time = event.getOption("time").getAsString();
+                    if (time.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+                        manager.addTime(time);
+                        event.getHook().sendMessage("✅ Час `" + time + "` успішно додано до авторестартів.").queue();
+                    } else {
+                        event.getHook().sendMessage("❌ Невірний формат часу! Використовуйте HH:mm (наприклад, 04:00 або 15:30)").queue();
+                    }
+                }
+                else if (sub.equals("remove")) {
+                    String time = event.getOption("time").getAsString();
+                    if (manager.removeTime(time)) {
+                        event.getHook().sendMessage("✅ Час `" + time + "` видалено з розкладу.").queue();
+                    } else {
+                        event.getHook().sendMessage("❌ Такого часу немає в списку авторестартів.").queue();
+                    }
+                }
+                else if (sub.equals("list")) {
+                    java.util.List<String> times = manager.getTimes();
+                    if (times.isEmpty()) {
+                        event.getHook().sendMessage("ℹ️ Список авторестартів порожній.").queue();
+                    } else {
+                        net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                        embed.setTitle("⏰ Заплановані авторестарти");
+                        embed.setColor(0x00FFFF);
+                        StringBuilder sb = new StringBuilder();
+                        for (String t : times) {
+                            sb.append("• `").append(t).append("`\n");
                         }
+                        embed.setDescription(sb.toString());
+                        embed.setFooter("Час вказано за Києвом");
+
+                        event.getHook().sendMessageEmbeds(embed.build()).queue();
                     }
-                    event.getHook().sendMessage("🚧 Режим технічних робіт **УВІМКНЕНО**. Збережено в конфіг. Кікнуто звичайних гравців: " + kickedCount).queue();
-                } else {
-                    event.getHook().sendMessage("✅ Режим технічних робіт **ВИМКНЕНО**. Збережено в конфіг. Сервер відкритий для всіх!").queue();
                 }
-            });
-        }
-        else if (event.getName().equals("autorestart")) {
-            if (!isAdmin(event)) return;
-            String sub = event.getSubcommandName();
-            if (sub == null) return;
-
-            com.example.minecord.utils.AutoRestartManager manager = plugin.getAutoRestartManager();
-
-            if (sub.equals("add")) {
-                String time = event.getOption("time").getAsString();
-                if (time.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
-                    manager.addTime(time);
-                    event.reply("✅ Час `" + time + "` успішно додано до авторестартів.").setEphemeral(true).queue();
-                } else {
-                    event.reply("❌ Невірний формат часу! Використовуйте HH:mm (наприклад, 04:00 або 15:30)").setEphemeral(true).queue();
+                else if (sub.equals("clear")) {
+                    manager.clearTimes();
+                    event.getHook().sendMessage("🗑️ Всі авторестарти повністю видалено.").queue();
                 }
-            }
-            else if (sub.equals("remove")) {
-                String time = event.getOption("time").getAsString();
-                if (manager.removeTime(time)) {
-                    event.reply("✅ Час `" + time + "` видалено з розкладу.").setEphemeral(true).queue();
-                } else {
-                    event.reply("❌ Такого часу немає в списку авторестартів.").setEphemeral(true).queue();
-                }
-            }
-            else if (sub.equals("list")) {
-                java.util.List<String> times = manager.getTimes();
-                if (times.isEmpty()) {
-                    event.reply("ℹ️ Список авторестартів порожній.").setEphemeral(true).queue();
-                } else {
-                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                    embed.setTitle("⏰ Заплановані авторестарти");
-                    embed.setColor(0x00FFFF);
-                    StringBuilder sb = new StringBuilder();
-                    for (String t : times) {
-                        sb.append("• `").append(t).append("`\n");
+                else if (sub.equals("toggle")) {
+                    boolean isPaused = !manager.isPaused();
+                    manager.setPaused(isPaused);
+                    if (isPaused) {
+                        event.getHook().sendMessage("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").queue();
+                    } else {
+                        event.getHook().sendMessage("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").queue();
                     }
-                    embed.setDescription(sb.toString());
-                    embed.setFooter("Час вказано за Києвом");
-
-                    event.replyEmbeds(embed.build()).setEphemeral(true).queue();
                 }
             }
-            else if (sub.equals("clear")) {
-                manager.clearTimes();
-                event.reply("🗑️ Всі авторестарти повністю видалено.").setEphemeral(true).queue();
-            }
-            else if (sub.equals("toggle")) {
-                boolean isPaused = !manager.isPaused();
-                manager.setPaused(isPaused);
-                if (isPaused) {
-                    event.reply("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").setEphemeral(true).queue();
+            else if (event.getName().equals("queuerestart")) {
+                event.deferReply(true).queue();
+                if (!isAdmin(event)) return;
+                if (plugin.getAutoRestartManager() == null) {
+                    event.getHook().sendMessage("❌ Менеджер авторестартів не активний.").queue();
+                    return;
+                }
+                boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
+                if (isPending) {
+                    if (plugin.getServer().getOnlinePlayers().isEmpty()) {
+                        event.getHook().sendMessage("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за кілька секунд!").queue();
+                    } else {
+                        event.getHook().sendMessage("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
+                                "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
+                                "*(Повторний виклик команди скасує чергу)*").queue();
+                    }
                 } else {
-                    event.reply("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").setEphemeral(true).queue();
+                    event.getHook().sendMessage("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").queue();
                 }
             }
-        }
-        else if (event.getName().equals("queuerestart")) {
-            if (!isAdmin(event)) return;
-            if (plugin.getAutoRestartManager() == null) {
-                event.reply("❌ Менеджер авторестартів не активний.").setEphemeral(true).queue();
-                return;
-            }
-            boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
-            if (isPending) {
-                if (plugin.getServer().getOnlinePlayers().isEmpty()) {
-                    event.reply("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за мить!").setEphemeral(true).queue();
-                } else {
-                    event.reply("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
-                            "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
-                            "*(Повторний виклик команди скасує чергу)*").setEphemeral(true).queue();
-                }
-            } else {
-                event.reply("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").setEphemeral(true).queue();
-            }
-        }
 
         else if (event.getName().equals("serverinfo")) {
             event.deferReply().queue();
@@ -282,8 +282,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                 isSelfStats = true;
                 candidateUuids = plugin.getLinkManager().getAllUUIDsFromDiscordId(discordUserId);
                 if (candidateUuids.isEmpty()) {
-                    event.replyEmbeds(createLinkGuideEmbed("Щоб переглядати **власну статистику** без введення нікнейма, прив'яжіть свій Minecraft акаунт до Discord."))
-                            .setEphemeral(true)
+                    event.deferReply(true).queue();
+                    event.getHook().sendMessageEmbeds(createLinkGuideEmbed("Щоб переглядати **власну статистику** без введення нікнейма, прив'яжіть свій Minecraft акаунт до Discord."))
                             .queue();
                     return;
                 }
@@ -478,8 +478,8 @@ public class DiscordCommandListener extends ListenerAdapter {
             });
         }
         else if (event.getName().equals("linkadmin")) {
-            if (!isAdmin(event)) return;
             event.deferReply(true).queue();
+            if (!isAdmin(event)) return;
             String playerName = event.getOption("player").getAsString();
             net.dv8tion.jda.api.entities.User discordUser = event.getOption("user").getAsUser();
 
@@ -536,8 +536,8 @@ public class DiscordCommandListener extends ListenerAdapter {
             });
         }
         else if (event.getName().equals("links")) {
-            if (!isAdmin(event)) return;
             event.deferReply(true).queue();
+            if (!isAdmin(event)) return;
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
@@ -616,7 +616,8 @@ public class DiscordCommandListener extends ListenerAdapter {
             });
         }
         else {
-            event.reply("❌ Невідома команда: /" + event.getName()).setEphemeral(true).queue();
+            event.deferReply(true).queue();
+            event.getHook().sendMessage("❌ Невідома команда: /" + event.getName()).queue();
         }
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Сталася непередбачувана помилка при виконанні команди /" + event.getName(), e);
@@ -692,7 +693,11 @@ public class DiscordCommandListener extends ListenerAdapter {
         if (event.getMember() != null && event.getMember().hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) {
             return true;
         }
-        event.reply("❌ Ця команда доступна лише адміністраторам сервера.").setEphemeral(true).queue();
+        if (event.isAcknowledged()) {
+            event.getHook().sendMessage("❌ Ця команда доступна лише адміністраторам сервера.").setEphemeral(true).queue();
+        } else {
+            event.reply("❌ Ця команда доступна лише адміністраторам сервера.").setEphemeral(true).queue();
+        }
         return false;
     }
 
