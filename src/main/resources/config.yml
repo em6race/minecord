@@ -170,7 +170,7 @@ autorestart:
 bluemap:
   auto-reload:
     # Чи ввімкнено автоматичне оновлення карти
-    enabled: true
+    enabled: false
     # Інтервал у годинах (наприклад, кожні 2 години)
     interval-hours: 2
     # Консольна команда для перезавантаження BlueMap
