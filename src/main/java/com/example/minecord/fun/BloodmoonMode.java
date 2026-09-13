@@ -180,6 +180,7 @@ public class BloodmoonMode implements FunMode, Listener {
         stopHordes();
         stopParticleTask();
         stopBomberTask();
+        clearAllMobGlowing();
         if (registered) {
             HandlerList.unregisterAll(this);
             registered = false;
@@ -189,6 +190,7 @@ public class BloodmoonMode implements FunMode, Listener {
     @Override
     public void onReload() {
         reloadConfig();
+        clearAllMobGlowing();
     }
 
     private void reloadConfig() {
@@ -494,6 +496,7 @@ public class BloodmoonMode implements FunMode, Listener {
         stopHordes();
         stopParticleTask();
         stopBomberTask();
+        clearAllMobGlowing();
 
         if (naturallyEnded && activeWorld != null) {
             activeWorld.setTime(0L);
@@ -525,6 +528,19 @@ public class BloodmoonMode implements FunMode, Listener {
         plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць завершено.");
         this.activeWorld = null;
         this.currentTier = null;
+    }
+
+    public int clearAllMobGlowing() {
+        int count = 0;
+        for (World world : Bukkit.getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                if (!(entity instanceof Player) && entity.isGlowing()) {
+                    entity.setGlowing(false);
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private void updateBossBar(long remainingSeconds, double progress) {
@@ -978,9 +994,6 @@ public class BloodmoonMode implements FunMode, Listener {
                     spd.setBaseValue(spd.getBaseValue() * (1.0 + 0.18 * tier.getSpeedLevel()));
                 }
             }
-            if (tier.getLevel() >= 2) {
-                creeper.setGlowing(true);
-            }
             return;
         }
 
@@ -994,10 +1007,6 @@ public class BloodmoonMode implements FunMode, Listener {
         }
         if (tier.getResistanceLevel() > 0) {
             monster.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, effectDurationTicks, tier.getResistanceLevel() - 1, false, false));
-        }
-
-        if (tier.getLevel() >= 2) {
-            monster.setGlowing(true);
         }
 
         // Екіпірування бронею (тільки людиноподібні моби: зомбі, скелети, пігліни)
@@ -1132,9 +1141,6 @@ public class BloodmoonMode implements FunMode, Listener {
         phantom.setSize(phantomSize);
         phantom.setCustomName(phantomTitle);
         phantom.setCustomNameVisible(true);
-        if (level >= 2) {
-            phantom.setGlowing(true);
-        }
 
         double baseHp = 20.0 * tier.getHealthMultiplier();
         AttributeInstance hpAttr = phantom.getAttribute(Attribute.GENERIC_MAX_HEALTH);
@@ -1205,10 +1211,6 @@ public class BloodmoonMode implements FunMode, Listener {
             double newHp = cHp.getBaseValue() * tier.getHealthMultiplier();
             cHp.setBaseValue(newHp);
             creeper.setHealth(newHp);
-        }
-
-        if (level >= 2) {
-            creeper.setGlowing(true);
         }
 
         if (target != null && target.isOnline()) {
