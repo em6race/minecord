@@ -1,6 +1,7 @@
 package com.example.minecord;
 
 import com.example.minecord.utils.AccountLinkManager;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -100,7 +101,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (args.length < 2) {
-                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status>");
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status|cleareffects [гравець]>");
                 return true;
             }
             if (plugin.getFunManager() == null) {
@@ -165,9 +166,36 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 } else {
                     sender.sendMessage(ChatColor.GRAY + "Кривавий Місяць наразі не активний.");
                 }
+            } else if (args[1].equalsIgnoreCase("cleareffects")) {
+                Player target = null;
+                if (args.length >= 3 && !args[2].equalsIgnoreCase("@a")) {
+                    target = Bukkit.getPlayer(args[2]);
+                    if (target == null) {
+                        sender.sendMessage(ChatColor.RED + "Гравця " + args[2] + " не знайдено!");
+                        return true;
+                    }
+                }
+
+                if (target != null) {
+                    for (org.bukkit.potion.PotionEffect effect : target.getActivePotionEffects()) {
+                        target.removePotionEffect(effect.getType());
+                    }
+                    sender.sendMessage(ChatColor.GREEN + "Усі ефекти зілля гравця " + target.getName() + " успішно очищено!");
+                    target.sendMessage(ChatColor.GREEN + "Ваші ефекти зілля було очищено адміністратором.");
+                } else {
+                    int count = 0;
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        for (org.bukkit.potion.PotionEffect effect : p.getActivePotionEffects()) {
+                            p.removePotionEffect(effect.getType());
+                        }
+                        p.sendMessage(ChatColor.GREEN + "Ваші ефекти зілля було очищено адміністратором.");
+                        count++;
+                    }
+                    sender.sendMessage(ChatColor.GREEN + "Ефекти очищено для " + count + " гравців на сервері!");
+                }
                 return true;
             } else {
-                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status>");
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status|cleareffects [гравець]>");
                 return true;
             }
         }
@@ -430,7 +458,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             } else if (args.length == 2 && args[0].equalsIgnoreCase("bloodmoon")) {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     List<String> sub = new ArrayList<>();
-                    for (String s : List.of("start", "stop", "status")) {
+                    for (String s : List.of("start", "stop", "status", "cleareffects")) {
                         if (s.startsWith(args[1].toLowerCase())) {
                             sub.add(s);
                         }
@@ -443,6 +471,19 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     for (String s : List.of("1", "2", "3", "4")) {
                         if (s.startsWith(args[2].toLowerCase())) {
                             sub.add(s);
+                        }
+                    }
+                    return sub;
+                }
+            } else if (args.length == 3 && args[0].equalsIgnoreCase("bloodmoon") && args[1].equalsIgnoreCase("cleareffects")) {
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    List<String> sub = new ArrayList<>();
+                    if ("@a".startsWith(args[2].toLowerCase())) {
+                        sub.add("@a");
+                    }
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (p.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
+                            sub.add(p.getName());
                         }
                     }
                     return sub;
