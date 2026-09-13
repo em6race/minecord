@@ -582,6 +582,73 @@ public class BloodmoonMode implements FunMode, Listener {
         }
     }
 
+    /**
+     * Знаходить безпечну точку для спавну мобів/боса на рівні гравця (в кімнаті, печері або на поверхні).
+     */
+    private Location findSafeSpawnLocation(Location center, double minRadius, double maxRadius, int heightRequired) {
+        World world = center.getWorld();
+        if (world == null) return null;
+
+        int playerY = center.getBlockY();
+
+        // 1. Пошук підлоги на рівні гравця (+3 до -6 блоків)
+        for (int attempt = 0; attempt < 25; attempt++) {
+            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double dist = ThreadLocalRandom.current().nextDouble(minRadius, maxRadius);
+            int x = center.getBlockX() + (int) (Math.cos(angle) * dist);
+            int z = center.getBlockZ() + (int) (Math.sin(angle) * dist);
+
+            for (int dy = 3; dy >= -6; dy--) {
+                int y = playerY + dy;
+                org.bukkit.block.Block floor = world.getBlockAt(x, y - 1, z);
+
+                if (!floor.getType().isSolid() || floor.isLiquid()) {
+                    continue;
+                }
+
+                boolean spaceOk = true;
+                for (int h = 0; h < heightRequired; h++) {
+                    org.bukkit.block.Block space = world.getBlockAt(x, y + h, z);
+                    if (space.getType().isSolid() || space.isLiquid()) {
+                        spaceOk = false;
+                        break;
+                    }
+                }
+
+                if (spaceOk) {
+                    return new Location(world, x + 0.5, y, z + 0.5);
+                }
+            }
+        }
+
+        // 2. Якщо відкрита поверхня з перепадами рельєфу
+        int highestY = world.getHighestBlockYAt(center.getBlockX(), center.getBlockZ());
+        if (Math.abs(highestY - playerY) <= 8) {
+            for (int attempt = 0; attempt < 10; attempt++) {
+                double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+                double dist = ThreadLocalRandom.current().nextDouble(minRadius, maxRadius);
+                int x = center.getBlockX() + (int) (Math.cos(angle) * dist);
+                int z = center.getBlockZ() + (int) (Math.sin(angle) * dist);
+                int hY = world.getHighestBlockYAt(x, z);
+                if (Math.abs(hY - playerY) <= 8) {
+                    org.bukkit.block.Block floor = world.getBlockAt(x, hY - 1, z);
+                    if (floor.getType().isSolid() && !floor.isLiquid()) {
+                        return new Location(world, x + 0.5, hY, z + 0.5);
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback: безпосередньо позаду гравця
+        org.bukkit.util.Vector dir = center.getDirection().setY(0);
+        if (dir.lengthSquared() < 0.01) {
+            dir = new org.bukkit.util.Vector(1, 0, 0);
+        } else {
+            dir.normalize();
+        }
+        return center.clone().add(dir.multiply(-3.5));
+    }
+
     private void spawnHordeNearPlayer(Player player) {
         if (player == null || !player.isOnline()) return;
 
@@ -597,18 +664,20 @@ public class BloodmoonMode implements FunMode, Listener {
         EntityType[] possibleTypes = {EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER, EntityType.CREEPER};
 
         for (int i = 0; i < count; i++) {
-            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
-            double dist = ThreadLocalRandom.current().nextDouble(10.0, 16.0);
-            int x = pLoc.getBlockX() + (int) (Math.cos(angle) * dist);
-            int z = pLoc.getBlockZ() + (int) (Math.sin(angle) * dist);
-            int y = player.getWorld().getHighestBlockYAt(x, z) + 1;
+            Location spawnLoc = findSafeSpawnLocation(pLoc, 6.0, 14.0, 2);
+            if (spawnLoc == null) {
+                spawnLoc = pLoc.clone().add(ThreadLocalRandom.current().nextDouble(-3, 3), 0, ThreadLocalRandom.current().nextDouble(-3, 3));
+            }
 
-            Location spawnLoc = new Location(player.getWorld(), x + 0.5, y, z + 0.5);
             EntityType type = possibleTypes[ThreadLocalRandom.current().nextInt(possibleTypes.length)];
-
             Entity entity = player.getWorld().spawnEntity(spawnLoc, type, CreatureSpawnEvent.SpawnReason.CUSTOM);
             if (entity instanceof Monster monster) {
                 buffMonster(monster, currentTier);
+                monster.setTarget(player);
+                AttributeInstance followAttr = monster.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+                if (followAttr != null) {
+                    followAttr.setBaseValue(40.0);
+                }
             }
         }
 
@@ -620,12 +689,10 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void spawnBossNearPlayer(Player player) {
         Location pLoc = player.getLocation();
-        double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
-        double dist = ThreadLocalRandom.current().nextDouble(12.0, 18.0);
-        int x = pLoc.getBlockX() + (int) (Math.cos(angle) * dist);
-        int z = pLoc.getBlockZ() + (int) (Math.sin(angle) * dist);
-        int y = player.getWorld().getHighestBlockYAt(x, z) + 1;
-        Location spawnLoc = new Location(player.getWorld(), x + 0.5, y, z + 0.5);
+        Location spawnLoc = findSafeSpawnLocation(pLoc, 5.0, 10.0, 3);
+        if (spawnLoc == null) {
+            spawnLoc = pLoc.clone().add(pLoc.getDirection().multiply(-4).setY(0));
+        }
 
         EntityType bossType = (currentTier.getLevel() >= 3) ? EntityType.WITHER_SKELETON : EntityType.ZOMBIE;
         Entity entity = player.getWorld().spawnEntity(spawnLoc, bossType, CreatureSpawnEvent.SpawnReason.CUSTOM);
@@ -638,6 +705,13 @@ public class BloodmoonMode implements FunMode, Listener {
             boss.setCustomName(currentTier.getBossName());
             boss.setCustomNameVisible(true);
             boss.setGlowing(true);
+            boss.setRemoveWhenFarAway(false);
+            boss.setTarget(player);
+
+            AttributeInstance followAttr = boss.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+            if (followAttr != null) {
+                followAttr.setBaseValue(64.0);
+            }
 
             double bossHp = (currentTier.getLevel() >= 4) ? 500.0 : ((currentTier.getLevel() >= 3) ? 300.0 : 150.0);
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
@@ -703,8 +777,17 @@ public class BloodmoonMode implements FunMode, Listener {
                 eq.setItemInMainHandDropChance(0.0f);
             }
 
+            // Візуальні ефекти та звук появи прямо біля гравця
+            player.getWorld().strikeLightningEffect(spawnLoc);
+            player.getWorld().spawnParticle(Particle.FLAME, spawnLoc.clone().add(0, 1, 0), 40, 0.4, 0.8, 0.4, 0.05);
+
+            int distInt = (int) Math.round(player.getLocation().distance(spawnLoc));
+            player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    "§4§l☠ БОС " + currentTier.getBossName() + " §4§lПОВСТАВ ПОРУЧ! (" + distInt + "м) ☠"
+            ));
+            player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.8f);
+
             if (currentTier.getLevel() >= 4) {
-                player.getWorld().strikeLightningEffect(spawnLoc);
                 Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
                         "§4§l☠☠☠ [АРМАГЕДДОН] ВОЛОДАР БЕЗОДНІ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠☠☠"
                 ));
