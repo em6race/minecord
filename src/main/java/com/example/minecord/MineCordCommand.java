@@ -100,7 +100,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (args.length < 2) {
-                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-3]|stop|status>");
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status>");
                 return true;
             }
             if (plugin.getFunManager() == null) {
@@ -119,12 +119,12 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     try {
                         tier = Integer.parseInt(args[2]);
                     } catch (NumberFormatException e) {
-                        sender.sendMessage(ChatColor.RED + "Некоректний рівень! Використовуйте 1, 2 або 3.");
+                        sender.sendMessage(ChatColor.RED + "Некоректний рівень! Використовуйте 1, 2, 3 або 4.");
                         return true;
                     }
                 }
-                if (tier < 1 || tier > 3) {
-                    sender.sendMessage(ChatColor.RED + "Некоректний рівень! Доступні рівні: 1 (Багряний Сутінок), 2 (Кривавий Місяць), 3 (Затемнення Апокаліпсису).");
+                if (tier < 1 || tier > 4) {
+                    sender.sendMessage(ChatColor.RED + "Некоректний рівень! Доступні рівні: 1 (Багряний Сутінок), 2 (Кривавий Місяць), 3 (Затемнення Апокаліпсису), 4 (Кривавий Армагеддон).");
                     return true;
                 }
 
@@ -167,7 +167,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 }
                 return true;
             } else {
-                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-3]|stop|status>");
+                sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status>");
                 return true;
             }
         }
@@ -440,7 +440,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             } else if (args.length == 3 && args[0].equalsIgnoreCase("bloodmoon") && args[1].equalsIgnoreCase("start")) {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     List<String> sub = new ArrayList<>();
-                    for (String s : List.of("1", "2", "3")) {
+                    for (String s : List.of("1", "2", "3", "4")) {
                         if (s.startsWith(args[2].toLowerCase())) {
                             sub.add(s);
                         }
