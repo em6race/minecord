@@ -594,21 +594,26 @@ public class BloodmoonMode implements FunMode, Listener {
                 // 3. Підсвітити мобів на 2 хвилини, щоб гравці легко знаходили їх на місцевості
                 entity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 120, 0, false, false, false));
 
-                // 4. Захист від абузу: якщо бос дожив до світанку, він розсіюється у тумані темряви
+                // 4. Захист від абузу: якщо бос дожив до світанку, він розсіюється у кривавому тумані
                 if (isBoss) {
                     Location bLoc = entity.getLocation();
                     World bWorld = bLoc.getWorld();
                     if (bWorld != null) {
-                        bWorld.spawnParticle(Particle.SMOKE_LARGE, bLoc.clone().add(0, 1, 0), 60, 0.6, 1.2, 0.6, 0.08);
-                        bWorld.playSound(bLoc, Sound.ENTITY_WITHER_DEATH, 1.5f, 0.5f);
+                        bWorld.spawnParticle(Particle.SMOKE_LARGE, bLoc.clone().add(0, 1, 0), 70, 0.8, 1.2, 0.8, 0.08);
+                        if (redDustOptions != null) {
+                            bWorld.spawnParticle(redParticle, bLoc.clone().add(0, 1, 0), 50, 0.8, 1.2, 0.8, redDustOptions);
+                        }
+                        bWorld.playSound(bLoc, Sound.ENTITY_WITCH_CELEBRATE, 1.8f, 0.8f);
+                        bWorld.playSound(bLoc, Sound.ENTITY_WITHER_DEATH, 1.2f, 0.5f);
                     }
-                    String bName = entity.getCustomName() != null ? entity.getCustomName() : "Бос";
+                    String bName = entity.getCustomName() != null ? entity.getCustomName() : "Титан";
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§c§l[!] " + bName + " §cрозсіявся у світанковому тумані! Ви не встигли здолати його до ранку..."
+                            "§4§l[!] §c«Ви не встигли подолати титана до світанку!» §r" + bName + " §cзник у кривавому тумані, зловісно регочучи..."
                     ));
                     entity.remove();
                     continue;
                 }
+
 
                 AttributeInstance maxHpAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 if (maxHpAttr != null) {
@@ -1771,7 +1776,6 @@ public class BloodmoonMode implements FunMode, Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        if (!active || activeWorld == null) return;
         Entity entity = event.getEntity();
         if (entity == null) return;
 
@@ -1780,7 +1784,7 @@ public class BloodmoonMode implements FunMode, Listener {
         boolean isBomber = pdc.has(bomberKey, PersistentDataType.BYTE);
 
         // Захист будівель: вибухи кріперів івенту наносять шкоду гравцям, але НЕ руйнують блоки баз
-        if (isBmMob || isBomber || (entity instanceof Creeper && entity.getWorld().equals(activeWorld))) {
+        if (isBmMob || isBomber || (active && entity instanceof Creeper && activeWorld != null && entity.getWorld().equals(activeWorld))) {
             event.blockList().clear();
             event.setYield(0.0f);
         }
@@ -1879,47 +1883,46 @@ public class BloodmoonMode implements FunMode, Listener {
             w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 500);
 
             if (currentTier.getLevel() >= 4) {
-                // Рівень 4: Судний День (Раґнарок) — Збалансований топовий ендгейм-лут
+                // Рівень 4: Судний День (Раґнарок)
                 w.spawn(loc, ExperienceOrb.class).setExperience(4500);
-                drops.add(new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4)));
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 2));
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(3, 5)));
-                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(4, 8)));
+                drops.add(new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 Зірки Незеру
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 незеритові злитки (без цілого блоку!)
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 2)); // 2 Тотеми
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 зачаровані яблука
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(3, 5))); // 3–4 алмазні блоки
+                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(4, 7)));
                 drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(5, 9)));
                 drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 48));
             } else if (currentTier.getLevel() == 3) {
-                // Рівень 3: Пекельний Катаклізм — Міфічний лут
+                // Рівень 3: Пекельний Катаклізм
                 w.spawn(loc, ExperienceOrb.class).setExperience(3000);
-                drops.add(new ItemStack(Material.NETHER_STAR, 1));
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, 2));
+                drops.add(new ItemStack(Material.NETHER_STAR, 1)); // 1 Зірка Незеру
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 незеритові злитки
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 Тотеми
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 зачаровані яблука
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 алмазні блоки
                 drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
                 drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 8)));
                 drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
             } else if (currentTier.getLevel() == 2) {
-                // Рівень 2: Кривавий Армагеддон — Легендарний лут
+                // Рівень 2: Кривавий Армагеддон
                 w.spawn(loc, ExperienceOrb.class).setExperience(2000);
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1));
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1));
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, 1));
-                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(4, 9)));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1)); // 1 Незеритовий злиток
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 1 зачароване яблуко
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 алмазні блоки
                 drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
                 drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
                 drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
             } else {
-                // Рівень 1: Кривавий Місяць — Епічний початковий лут
+                // Рівень 1: Кривавий Місяць
                 w.spawn(loc, ExperienceOrb.class).setExperience(1000);
                 if (ThreadLocalRandom.current().nextBoolean()) {
-                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1));
+                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем (50% шанс)
                 }
-                drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
-                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(5, 9)));
-                drops.add(new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
+                drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1)); // 1 незеритовий скрап
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(5, 9))); // 5–8 алмазів
+                drops.add(new ItemStack(Material.GOLDEN_APPLE, 1)); // звичайне золоте яблуко
                 drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
                 drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
                 drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 16));
@@ -1927,6 +1930,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
             // Святковий феєрверк тріумфу при падінні боса
             spawnBossVictoryFirework(loc);
+
 
             String killerName = killer.getName();
             if (currentTier.getLevel() >= 4) {
