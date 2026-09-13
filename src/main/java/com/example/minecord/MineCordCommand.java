@@ -214,6 +214,10 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     }
                     sender.sendMessage(ChatColor.GREEN + "Ефекти очищено для " + count + " гравців на сервері!");
                 }
+                int mobGlowCount = bloodmoon.clearAllMobGlowing();
+                if (mobGlowCount > 0) {
+                    sender.sendMessage(ChatColor.GREEN + "Також знято залишкове підсвічування (glowing) з " + mobGlowCount + " мобів!");
+                }
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "Використання: /minecord bloodmoon <start [1-4]|stop|status|cleareffects [гравець]>");
