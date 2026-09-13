@@ -102,22 +102,28 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void registerDefaultTiers() {
         tiers.put(1, new BloodmoonTier(
-                1, "tier_1", "Багряний Сутінок", 20,
+                1, "tier_1", "Багряний Сутінок", 25,
                 1.3, 0, 0, 0, 20,
                 1.5, 0.0, 2, 4,
                 "§c§lБагряний Страж", BarColor.YELLOW, 0xFFA500
         ));
         tiers.put(2, new BloodmoonTier(
-                2, "tier_2", "Кривавий Місяць", 55,
+                2, "tier_2", "Кривавий Місяць", 50,
                 1.7, 1, 1, 0, 45,
                 2.0, 15.0, 4, 6,
                 "§4§lКривавий Лицар", BarColor.RED, 0xDD0000
         ));
         tiers.put(3, new BloodmoonTier(
-                3, "tier_3", "Затемнення Апокаліпсису", 25,
+                3, "tier_3", "Затемнення Апокаліпсису", 20,
                 2.5, 2, 2, 1, 75,
                 3.0, 40.0, 6, 10,
                 "§5§lКривавий Жнець", BarColor.PURPLE, 0x660033
+        ));
+        tiers.put(4, new BloodmoonTier(
+                4, "tier_4", "Кривавий Армагеддон", 5,
+                4.0, 2, 3, 2, 95,
+                5.0, 60.0, 8, 14,
+                "§4§l☠ Володар Безодні ☠", BarColor.RED, 0x2A0000
         ));
     }
 
@@ -372,6 +378,14 @@ public class BloodmoonMode implements FunMode, Listener {
                         "§4§l[!] §cКривавий Місяць зриває ваші сни! Прокидайтеся!"
                 ));
                 p.playSound(p.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1.0f, 0.9f);
+            } else if (tier.getLevel() >= 4) {
+                p.sendTitle(
+                        "§4§l☠ КРИВАВИЙ АРМАГЕДДОН ☠",
+                        "§cРівень загрози: §4§l" + tier.getName() + " (MAX)",
+                        10, 100, 30
+                );
+                p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.2f, 0.7f);
+                p.getWorld().strikeLightningEffect(p.getLocation());
             } else {
                 p.sendTitle(
                         "§4§lКРИВАВИЙ МІСЯЦЬ",
@@ -385,14 +399,23 @@ public class BloodmoonMode implements FunMode, Listener {
         }
 
         // Повідомлення в ігровий чат
-        Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                "\n§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸\n" +
-                "  §cРівень загрози: §e" + tier.getName() + " §7(Рівень " + tier.getLevel() + ")\n" +
-                "  §cМонстри посилені! Сон у ліжках заблоковано!\n" +
-                "  §cТримайте оборону баз до світанку!\n" +
-                "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        ));
+        String chatMsg;
+        if (tier.getLevel() >= 4) {
+            chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
+                    "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН (РІВЕНЬ IV)! ☠\n" +
+                    "  §cБЕЗОДНЯ ПОГЛИНУЛА СВІТ! ПОВСТАВ ВОЛОДАР СМЕРТІ!\n" +
+                    "  §cМонстри смертоносні, орди невблаганні, сон заблоковано!\n" +
+                    "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ЗА ВИЖИВАННЯ!\n" +
+                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
+        } else {
+            chatMsg = "\n§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                    "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸\n" +
+                    "  §cРівень загрози: §e" + tier.getName() + " §7(Рівень " + tier.getLevel() + ")\n" +
+                    "  §cМонстри посилені! Сон у ліжках заблоковано!\n" +
+                    "  §cТримайте оборону баз до світанку!\n" +
+                    "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        }
+        Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(chatMsg));
 
         // Відправка повідомлення в Discord
         sendDiscordStartEmbed(tier);
@@ -616,20 +639,51 @@ public class BloodmoonMode implements FunMode, Listener {
             boss.setCustomNameVisible(true);
             boss.setGlowing(true);
 
-            double bossHp = (currentTier.getLevel() >= 3) ? 300.0 : 150.0;
+            double bossHp = (currentTier.getLevel() >= 4) ? 500.0 : ((currentTier.getLevel() >= 3) ? 300.0 : 150.0);
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
                 hpAttr.setBaseValue(bossHp);
                 boss.setHealth(bossHp);
             }
 
-            boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
-            boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, 1, false, false));
-            boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, 1, false, false));
+            int speedAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
+            int strAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
+            int resAmp = (currentTier.getLevel() >= 4) ? 2 : 1;
+
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, speedAmp, false, false));
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, strAmp, false, false));
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, resAmp, false, false));
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0, false, false));
+            if (currentTier.getLevel() >= 4) {
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, false, false));
+            }
 
             EntityEquipment eq = boss.getEquipment();
             if (eq != null) {
-                if (currentTier.getLevel() >= 3) {
+                if (currentTier.getLevel() >= 4) {
+                    ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setHelmet(helm);
+
+                    ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    chest.addEnchantment(Enchantment.THORNS, 2);
+                    eq.setChestplate(chest);
+
+                    ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setLeggings(legs);
+
+                    ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    eq.setBoots(boots);
+
+                    ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 5);
+                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
+                    weapon.addEnchantment(Enchantment.KNOCKBACK, 2);
+                    eq.setItemInMainHand(weapon);
+                } else if (currentTier.getLevel() >= 3) {
                     eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
                     eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
                     eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
@@ -649,10 +703,18 @@ public class BloodmoonMode implements FunMode, Listener {
                 eq.setItemInMainHandDropChance(0.0f);
             }
 
-            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                    "§4§l[!] §cСходження Боса: §r" + currentTier.getBossName() + "§c біля гравця §e" + player.getName() + "§c!"
-            ));
-            player.getWorld().playSound(spawnLoc, Sound.ENTITY_WITHER_SPAWN, 1.2f, 1.0f);
+            if (currentTier.getLevel() >= 4) {
+                player.getWorld().strikeLightningEffect(spawnLoc);
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l☠☠☠ [АРМАГЕДДОН] ВОЛОДАР БЕЗОДНІ ПОВСТАВ! §r" + currentTier.getBossName() + "§4§l біля гравця §e" + player.getName() + "§4§l! ☠☠☠"
+                ));
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.7f);
+            } else {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l[!] §cСходження Боса: §r" + currentTier.getBossName() + "§c біля гравця §e" + player.getName() + "§c!"
+                ));
+                player.getWorld().playSound(spawnLoc, Sound.ENTITY_WITHER_SPAWN, 1.2f, 1.0f);
+            }
         }
     }
 
@@ -679,6 +741,10 @@ public class BloodmoonMode implements FunMode, Listener {
             monster.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, tier.getResistanceLevel() - 1, false, false));
         }
 
+        if (tier.getLevel() >= 4 && monster instanceof Creeper creeper) {
+            creeper.setPowered(true);
+        }
+
         if (tier.getLevel() >= 3) {
             monster.setGlowing(true);
         }
@@ -687,7 +753,24 @@ public class BloodmoonMode implements FunMode, Listener {
         if (ThreadLocalRandom.current().nextInt(100) < tier.getArmorChancePercent()) {
             EntityEquipment eq = monster.getEquipment();
             if (eq != null) {
-                if (tier.getLevel() >= 3) {
+                if (tier.getLevel() >= 4) {
+                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+                    eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+                    if (monster instanceof Skeleton) {
+                        ItemStack bow = new ItemStack(Material.BOW);
+                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 3);
+                        eq.setItemInMainHand(bow);
+                    } else {
+                        ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 3);
+                        sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
+                        eq.setItemInMainHand(sword);
+                    }
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0, false, false));
+                } else if (tier.getLevel() >= 3) {
                     eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
                     eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
                     eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
@@ -797,17 +880,32 @@ public class BloodmoonMode implements FunMode, Listener {
             if (channel == null) return;
 
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸");
+            if (tier.getLevel() >= 4) {
+                eb.setTitle("☠️ [АРМАГЕДДОН] КРИВАВИЙ МІСЯЦЬ РІВНЯ IV! ☠️");
+            } else {
+                eb.setTitle("🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸");
+            }
             eb.setColor(tier.getDiscordColorHex());
-            eb.setDescription(
-                    "**Рівень загрози:** `" + tier.getName() + "` (Рівень " + tier.getLevel() + ")\n\n" +
-                    "⚠️ **Увага всім гравцям на сервері:**\n" +
-                    "• Сон у ліжках заблоковано до настання світанку!\n" +
-                    "• Монстри отримали додаткове здоров'я (+" + (int)((tier.getHealthMultiplier() - 1.0) * 100) + "%) та бафи швидкості/сили.\n" +
-                    "• Очікуються хвилі орд монстрів та можлива поява босів.\n" +
-                    "• За знищення мобів видається **x" + tier.getExpMultiplier() + "** досвіду та рідкісний лут!\n\n" +
-                    "🛡️ *Тримайте оборону баз та готуйте зброю!*"
-            );
+            String desc;
+            if (tier.getLevel() >= 4) {
+                desc = "**Рівень загрози:** `☠ " + tier.getName() + " ☠` (МАКСИМАЛЬНИЙ РІВЕНЬ 4)\n\n" +
+                        "🔥 **БЕЗОДНЯ ПОГЛИНУЛА СВІТ — НАЙКОШМАРНІША НІЧ:**\n" +
+                        "• Сон у ліжках повністю унеможливлено!\n" +
+                        "• Монстри посилені у **" + tier.getHealthMultiplier() + " рази**, екіпіровані незеритом та смертельними чарами!\n" +
+                        "• Заряджені кріпери та невпинні гігантські орди монстрів.\n" +
+                        "• З високим шансом повстане **Володар Безодні**!\n" +
+                        "• За перемогу над босом: Зірка Незеру, незерит, зачаровані золоті яблука та **x" + tier.getExpMultiplier() + "** досвіду!\n\n" +
+                        "⚰️ *Шанси пережити цю ніч вкрай малі. Хай допоможуть вам небеса!*";
+            } else {
+                desc = "**Рівень загрози:** `" + tier.getName() + "` (Рівень " + tier.getLevel() + ")\n\n" +
+                        "⚠️ **Увага всім гравцям на сервері:**\n" +
+                        "• Сон у ліжках заблоковано до настання світанку!\n" +
+                        "• Монстри отримали додаткове здоров'я (+" + (int)((tier.getHealthMultiplier() - 1.0) * 100) + "%) та бафи швидкості/сили.\n" +
+                        "• Очікуються хвилі орд монстрів та можлива поява босів.\n" +
+                        "• За знищення мобів видається **x" + tier.getExpMultiplier() + "** досвіду та рідкісний лут!\n\n" +
+                        "🛡️ *Тримайте оборону баз та готуйте зброю!*";
+            }
+            eb.setDescription(desc);
             eb.setTimestamp(Instant.now());
             eb.setFooter("MineCord Bloodmoon Event", null);
 
@@ -893,7 +991,13 @@ public class BloodmoonMode implements FunMode, Listener {
                 loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
                 loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(16, 33)));
 
-                if (currentTier.getLevel() >= 3) {
+                if (currentTier.getLevel() >= 4) {
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(1, 3)));
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(1, 3)));
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 1));
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, 1));
+                } else if (currentTier.getLevel() >= 3) {
                     if (ThreadLocalRandom.current().nextInt(100) < 50) {
                         loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 1));
                     }
@@ -907,12 +1011,21 @@ public class BloodmoonMode implements FunMode, Listener {
 
                 Player killer = entity.getKiller();
                 String killerName = (killer != null) ? killer.getName() : "Герої";
-                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        "§6§l[!] Гравець §e" + killerName + " §6переміг боса §r" + entity.getCustomName() + "§6! Трофеї випали на землю!"
-                ));
+                if (currentTier.getLevel() >= 4) {
+                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                            "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Зірка Незеру та незерит випали на землю! ☠"
+                    ));
+                } else {
+                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                            "§6§l[!] Гравець §e" + killerName + " §6переміг боса §r" + entity.getCustomName() + "§6! Трофеї випали на землю!"
+                    ));
+                }
             } else {
                 // Шанс додаткового дропу зі звичайних кривавих мобів
                 int roll = ThreadLocalRandom.current().nextInt(100);
+                if (currentTier.getLevel() >= 4 && roll < 6) {
+                    loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
+                }
                 if (roll < 12) {
                     loc.getWorld().dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, 1));
                 } else if (roll < 20) {
