@@ -20,6 +20,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -53,6 +54,7 @@ public class BloodmoonMode implements FunMode, Listener {
     private final MineCord plugin;
     private final NamespacedKey mobKey;
     private final NamespacedKey bossKey;
+    private final NamespacedKey bomberKey;
 
     private boolean enabled = true;
     private double chancePercent = 5.0;
@@ -81,8 +83,10 @@ public class BloodmoonMode implements FunMode, Listener {
     private BukkitTask mainCycleTask = null;
     private BukkitTask hordeTask = null;
     private BukkitTask particleTask = null;
+    private BukkitTask bomberTask = null;
 
     private final Set<UUID> activeBorderPlayers = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> activeBomberPhantoms = ConcurrentHashMap.newKeySet();
     private boolean registered = false;
 
     private Particle redParticle;
@@ -92,6 +96,7 @@ public class BloodmoonMode implements FunMode, Listener {
         this.plugin = plugin;
         this.mobKey = new NamespacedKey(plugin, "bloodmoon_mob");
         this.bossKey = new NamespacedKey(plugin, "bloodmoon_boss");
+        this.bomberKey = new NamespacedKey(plugin, "bloodmoon_bomber");
 
         initParticle();
         registerDefaultTiers();
@@ -172,6 +177,9 @@ public class BloodmoonMode implements FunMode, Listener {
             cleanUpVisuals();
         }
         stopMainCycle();
+        stopHordes();
+        stopParticleTask();
+        stopBomberTask();
         if (registered) {
             HandlerList.unregisterAll(this);
             registered = false;
@@ -466,9 +474,10 @@ public class BloodmoonMode implements FunMode, Listener {
         // Відправка повідомлення в Discord
         sendDiscordStartEmbed(tier);
 
-        // Запуск тасків орд та червоного попелу
+        // Запуск тасків орд, червоного попелу та камікадзе
         startHordes();
         startParticleTask();
+        startBomberTask();
 
         plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць активовано! Рівень: " + tier.getName() + " (" + tier.getLevel() + ")");
     }
@@ -484,6 +493,7 @@ public class BloodmoonMode implements FunMode, Listener {
         cleanUpVisuals();
         stopHordes();
         stopParticleTask();
+        stopBomberTask();
 
         if (naturallyEnded && activeWorld != null) {
             activeWorld.setTime(0L);
@@ -731,6 +741,33 @@ public class BloodmoonMode implements FunMode, Listener {
                     followAttr.setBaseValue(40.0);
                 }
             }
+        }
+
+        // Повітряна підтримка камікадзе: Фантоми з кріперами на голові
+        int bomberChance = switch (currentTier.getLevel()) {
+            case 4 -> 90;
+            case 3 -> 65;
+            case 2 -> 40;
+            default -> 20;
+        };
+
+        if (ThreadLocalRandom.current().nextInt(100) < bomberChance) {
+            int maxBombers = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : 1);
+            int bomberCount = ThreadLocalRandom.current().nextInt(1, maxBombers + 1);
+
+            for (int b = 0; b < bomberCount; b++) {
+                Location skyLoc = pLoc.clone().add(
+                        ThreadLocalRandom.current().nextDouble(-10, 10),
+                        ThreadLocalRandom.current().nextDouble(12, 18),
+                        ThreadLocalRandom.current().nextDouble(-10, 10)
+                );
+                spawnPhantomBomber(skyLoc, player, currentTier);
+            }
+
+            player.playSound(pLoc, Sound.ENTITY_PHANTOM_SWOOP, 1.5f, 0.5f);
+            player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    "§4§l[!] §cУВАГА: Повітряний наліт! Фантоми-камікадзе з кріперами атакують! §4§l[!]"
+            ));
         }
 
         // Перевірка на спавн міні-боса
@@ -1053,6 +1090,267 @@ public class BloodmoonMode implements FunMode, Listener {
     }
 
     // ==========================================
+    // Летючі камікадзе (Фантом + Кріпер-бомба)
+    // ==========================================
+
+    public Phantom spawnPhantomBomber(Location loc, Player target, BloodmoonTier tier) {
+        if (loc == null || loc.getWorld() == null || tier == null) return null;
+        Entity phantomEntity = loc.getWorld().spawnEntity(loc, EntityType.PHANTOM, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        if (!(phantomEntity instanceof Phantom phantom)) return null;
+        equipPhantomAsBomber(phantom, target, tier);
+        return phantom;
+    }
+
+    public void equipPhantomAsBomber(Phantom phantom, Player target, BloodmoonTier tier) {
+        if (phantom == null || !phantom.isValid() || tier == null) return;
+
+        World world = phantom.getWorld();
+        Location loc = phantom.getLocation();
+        int level = tier.getLevel();
+
+        // 1. Налаштування Фантома
+        PersistentDataContainer pPdc = phantom.getPersistentDataContainer();
+        pPdc.set(mobKey, PersistentDataType.BYTE, (byte) level);
+        pPdc.set(bomberKey, PersistentDataType.BYTE, (byte) 1);
+
+        int phantomSize;
+        String phantomTitle;
+        if (level >= 4) {
+            phantomSize = 7;
+            phantomTitle = "§0§l☠ §4§lСУДНИЙ ФАНТОМ-КАМІКАДЗЕ §0§l☠";
+        } else if (level == 3) {
+            phantomSize = 5;
+            phantomTitle = "§4§l☠ Пекельний Бомбардувальник ☠";
+        } else if (level == 2) {
+            phantomSize = 3;
+            phantomTitle = "§4§l☠ Армагеддон-Фантом ☠";
+        } else {
+            phantomSize = 2;
+            phantomTitle = "§c§lКривавий Фантом-Бомбардувальник";
+        }
+
+        phantom.setSize(phantomSize);
+        phantom.setCustomName(phantomTitle);
+        phantom.setCustomNameVisible(true);
+        if (level >= 2) {
+            phantom.setGlowing(true);
+        }
+
+        double baseHp = 20.0 * tier.getHealthMultiplier();
+        AttributeInstance hpAttr = phantom.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        if (hpAttr != null) {
+            hpAttr.setBaseValue(baseHp);
+            phantom.setHealth(baseHp);
+        }
+
+        AttributeInstance followAttr = phantom.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+        if (followAttr != null) {
+            followAttr.setBaseValue(64.0);
+        }
+
+        if (target != null && target.isOnline()) {
+            phantom.setTarget(target);
+        }
+
+        int effectDuration = (durationMinutes + 5) * 60 * 20;
+        int speedAmp = (level >= 4) ? 2 : (level >= 3 ? 1 : 0);
+        phantom.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, effectDuration, speedAmp, false, false));
+
+        // 2. Створення Кріпера-пасажира
+        Entity creeperEntity = world.spawnEntity(loc, EntityType.CREEPER, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        if (!(creeperEntity instanceof Creeper creeper)) {
+            activeBomberPhantoms.add(phantom.getUniqueId());
+            return;
+        }
+
+        PersistentDataContainer cPdc = creeper.getPersistentDataContainer();
+        cPdc.set(mobKey, PersistentDataType.BYTE, (byte) level);
+        cPdc.set(bomberKey, PersistentDataType.BYTE, (byte) 1);
+
+        String creeperTitle;
+        int explosionRadius;
+        int maxFuse;
+        boolean powered;
+
+        if (level >= 4) {
+            creeperTitle = "§0§l☠ §4§lТЕРМОЯДЕРНА АВІАБОМБА §0§l☠";
+            explosionRadius = 6;
+            maxFuse = 5;
+            powered = true;
+        } else if (level == 3) {
+            creeperTitle = "§4§l☠ Пекельна Авіабомба ☠";
+            explosionRadius = 5;
+            maxFuse = 10;
+            powered = true;
+        } else if (level == 2) {
+            creeperTitle = "§c§l☠ Заряджена Авіабомба ☠";
+            explosionRadius = 4;
+            maxFuse = 15;
+            powered = ThreadLocalRandom.current().nextBoolean();
+        } else {
+            creeperTitle = "§c§lКривава Авіабомба";
+            explosionRadius = 3;
+            maxFuse = 20;
+            powered = false;
+        }
+
+        creeper.setCustomName(creeperTitle);
+        creeper.setCustomNameVisible(true);
+        creeper.setPowered(powered);
+        creeper.setExplosionRadius(explosionRadius);
+        creeper.setMaxFuseTicks(maxFuse);
+
+        AttributeInstance cHp = creeper.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        if (cHp != null) {
+            double newHp = cHp.getBaseValue() * tier.getHealthMultiplier();
+            cHp.setBaseValue(newHp);
+            creeper.setHealth(newHp);
+        }
+
+        if (level >= 2) {
+            creeper.setGlowing(true);
+        }
+
+        if (target != null && target.isOnline()) {
+            creeper.setTarget(target);
+        }
+
+        phantom.addPassenger(creeper);
+        activeBomberPhantoms.add(phantom.getUniqueId());
+
+        world.playSound(loc, Sound.ENTITY_PHANTOM_SWOOP, 1.5f, 0.6f);
+        world.playSound(loc, Sound.ENTITY_CREEPER_PRIMED, 1.0f, 1.2f);
+        world.spawnParticle(Particle.SMOKE_LARGE, loc, 15, 0.5, 0.5, 0.5, 0.05);
+    }
+
+    private void startBomberTask() {
+        stopBomberTask();
+        bomberTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!active || activeWorld == null || currentTier == null) {
+                    cancel();
+                    return;
+                }
+
+                if (activeBomberPhantoms.isEmpty()) return;
+
+                Iterator<UUID> it = activeBomberPhantoms.iterator();
+                while (it.hasNext()) {
+                    UUID pId = it.next();
+                    Entity entity = Bukkit.getEntity(pId);
+                    if (!(entity instanceof Phantom phantom) || !phantom.isValid() || phantom.isDead()) {
+                        it.remove();
+                        continue;
+                    }
+
+                    Creeper creeper = null;
+                    for (Entity pass : phantom.getPassengers()) {
+                        if (pass instanceof Creeper c && c.isValid() && !c.isDead()) {
+                            creeper = c;
+                            break;
+                        }
+                    }
+
+                    if (creeper == null) {
+                        it.remove();
+                        continue;
+                    }
+
+                    Location pLoc = phantom.getLocation();
+                    Player nearest = findNearestSurvivalPlayer(pLoc, 48.0);
+                    if (nearest == null) continue;
+
+                    if (phantom.getTarget() == null || !phantom.getTarget().equals(nearest)) {
+                        phantom.setTarget(nearest);
+                    }
+                    if (creeper.getTarget() == null || !creeper.getTarget().equals(nearest)) {
+                        creeper.setTarget(nearest);
+                    }
+
+                    double dist = pLoc.distance(nearest.getLocation());
+
+                    // Шлейф вогню та диму під час польоту
+                    if (dist < 32.0) {
+                        Location trailLoc = pLoc.clone().add(0, 0.5, 0);
+                        if (currentTier.getLevel() >= 3) {
+                            phantom.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, trailLoc, 3, 0.2, 0.2, 0.2, 0.02);
+                        } else {
+                            phantom.getWorld().spawnParticle(Particle.FLAME, trailLoc, 2, 0.2, 0.2, 0.2, 0.02);
+                        }
+                    }
+
+                    // 1. Свист пікірування та запалювання запалу (дистанція <= 4.5м)
+                    if (dist <= 4.5) {
+                        if (!creeper.isIgnited()) {
+                            creeper.ignite();
+                            nearest.playSound(pLoc, Sound.ENTITY_CREEPER_PRIMED, 1.2f, 1.2f);
+                            nearest.playSound(pLoc, Sound.ENTITY_PHANTOM_SWOOP, 1.5f, 0.7f);
+                            nearest.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                                    "§4§l[!] §cПІКІРУВАННЯ! Фантом-камікадзе влітає у вас! §4§l[!]"
+                            ));
+                        }
+                    }
+
+                    // 2. Пряме зіткнення/вліт у гравця (дистанція <= 2.2м) -> МИТТЄВИЙ ВИБУХ!
+                    if (dist <= 2.2) {
+                        detonateBomber(creeper, phantom, nearest);
+                        it.remove();
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 4L, 4L);
+    }
+
+    private void stopBomberTask() {
+        if (bomberTask != null) {
+            bomberTask.cancel();
+            bomberTask = null;
+        }
+        activeBomberPhantoms.clear();
+    }
+
+    private void detonateBomber(Creeper creeper, Phantom phantom, Player player) {
+        if (creeper == null || !creeper.isValid()) return;
+
+        Location loc = creeper.getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        for (PotionEffect pe : creeper.getActivePotionEffects()) {
+            creeper.removePotionEffect(pe.getType());
+        }
+
+        creeper.explode();
+
+        if (phantom != null && phantom.isValid()) {
+            activeBomberPhantoms.remove(phantom.getUniqueId());
+            phantom.remove();
+        }
+
+        world.spawnParticle(Particle.EXPLOSION_LARGE, loc, 3, 0.5, 0.5, 0.5, 0.1);
+        world.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.9f);
+    }
+
+    private Player findNearestSurvivalPlayer(Location loc, double maxDistance) {
+        if (loc == null || loc.getWorld() == null) return null;
+        Player nearest = null;
+        double nearestDistSq = maxDistance * maxDistance;
+
+        for (Player p : loc.getWorld().getPlayers()) {
+            if (p.getGameMode() != GameMode.SURVIVAL && p.getGameMode() != GameMode.ADVENTURE) {
+                continue;
+            }
+            double distSq = p.getLocation().distanceSquared(loc);
+            if (distSq < nearestDistSq) {
+                nearestDistSq = distSq;
+                nearest = p;
+            }
+        }
+        return nearest;
+    }
+
+    // ==========================================
     // Збереження та відновлення стану (Рестарт)
     // ==========================================
 
@@ -1162,6 +1460,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Монстри посилені у **10.0 разів** (10x HP, Сила IV, Опір II, Швидкість III)!\n" +
                         "• 100% захист: повні комплекти зачарованого незериту (Захист IV, Шипи III)!\n" +
                         "• Гігантські орди до 36 монстрів та швидкісні заряджені кріпери!\n" +
+                        "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом при таранному ударі!\n" +
                         "• Повстає **☠ ТИТАН ХАОСУ ☠** (1400 HP)!\n" +
                         "• За перемогу над босом: **3-4 Зірки Незеру, Блок Незериту, 3-4 Тотеми, Блоки Діамантів, Яблука Нотча та 10000 EXP**!\n\n" +
                         "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
@@ -1172,6 +1471,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Монстри посилені у **6.5 разів** (6.5x HP, Сила III, Опір II)!\n" +
                         "• 95% монстрів у зачарованому незериті з гострими мечами!\n" +
                         "• Заряджені кріпери та невпинні орди до 26 монстрів!\n" +
+                        "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із зарядженими кріперами-камікадзе!\n" +
                         "• Повстає **☠ Архідемон Смерті ☠** (850 HP)!\n" +
                         "• За перемогу над босом: **2 Зірки Незеру, 2-4 незеритові зливки, 2-3 Тотеми, Блоки Діамантів та 6000 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
@@ -1181,6 +1481,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Сон у ліжках заблоковано!\n" +
                         "• Монстри посилені у **4.5 рази** (4.5x HP, Сила II, Опір I)!\n" +
                         "• Незеритова й діамантова броня, заряджені кріпери та орди до 18 монстрів!\n" +
+                        "• ✈️ **Повітряні бомбардувальники:** фантоми з авіабомбами-кріперами на голові!\n" +
                         "• Повстає **Володар Безодні** (550 HP)!\n" +
                         "• За перемогу над босом: **1 Зірка Незеру, 2-3 незеритові зливки, 2 Тотеми, Блоки Діамантів та 4000 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
@@ -1190,6 +1491,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Сон у ліжках заблоковано до світанку!\n" +
                         "• Монстри отримали **2.5x здоров'я**, бафи Швидкості та Сили!\n" +
                         "• Орди монстрів до 12 створінь у діамантовому спорядженні!\n" +
+                        "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами, що пікірують на гравців!\n" +
                         "• Повстає бос **«Кривавий Жнець»** (300 HP)!\n" +
                         "• За перемогу над босом: **100% Тотем Безсмертя, Незеритовий зливок, Зачароване Золоте Яблуко, Блок Діамантів та 2000 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
@@ -1270,8 +1572,51 @@ public class BloodmoonMode implements FunMode, Listener {
             return;
         }
 
+        if (entity instanceof Phantom phantom) {
+            int naturalBomberChance = switch (currentTier.getLevel()) {
+                case 4 -> 100;
+                case 3 -> 75;
+                case 2 -> 50;
+                default -> 25;
+            };
+            if (ThreadLocalRandom.current().nextInt(100) < naturalBomberChance) {
+                Player nearest = findNearestSurvivalPlayer(phantom.getLocation(), 64.0);
+                equipPhantomAsBomber(phantom, nearest, currentTier);
+                return;
+            }
+        }
+
         if (event.getEntity() instanceof Monster monster) {
             buffMonster(monster, currentTier);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBomberStrike(EntityDamageByEntityEvent event) {
+        if (!active || currentTier == null) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        Entity damager = event.getDamager();
+        Phantom phantom = null;
+        Creeper creeper = null;
+
+        if (damager instanceof Phantom p && p.getPersistentDataContainer().has(bomberKey, PersistentDataType.BYTE)) {
+            phantom = p;
+            for (Entity pass : p.getPassengers()) {
+                if (pass instanceof Creeper c && c.isValid() && !c.isDead()) {
+                    creeper = c;
+                    break;
+                }
+            }
+        } else if (damager instanceof Creeper c && c.getPersistentDataContainer().has(bomberKey, PersistentDataType.BYTE)) {
+            creeper = c;
+            if (c.getVehicle() instanceof Phantom p) {
+                phantom = p;
+            }
+        }
+
+        if (creeper != null && creeper.isValid() && !creeper.isDead()) {
+            detonateBomber(creeper, phantom, player);
         }
     }
 
@@ -1328,6 +1673,16 @@ public class BloodmoonMode implements FunMode, Listener {
         }
 
         PersistentDataContainer pdc = entity.getPersistentDataContainer();
+
+        if (entity instanceof Phantom phantom && pdc.has(bomberKey, PersistentDataType.BYTE)) {
+            activeBomberPhantoms.remove(phantom.getUniqueId());
+            for (Entity pass : phantom.getPassengers()) {
+                if (pass instanceof Creeper creeper && creeper.isValid() && !creeper.isDead()) {
+                    creeper.ignite();
+                    creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_CREEPER_PRIMED, 1.2f, 1.0f);
+                }
+            }
+        }
 
         if (pdc.has(mobKey, PersistentDataType.BYTE)) {
             // Захист від автоферм (за принципом BloodmoonReloaded): кастомний дроп тільки якщо моба вбив гравець
