@@ -113,27 +113,27 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void registerDefaultTiers() {
         tiers.put(1, new BloodmoonTier(
-                1, "tier_1", "Кривавий Місяць", 40,
-                2.5, 1, 1, 1, 70,
-                2.5, 30.0, 6, 12,
+                1, "tier_1", "Кривавий Місяць", 60,
+                1.6, 0, 0, 0, 40,
+                2.0, 20.0, 4, 8,
                 "§5§lКривавий Жнець", BarColor.RED, 0xDD0000
         ));
         tiers.put(2, new BloodmoonTier(
-                2, "tier_2", "Кривавий Армагеддон", 35,
-                4.5, 2, 2, 1, 85,
-                4.0, 50.0, 10, 18,
+                2, "tier_2", "Кривавий Армагеддон", 25,
+                2.5, 1, 1, 0, 60,
+                3.0, 35.0, 6, 12,
                 "§4§l☠ Володар Безодні ☠", BarColor.RED, 0xAA0000
         ));
         tiers.put(3, new BloodmoonTier(
-                3, "tier_3", "Пекельний Катаклізм", 18,
-                6.5, 2, 3, 2, 95,
-                6.0, 65.0, 16, 26,
+                3, "tier_3", "Пекельний Катаклізм", 12,
+                3.5, 1, 2, 1, 80,
+                5.0, 50.0, 10, 18,
                 "§4§l☠ Архідемон Смерті ☠", BarColor.PURPLE, 0x660033
         ));
         tiers.put(4, new BloodmoonTier(
-                4, "tier_4", "☠ Судний День (Раґнарок) ☠", 7,
-                10.0, 3, 4, 2, 100,
-                10.0, 80.0, 22, 36,
+                4, "tier_4", "☠ Судний День (Раґнарок) ☠", 3,
+                5.0, 2, 2, 1, 90,
+                8.0, 70.0, 14, 24,
                 "§0§l☠ §4§lТИТАН ХАОСУ §0§l☠", BarColor.PURPLE, 0x2A0000
         ));
     }
@@ -820,13 +820,13 @@ public class BloodmoonMode implements FunMode, Listener {
 
             double bossHp;
             if (currentTier.getLevel() >= 4) {
-                bossHp = 1400.0;
+                bossHp = 900.0;
             } else if (currentTier.getLevel() == 3) {
-                bossHp = 850.0;
+                bossHp = 600.0;
             } else if (currentTier.getLevel() == 2) {
-                bossHp = 550.0;
+                bossHp = 380.0;
             } else {
-                bossHp = 300.0;
+                bossHp = 200.0;
             }
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
@@ -1024,47 +1024,9 @@ public class BloodmoonMode implements FunMode, Listener {
                 eq.setItemInOffHandDropChance(0.0f);
 
                 if (tier.getLevel() >= 4) {
-                    // Рівень 4 (Раґнарок): Повний незерит, максимальні чари
-                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+                    // Рівень 4 (Раґнарок): Незерит + Діамант, помірні чари
+                    eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
                     eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
-                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
-                    if (monster instanceof Skeleton) {
-                        ItemStack bow = new ItemStack(Material.BOW);
-                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
-                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 5);
-                        bow.addEnchantment(Enchantment.ARROW_KNOCKBACK, 2);
-                        eq.setItemInMainHand(bow);
-                    } else {
-                        ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
-                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 5);
-                        sword.addEnchantment(Enchantment.FIRE_ASPECT, 2);
-                        sword.addEnchantment(Enchantment.KNOCKBACK, 2);
-                        eq.setItemInMainHand(sword);
-                    }
-                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
-                } else if (tier.getLevel() == 3) {
-                    // Рівень 3 (Катаклізм): Повний незерит, потужні чари
-                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
-                    eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
-                    eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
-                    if (monster instanceof Skeleton) {
-                        ItemStack bow = new ItemStack(Material.BOW);
-                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
-                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 4);
-                        eq.setItemInMainHand(bow);
-                    } else {
-                        ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
-                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 4);
-                        sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
-                        eq.setItemInMainHand(sword);
-                    }
-                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
-                } else if (tier.getLevel() == 2) {
-                    // Рівень 2 (Армагеддон): Діамант + Незерит
-                    eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
-                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
                     eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
                     eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
                     if (monster instanceof Skeleton) {
@@ -1073,24 +1035,51 @@ public class BloodmoonMode implements FunMode, Listener {
                         bow.addEnchantment(Enchantment.ARROW_DAMAGE, 3);
                         eq.setItemInMainHand(bow);
                     } else {
-                        ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
+                        ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
                         sword.addEnchantment(Enchantment.DAMAGE_ALL, 3);
                         sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                         eq.setItemInMainHand(sword);
                     }
-                } else {
-                    // Рівень 1 (Кривавий Місяць): Повний діамантовий сет
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
+                } else if (tier.getLevel() == 3) {
+                    // Рівень 3 (Катаклізм): Діамантова броня, збалансовані чари
                     eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
                     eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+                    eq.setLeggings(new ItemStack(Material.IRON_LEGGINGS));
                     eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
                     if (monster instanceof Skeleton) {
                         ItemStack bow = new ItemStack(Material.BOW);
-                        bow.addEnchantment(Enchantment.ARROW_FIRE, 1);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 2);
                         eq.setItemInMainHand(bow);
                     } else {
                         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
                         sword.addEnchantment(Enchantment.DAMAGE_ALL, 2);
+                        eq.setItemInMainHand(sword);
+                    }
+                } else if (tier.getLevel() == 2) {
+                    // Рівень 2 (Армагеддон): Залізо + Діамант
+                    eq.setHelmet(new ItemStack(Material.IRON_HELMET));
+                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.IRON_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.IRON_BOOTS));
+                    if (monster instanceof Skeleton) {
+                        ItemStack bow = new ItemStack(Material.BOW);
+                        bow.addEnchantment(Enchantment.ARROW_DAMAGE, 1);
+                        eq.setItemInMainHand(bow);
+                    } else {
+                        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 2);
+                        eq.setItemInMainHand(sword);
+                    }
+                } else {
+                    // Рівень 1 (Кривавий Місяць): Залізне спорядження
+                    eq.setHelmet(new ItemStack(Material.IRON_HELMET));
+                    eq.setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+                    if (monster instanceof Skeleton) {
+                        eq.setItemInMainHand(new ItemStack(Material.BOW));
+                    } else {
+                        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+                        sword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
                         eq.setItemInMainHand(sword);
                     }
                 }
@@ -1111,7 +1100,7 @@ public class BloodmoonMode implements FunMode, Listener {
     }
 
     public void equipPhantomAsBomber(Phantom phantom, Player target, BloodmoonTier tier) {
-        if (phantom == null || !phantom.isValid() || tier == null) return;
+        if (phantom == null || phantom.isDead() || tier == null) return;
 
         World world = phantom.getWorld();
         Location loc = phantom.getLocation();
@@ -1125,16 +1114,16 @@ public class BloodmoonMode implements FunMode, Listener {
         int phantomSize;
         String phantomTitle;
         if (level >= 4) {
-            phantomSize = 7;
+            phantomSize = 4;
             phantomTitle = "§0§l☠ §4§lСУДНИЙ ФАНТОМ-КАМІКАДЗЕ §0§l☠";
         } else if (level == 3) {
-            phantomSize = 5;
+            phantomSize = 3;
             phantomTitle = "§4§l☠ Пекельний Бомбардувальник ☠";
         } else if (level == 2) {
-            phantomSize = 3;
+            phantomSize = 2;
             phantomTitle = "§4§l☠ Армагеддон-Фантом ☠";
         } else {
-            phantomSize = 2;
+            phantomSize = 1;
             phantomTitle = "§c§lКривавий Фантом-Бомбардувальник";
         }
 
@@ -1151,7 +1140,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
         AttributeInstance followAttr = phantom.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
         if (followAttr != null) {
-            followAttr.setBaseValue(64.0);
+            followAttr.setBaseValue(48.0);
         }
 
         if (target != null && target.isOnline()) {
@@ -1159,7 +1148,7 @@ public class BloodmoonMode implements FunMode, Listener {
         }
 
         int effectDuration = (durationMinutes + 5) * 60 * 20;
-        int speedAmp = (level >= 4) ? 2 : (level >= 3 ? 1 : 0);
+        int speedAmp = (level >= 4) ? 1 : 0;
         phantom.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, effectDuration, speedAmp, false, false));
 
         // 2. Створення Кріпера-пасажира
@@ -1180,19 +1169,19 @@ public class BloodmoonMode implements FunMode, Listener {
 
         if (level >= 4) {
             creeperTitle = "§0§l☠ §4§lТЕРМОЯДЕРНА АВІАБОМБА §0§l☠";
-            explosionRadius = 6;
-            maxFuse = 5;
-            powered = true;
-        } else if (level == 3) {
-            creeperTitle = "§4§l☠ Пекельна Авіабомба ☠";
             explosionRadius = 5;
-            maxFuse = 10;
-            powered = true;
+            maxFuse = 8;
+            powered = true; // 100% заряджений на Tier 4
+        } else if (level == 3) {
+            creeperTitle = "§4§l☠ Заряджена Авіабомба ☠";
+            explosionRadius = 4;
+            maxFuse = 12;
+            powered = true; // 100% заряджений на Tier 3
         } else if (level == 2) {
             creeperTitle = "§c§l☠ Заряджена Авіабомба ☠";
-            explosionRadius = 4;
+            explosionRadius = 3;
             maxFuse = 15;
-            powered = ThreadLocalRandom.current().nextBoolean();
+            powered = ThreadLocalRandom.current().nextInt(100) < 75; // 75% заряджений на Tier 2
         } else {
             creeperTitle = "§c§lКривава Авіабомба";
             explosionRadius = 3;
@@ -1219,6 +1208,15 @@ public class BloodmoonMode implements FunMode, Listener {
 
         phantom.addPassenger(creeper);
         activeBomberPhantoms.add(phantom.getUniqueId());
+
+        // Захист від скидання пасажира під час ініціалізації в Paper (повторна посадка через 1 тік)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!phantom.isDead() && !creeper.isDead()) {
+                if (!phantom.getPassengers().contains(creeper)) {
+                    phantom.addPassenger(creeper);
+                }
+            }
+        }, 1L);
 
         world.playSound(loc, Sound.ENTITY_PHANTOM_SWOOP, 1.5f, 0.6f);
         world.playSound(loc, Sound.ENTITY_CREEPER_PRIMED, 1.0f, 1.2f);
@@ -1248,9 +1246,21 @@ public class BloodmoonMode implements FunMode, Listener {
 
                     Creeper creeper = null;
                     for (Entity pass : phantom.getPassengers()) {
-                        if (pass instanceof Creeper c && c.isValid() && !c.isDead()) {
+                        if (pass instanceof Creeper c && !c.isDead()) {
                             creeper = c;
                             break;
+                        }
+                    }
+
+                    if (creeper == null) {
+                        for (Entity nearby : phantom.getNearbyEntities(4.0, 4.0, 4.0)) {
+                            if (nearby instanceof Creeper c && !c.isDead() && c.getPersistentDataContainer().has(bomberKey, PersistentDataType.BYTE)) {
+                                if (c.getVehicle() == null) {
+                                    phantom.addPassenger(c);
+                                    creeper = c;
+                                    break;
+                                }
+                            }
                         }
                     }
 
@@ -1577,13 +1587,17 @@ public class BloodmoonMode implements FunMode, Listener {
         if (entity instanceof Phantom phantom) {
             int naturalBomberChance = switch (currentTier.getLevel()) {
                 case 4 -> 100;
-                case 3 -> 75;
-                case 2 -> 50;
-                default -> 25;
+                case 3 -> 85;
+                case 2 -> 60;
+                default -> 30;
             };
             if (ThreadLocalRandom.current().nextInt(100) < naturalBomberChance) {
-                Player nearest = findNearestSurvivalPlayer(phantom.getLocation(), 64.0);
-                equipPhantomAsBomber(phantom, nearest, currentTier);
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (active && currentTier != null && !phantom.isDead()) {
+                        Player nearest = findNearestSurvivalPlayer(phantom.getLocation(), 64.0);
+                        equipPhantomAsBomber(phantom, nearest, currentTier);
+                    }
+                });
                 return;
             }
         }
@@ -1686,158 +1700,170 @@ public class BloodmoonMode implements FunMode, Listener {
             }
         }
 
-        if (pdc.has(mobKey, PersistentDataType.BYTE)) {
-            // Захист від автоферм (за принципом BloodmoonReloaded): кастомний дроп тільки якщо моба вбив гравець
-            if (entity.getKiller() == null) {
-                return;
+        boolean isBloodmoonMob = pdc.has(mobKey, PersistentDataType.BYTE);
+        if (!isBloodmoonMob && entity instanceof Monster && activeWorld != null && entity.getWorld().equals(activeWorld)) {
+            isBloodmoonMob = true;
+        }
+        if (!isBloodmoonMob) return;
+
+        Player killer = entity.getKiller();
+        if (killer == null && entity.getLastDamageCause() instanceof EntityDamageByEntityEvent edbe) {
+            if (edbe.getDamager() instanceof Player p) {
+                killer = p;
+            } else if (edbe.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+                killer = p;
+            } else if (edbe.getDamager() instanceof Tameable tam && tam.getOwner() instanceof Player p) {
+                killer = p;
+            }
+        }
+
+        // Захист від автоферм: кастомний дроп тільки якщо моба вбив гравець (мечем, луком чи вовком)
+        if (killer == null) {
+            return;
+        }
+
+        mobsKilled++;
+
+        // Збільшення досвіду
+        int baseExp = Math.max(event.getDroppedExp(), 12);
+        event.setDroppedExp((int) (baseExp * currentTier.getExpMultiplier()));
+
+        boolean isBoss = pdc.has(bossKey, PersistentDataType.BYTE);
+        Location loc = entity.getLocation();
+        World w = loc.getWorld();
+        if (w == null) return;
+        List<ItemStack> drops = event.getDrops();
+
+        if (isBoss) {
+            // Додатковий досвід за боса
+            w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 500);
+
+            if (currentTier.getLevel() >= 4) {
+                // Рівень 4: Судний День (Раґнарок) — Божественний дроп
+                w.spawn(loc, ExperienceOrb.class).setExperience(10000);
+                drops.add(new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(3, 5)));
+                drops.add(new ItemStack(Material.NETHERITE_BLOCK, 1));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(4, 7)));
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(3, 5)));
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 7)));
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(4, 7)));
+                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(8, 13)));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(10, 17)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 64));
+            } else if (currentTier.getLevel() == 3) {
+                // Рівень 3: Пекельний Катаклізм — Міфічний дроп
+                w.spawn(loc, ExperienceOrb.class).setExperience(6000);
+                drops.add(new ItemStack(Material.NETHER_STAR, 2));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 5)));
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(2, 4)));
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 5)));
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, 3));
+                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(5, 9)));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(6, 11)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 48));
+            } else if (currentTier.getLevel() == 2) {
+                // Рівень 2: Кривавий Армагеддон — Легендарний дроп
+                w.spawn(loc, ExperienceOrb.class).setExperience(4000);
+                drops.add(new ItemStack(Material.NETHER_STAR, 1));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4)));
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 2));
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, 2));
+                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 9)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
+            } else {
+                // Рівень 1: Кривавий Місяць — Епічний гарантований дроп
+                w.spawn(loc, ExperienceOrb.class).setExperience(2000);
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1));
+                drops.add(new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(2, 5)));
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
+                drops.add(new ItemStack(Material.DIAMOND_BLOCK, 1));
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(12, 21)));
+                drops.add(new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 9)));
+                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
             }
 
-            mobsKilled++;
+            // Святковий феєрверк тріумфу при падінні боса
+            spawnBossVictoryFirework(loc);
 
-            // Збільшення досвіду
-            event.setDroppedExp((int) (event.getDroppedExp() * currentTier.getExpMultiplier()));
-
-            boolean isBoss = pdc.has(bossKey, PersistentDataType.BYTE);
-            Location loc = entity.getLocation();
-            World w = loc.getWorld();
-            if (w == null) return;
-
-            if (isBoss) {
-                // Додатковий досвід за боса
-                w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 500);
-
-                if (currentTier.getLevel() >= 4) {
-                    // Рівень 4: Судний День (Раґнарок) — Божественний дроп
-                    w.spawn(loc, ExperienceOrb.class).setExperience(10000);
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(3, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_BLOCK, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(4, 7)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(3, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 7)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(4, 7)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(8, 13)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(10, 17)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 64));
-                } else if (currentTier.getLevel() == 3) {
-                    // Рівень 3: Пекельний Катаклізм — Міфічний дроп
-                    w.spawn(loc, ExperienceOrb.class).setExperience(6000);
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, 2));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 3));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(5, 9)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(6, 11)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 48));
-                } else if (currentTier.getLevel() == 2) {
-                    // Рівень 2: Кривавий Армагеддон — Легендарний дроп
-                    w.spawn(loc, ExperienceOrb.class).setExperience(4000);
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHER_STAR, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 2));
-                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 2));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 9)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
-                } else {
-                    // Рівень 1: Кривавий Місяць — Епічний гарантований дроп
-                    w.spawn(loc, ExperienceOrb.class).setExperience(2000);
-                    w.dropItemNaturally(loc, new ItemStack(Material.TOTEM_OF_UNDYING, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_INGOT, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(2, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND_BLOCK, 1));
-                    w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(12, 21)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(4, 9)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 7)));
-                    w.dropItemNaturally(loc, new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
-                }
-
-                // Святковий феєрверк тріумфу при падінні боса
-                spawnBossVictoryFirework(loc);
-
-                Player killer = entity.getKiller();
-                String killerName = (killer != null) ? killer.getName() : "Герої";
-                if (currentTier.getLevel() >= 4) {
-                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§4§l☠ [БОЖЕСТВЕННА ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ТИТАНА ХАОСУ §r" + entity.getCustomName() + "§4§l! 4 Зірки Незеру, Блок Незериту та тотеми випали на землю! ☠"
-                    ));
-                } else if (currentTier.getLevel() == 3) {
-                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§c§l☠ [МІФІЧНИЙ ПОДВИГ] Гравець §e" + killerName + " §c§lвигнав АРХІДЕМОНА СМЕРТІ §r" + entity.getCustomName() + "§c§l! 2 Зірки Незеру, незерит та тотеми випали на землю! ☠"
-                    ));
-                } else if (currentTier.getLevel() == 2) {
-                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Зірка Незеру та незерит випали на землю! ☠"
-                    ));
-                } else {
-                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§5§l☠ [ЕПОС] Гравець §e" + killerName + " §5§lпереміг КРИВАВОГО ЖНЕЦЯ §r" + entity.getCustomName() + "§5§l! Тотем, незерит та скарби випали на землю! ☠"
-                    ));
-                }
+            String killerName = killer.getName();
+            if (currentTier.getLevel() >= 4) {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l☠ [БОЖЕСТВЕННА ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ТИТАНА ХАОСУ §r" + entity.getCustomName() + "§4§l! 4 Зірки Незеру, Блок Незериту та тотеми випали на землю! ☠"
+                ));
+            } else if (currentTier.getLevel() == 3) {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§c§l☠ [МІФІЧНИЙ ПОДВИГ] Гравець §e" + killerName + " §c§lвигнав АРХІДЕМОНА СМЕРТІ §r" + entity.getCustomName() + "§c§l! 2 Зірки Незеру, незерит та тотеми випали на землю! ☠"
+                ));
+            } else if (currentTier.getLevel() == 2) {
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l☠ [ЛЕГЕНДА] Гравець §e" + killerName + " §4§lздолав ВОЛОДАРЯ БЕЗОДНІ §r" + entity.getCustomName() + "§4§l! Зірка Незеру та незерит випали на землю! ☠"
+                ));
             } else {
-                // Дроп зі звичайних мобів (за принципом BloodmoonReloaded: 1-5 пачок луту залежно від рівня)
-                int lvl = currentTier.getLevel();
-                int rolls = (lvl >= 4) ? ThreadLocalRandom.current().nextInt(2, 6)
-                        : (lvl == 3) ? ThreadLocalRandom.current().nextInt(1, 5)
-                        : (lvl == 2) ? ThreadLocalRandom.current().nextInt(1, 4)
-                        : ThreadLocalRandom.current().nextInt(1, 3);
-
-                for (int i = 0; i < rolls; i++) {
-                    int roll = ThreadLocalRandom.current().nextInt(100);
-                    if (lvl >= 4) {
-                        if (roll < 12) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                        } else if (roll < 28) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(2, 5)));
-                        } else if (roll < 48) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
-                        } else if (roll < 70) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(1, 4)));
-                        } else if (roll < 88) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3)));
-                        } else {
-                            w.dropItemNaturally(loc, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
-                        }
-                    } else if (lvl == 3) {
-                        if (roll < 10) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                        } else if (roll < 28) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 4)));
-                        } else if (roll < 52) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(4, 9)));
-                        } else if (roll < 76) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_BLOCK, 1));
-                        } else if (roll < 90) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, 1));
-                        } else {
-                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(2, 6)));
-                        }
-                    } else if (lvl == 2) {
-                        if (roll < 7) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.NETHERITE_SCRAP, 1));
-                        } else if (roll < 25) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3)));
-                        } else if (roll < 55) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(3, 7)));
-                        } else if (roll < 80) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(4, 10)));
-                        } else {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLDEN_APPLE, 1));
-                        }
-                    } else {
-                        if (roll < 15) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.DIAMOND, 1));
-                        } else if (roll < 45) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(2, 6)));
-                        } else if (roll < 80) {
-                            w.dropItemNaturally(loc, new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(3, 8)));
-                        } else {
-                            w.dropItemNaturally(loc, new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 4)));
-                        }
-                    }
+                Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        "§5§l☠ [ЕПОС] Гравець §e" + killerName + " §5§lпереміг КРИВАВОГО ЖНЕЦЯ §r" + entity.getCustomName() + "§5§l! Тотем, незерит та скарби випали на землю! ☠"
+                ));
+            }
+        } else {
+            // Дроп зі звичайних мобів (щедрий гарантований лут прямо в список дропів)
+            int lvl = currentTier.getLevel();
+            if (lvl >= 4) {
+                // Tier 4: Суперцінний ендгейм дроп
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(2, 5)));
+                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_BLOCK : Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
+                if (ThreadLocalRandom.current().nextInt(100) < 60) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 25) {
+                    drops.add(new ItemStack(Material.NETHERITE_INGOT, 1));
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 50) {
+                    drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 15) {
+                    drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
+                }
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, ThreadLocalRandom.current().nextInt(2, 6)));
+            } else if (lvl == 3) {
+                // Tier 3: Діаманти, золоті зливки, незеритові уламки
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 4)));
+                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(4, 9)));
+                if (ThreadLocalRandom.current().nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
+                }
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    drops.add(new ItemStack(Material.IRON_BLOCK, 1));
+                }
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, ThreadLocalRandom.current().nextInt(1, 4)));
+            } else if (lvl == 2) {
+                // Tier 2: Діаманти, зливки, смарагди
+                if (ThreadLocalRandom.current().nextInt(100) < 80) {
+                    drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3)));
+                }
+                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(3, 7)));
+                if (ThreadLocalRandom.current().nextInt(100) < 20) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 25) {
+                    drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
+                }
+                drops.add(new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 4)));
+            } else {
+                // Tier 1: Діаманти, залізо, золото, смарагди
+                if (ThreadLocalRandom.current().nextInt(100) < 50) {
+                    drops.add(new ItemStack(Material.DIAMOND, 1));
+                }
+                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(2, 6)));
+                drops.add(new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 3)));
+                if (ThreadLocalRandom.current().nextInt(100) < 15) {
+                    drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
             }
         }
