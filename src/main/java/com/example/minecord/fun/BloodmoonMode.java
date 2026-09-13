@@ -1595,7 +1595,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Гігантські орди до 36 монстрів та швидкісні заряджені кріпери!\n" +
                         "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом при таранному ударі!\n" +
                         "• Повстає **☠ ТИТАН ХАОСУ ☠** (1400 HP)!\n" +
-                        "• За перемогу над босом: **3-4 Зірки Незеру, Блок Незериту, 3-4 Тотеми, Блоки Діамантів, Яблука Нотча та 10000 EXP**!\n\n" +
+                        "• За перемогу над босом: **Зірка Незеру, Незеритовий зливок, Тотем, Яблуко Нотча, 3-5 Алмазів та 3500 EXP**!\n\n" +
                         "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
                 desc = "**Фаза події:** `[ФАЗА 3]` | **Рівень загрози:** `🔥 " + tier.getName() + " 🔥`\n\n" +
@@ -1606,7 +1606,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Заряджені кріпери та невпинні орди до 26 монстрів!\n" +
                         "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із зарядженими кріперами-камікадзе!\n" +
                         "• Повстає **☠ Архідемон Смерті ☠** (850 HP)!\n" +
-                        "• За перемогу над босом: **2 Зірки Незеру, 2-4 незеритові зливки, 2-3 Тотеми, Блоки Діамантів та 6000 EXP**!\n\n" +
+                        "• За перемогу над босом: **1-2 Незеритові скрапи, 2-3 Алмази, Тотем, Зливки та 2200 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
                 desc = "**Фаза події:** `[ФАЗА 2]` | **Рівень загрози:** `☠ " + tier.getName() + " ☠`\n\n" +
@@ -1616,7 +1616,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Незеритова й діамантова броня, заряджені кріпери та орди до 18 монстрів!\n" +
                         "• ✈️ **Повітряні бомбардувальники:** фантоми з авіабомбами-кріперами на голові!\n" +
                         "• Повстає **Володар Безодні** (550 HP)!\n" +
-                        "• За перемогу над босом: **1 Зірка Незеру, 2-3 незеритові зливки, 2 Тотеми, Блоки Діамантів та 4000 EXP**!\n\n" +
+                        "• За перемогу над босом: **1 Незеритовий скрап, 1-2 Алмази, Золоте яблуко, Зливки та 1500 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
             } else {
                 desc = "**Фаза події:** `[ФАЗА 1]` | **Рівень загрози:** `" + tier.getName() + "`\n\n" +
@@ -1626,7 +1626,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Орди монстрів до 12 створінь у діамантовому спорядженні!\n" +
                         "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами, що пікірують на гравців!\n" +
                         "• Повстає бос **«Кривавий Жнець»** (300 HP)!\n" +
-                        "• За перемогу над босом: **100% Тотем Безсмертя, Незеритовий зливок, Зачароване Золоте Яблуко, Блок Діамантів та 2000 EXP**!\n\n" +
+                        "• За перемогу над босом: **1-2 Алмази, Золоте яблуко, Зливки заліза/золота та 800 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
             }
             eb.setDescription(desc);
@@ -1875,52 +1875,69 @@ public class BloodmoonMode implements FunMode, Listener {
 
         if (isBoss) {
             // Додатковий досвід за боса
-            w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 500);
+            w.spawn(loc, ExperienceOrb.class).setExperience(currentTier.getLevel() * 400);
 
             if (currentTier.getLevel() >= 4) {
                 // Рівень 4: Судний День (Раґнарок)
-                w.spawn(loc, ExperienceOrb.class).setExperience(4500);
-                drops.add(new ItemStack(Material.NETHER_STAR, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 Зірки Незеру
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 незеритові злитки (без цілого блоку!)
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 2)); // 2 Тотеми
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 зачаровані яблука
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(3, 5))); // 3–4 алмазні блоки
-                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(4, 7)));
-                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(5, 9)));
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 48));
+                w.spawn(loc, ExperienceOrb.class).setExperience(3500);
+                drops.add(new ItemStack(Material.NETHER_STAR, 1)); // 1 Зірка Незеру
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1)); // 1 незеритовий злиток
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 50% шанс на 2-й тотем
+                }
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 1 зачароване яблуко
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(3, 6))); // 3–5 алмазів
+                drops.add(new ItemStack(Material.GOLD_BLOCK, 1));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
             } else if (currentTier.getLevel() == 3) {
                 // Рівень 3: Пекельний Катаклізм
-                w.spawn(loc, ExperienceOrb.class).setExperience(3000);
-                drops.add(new ItemStack(Material.NETHER_STAR, 1)); // 1 Зірка Незеру
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 незеритові злитки
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 Тотеми
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 зачаровані яблука
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 алмазні блоки
-                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
-                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 8)));
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
+                w.spawn(loc, ExperienceOrb.class).setExperience(2200);
+                if (ThreadLocalRandom.current().nextInt(100) < 30) {
+                    drops.add(new ItemStack(Material.NETHER_STAR, 1)); // 30% шанс на Зірку Незеру
+                }
+                drops.add(new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 скрапи
+                if (ThreadLocalRandom.current().nextInt(100) < 75) {
+                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 75% шанс на Тотем
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 40% зачароване яблуко
+                }
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(2, 4))); // 2–3 алмази
+                drops.add(new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(5, 10)));
+                drops.add(new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(8, 15)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 16));
             } else if (currentTier.getLevel() == 2) {
                 // Рівень 2: Кривавий Армагеддон
-                w.spawn(loc, ExperienceOrb.class).setExperience(2000);
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1)); // 1 Незеритовий злиток
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 1 зачароване яблуко
-                drops.add(new ItemStack(Material.DIAMOND_BLOCK, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 алмазні блоки
-                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
-                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(3, 6)));
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 24));
+                w.spawn(loc, ExperienceOrb.class).setExperience(1500);
+                drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1)); // 1 незеритовий скрап
+                if (ThreadLocalRandom.current().nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 40% шанс на Тотем
+                }
+                if (ThreadLocalRandom.current().nextInt(100) < 20) {
+                    drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 20% зачароване яблуко
+                } else {
+                    drops.add(new ItemStack(Material.GOLDEN_APPLE, 1)); // звичайне золоте яблуко
+                }
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3))); // 1–2 алмази
+                drops.add(new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(3, 6)));
+                drops.add(new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(5, 9)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 12));
             } else {
                 // Рівень 1: Кривавий Місяць
-                w.spawn(loc, ExperienceOrb.class).setExperience(1000);
-                if (ThreadLocalRandom.current().nextBoolean()) {
-                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем (50% шанс)
+                w.spawn(loc, ExperienceOrb.class).setExperience(800);
+                if (ThreadLocalRandom.current().nextInt(100) < 20) {
+                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 20% шанс на Тотем
                 }
-                drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1)); // 1 незеритовий скрап
-                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(5, 9))); // 5–8 алмазів
+                if (ThreadLocalRandom.current().nextInt(100) < 25) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1)); // 25% шанс на 1 скрап
+                }
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(100) < 35 ? 2 : 1)); // 1 (рідше 2) алмаз
                 drops.add(new ItemStack(Material.GOLDEN_APPLE, 1)); // звичайне золоте яблуко
-                drops.add(new ItemStack(Material.GOLD_BLOCK, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(2, 5)));
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 16));
+                drops.add(new ItemStack(Material.GOLD_INGOT, ThreadLocalRandom.current().nextInt(2, 4)));
+                drops.add(new ItemStack(Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(3, 6)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 6));
             }
 
             // Святковий феєрверк тріумфу при падінні боса
@@ -1933,86 +1950,90 @@ public class BloodmoonMode implements FunMode, Listener {
             ));
 
         } else {
-            // Дроп зі звичайних мобів (збалансований помірний лут без ламання економіки)
+            // Дроп зі звичайних мобів (суворо обмежений: максимум 1-2 цінних предмети за всю ніч)
             int lvl = currentTier.getLevel();
             ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
             if (lvl >= 4) {
                 // Tier 4 (Фаза IV - Судний день / Раґнарок)
-                if (rnd.nextInt(100) < 70) {
-                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(2, 5)));
+                if (rnd.nextInt(100) < 30) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 5) {
-                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_BLOCK : Material.IRON_BLOCK, 1));
+                if (rnd.nextInt(100) < 18) {
+                    drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                if (rnd.nextInt(100) < 40) {
-                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 4)));
-                }
-                if (rnd.nextInt(100) < 15) {
+                // Алмаз: 2.0% шанс (1 на 50 мобів -> 1-2 за всю ніч)
+                if (rnd.nextInt(100) < 2) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                if (rnd.nextInt(100) < 4) {
+                // Незеритовий скрап: 0.4% шанс (1 на 250 мобів -> вкрай рідкісний випадок 1 шт)
+                if (rnd.nextInt(1000) < 4) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                if (rnd.nextInt(100) < 5) {
+                // Золоте яблуко: 1.0% шанс
+                if (rnd.nextInt(100) < 1) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(1000) < 5) {
+                // Зачароване яблуко: 0.05% (1 на 2000)
+                if (rnd.nextInt(2000) == 0) {
                     drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 40) {
-                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, rnd.nextInt(1, 3)));
+                if (rnd.nextInt(100) < 16) {
+                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else if (lvl == 3) {
                 // Tier 3 (Фаза III - Пекельний Катаклізм)
-                if (rnd.nextInt(100) < 60) {
-                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 4)));
+                if (rnd.nextInt(100) < 24) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 30) {
-                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 3)));
+                if (rnd.nextInt(100) < 14) {
+                    drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                if (rnd.nextInt(100) < 10) {
+                // Алмаз: 1.5% шанс (1 на 66 мобів -> ~1 алмаз за ніч)
+                if (rnd.nextInt(1000) < 15) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                if (rnd.nextInt(100) < 2) {
-                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
-                }
-                if (rnd.nextInt(100) < 3) {
+                // Золоте яблуко: 0.6% шанс (1 на 166)
+                if (rnd.nextInt(1000) < 6) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 30) {
+                if (rnd.nextInt(100) < 12) {
                     drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else if (lvl == 2) {
                 // Tier 2 (Фаза II - Кривавий Армагеддон)
-                // Скрап видалено зі звичайних мобів (0%) - він залишається тільки в луті з боса!
-                if (rnd.nextInt(100) < 50) {
-                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 3)));
+                // Скрап повністю відсутній у звичайних мобів (0%)!
+                if (rnd.nextInt(100) < 18) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 25) {
-                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 2)));
+                if (rnd.nextInt(100) < 10) {
+                    drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                if (rnd.nextInt(100) < 5) {
+                // Алмаз: 1.0% шанс (1 на 100 мобів -> за ніч 0-1, у рідких випадках 2)
+                if (rnd.nextInt(100) < 1) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                if (rnd.nextInt(100) < 2) {
+                // Золоте яблуко: 0.4% шанс (1 на 250)
+                if (rnd.nextInt(1000) < 4) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 20) {
+                if (rnd.nextInt(100) < 8) {
                     drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else {
                 // Tier 1 (Фаза I - Кривавий Місяць)
-                if (rnd.nextInt(100) < 35) {
-                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 3)));
+                if (rnd.nextInt(100) < 12) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 15) {
+                if (rnd.nextInt(100) < 6) {
                     drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                if (rnd.nextInt(100) < 2) {
+                // Алмаз: 0.4% шанс (1 на 250 мобів -> 0 або вкрай рідко 1 за ніч)
+                if (rnd.nextInt(1000) < 4) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                if (rnd.nextInt(100) < 1) {
+                // Золоте яблуко: 0.2% шанс
+                if (rnd.nextInt(1000) < 2) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
             }
