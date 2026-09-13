@@ -1,4 +1,4 @@
-﻿build/
+build/
 .gradle/
 .idea/
 *.iml
@@ -10,3 +10,7 @@ test/
 JDA_extracted/
 *.patch
 .git-rewrite-*
+__pycache__/
+*.local*
+*.secrets*
+scripts/
