@@ -180,8 +180,8 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             } else if (args[1].equalsIgnoreCase("status")) {
                 if (bloodmoon.isActive()) {
                     com.example.minecord.fun.BloodmoonTier t = bloodmoon.getCurrentTier();
-                    String tName = (t != null) ? t.getName() + " (Рівень " + t.getLevel() + ")" : "невідомо";
-                    sender.sendMessage(ChatColor.RED + "Кривавий Місяць АКТИВНИЙ! " + ChatColor.YELLOW + "Рівень: " + ChatColor.WHITE + tName + 
+                    String tName = (t != null) ? "Фаза " + t.getLevel() + " (" + t.getName() + ")" : "невідомо";
+                    sender.sendMessage(ChatColor.RED + "Кривавий Місяць АКТИВНИЙ! " + ChatColor.YELLOW + "Фаза: " + ChatColor.WHITE + tName + 
                             ChatColor.YELLOW + " | Знищено мобів: " + ChatColor.WHITE + bloodmoon.getMobsKilledTonight() + 
                             ChatColor.YELLOW + " | Хвиль орд: " + ChatColor.WHITE + bloodmoon.getHordesSpawnedTonight());
                 } else {

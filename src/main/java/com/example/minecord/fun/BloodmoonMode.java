@@ -385,7 +385,7 @@ public class BloodmoonMode implements FunMode, Listener {
         }
         String formattedTime = String.format("%02d:%02d", durationSeconds / 60, durationSeconds % 60);
         bossBar = Bukkit.createBossBar(
-                "§4§l🩸 КРИВАВИЙ МІСЯЦЬ §c[" + tier.getName() + "] §f[До світанку: §e" + formattedTime + "§f] §4§l🩸",
+                "§4§l🩸 КРИВАВИЙ МІСЯЦЬ §6[Фаза " + tier.getLevel() + ": §c" + tier.getName() + "§6] §f[До світанку: §e" + formattedTime + "§f] §4§l🩸",
                 tier.getBarColor(),
                 BarStyle.SOLID
         );
@@ -411,7 +411,7 @@ public class BloodmoonMode implements FunMode, Listener {
             } else if (tier.getLevel() >= 4) {
                 p.sendTitle(
                         "§4§l☠ СУДНИЙ ДЕНЬ (РАҐНАРОК) ☠",
-                        "§cРівень загрози: §4§l" + tier.getName() + " (MAX)",
+                        "§6[Фаза 4] §cРівень загрози: §4§l" + tier.getName() + " (MAX)",
                         10, 100, 30
                 );
                 p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.2f, 0.7f);
@@ -419,7 +419,7 @@ public class BloodmoonMode implements FunMode, Listener {
             } else if (tier.getLevel() == 3) {
                 p.sendTitle(
                         "§c§l🔥 ПЕКЕЛЬНИЙ КАТАКЛІЗМ 🔥",
-                        "§cРівень загрози: §e" + tier.getName(),
+                        "§6[Фаза 3] §cРівень загрози: §e" + tier.getName(),
                         10, 90, 25
                 );
                 p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.2f, 0.6f);
@@ -427,14 +427,14 @@ public class BloodmoonMode implements FunMode, Listener {
             } else if (tier.getLevel() == 2) {
                 p.sendTitle(
                         "§4§l☠ КРИВАВИЙ АРМАГЕДДОН ☠",
-                        "§cРівень загрози: §e" + tier.getName(),
+                        "§6[Фаза 2] §cРівень загрози: §e" + tier.getName(),
                         10, 85, 25
                 );
                 p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.8f);
             } else {
                 p.sendTitle(
                         "§4§l🩸 КРИВАВИЙ МІСЯЦЬ 🩸",
-                        "§cРівень загрози: §f" + tier.getName(),
+                        "§6[Фаза 1] §cРівень загрози: §f" + tier.getName(),
                         10, 80, 20
                 );
             }
@@ -447,28 +447,28 @@ public class BloodmoonMode implements FunMode, Listener {
         String chatMsg;
         if (tier.getLevel() >= 4) {
             chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
-                    "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — РІВЕНЬ IV! ☠\n" +
+                    "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — [ФАЗА 4]! ☠\n" +
                     "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
                     "  §c10x HP, повний незерит, смертельні орди до 36 мобів!\n" +
                     "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
         } else if (tier.getLevel() == 3) {
             chatMsg = "\n§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
-                    "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ (РІВЕНЬ III)! 🔥\n" +
+                    "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ — [ФАЗА 3]! 🔥\n" +
                     "  §cАРХІДЕМОНИ СМЕРТІ ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
                     "  §c6.5x HP, незеритова броня, гігантські орди та заряджені кріпери!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕСЯ ДО БОЮ!\n" +
                     "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n";
         } else if (tier.getLevel() == 2) {
             chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
-                    "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН (РІВЕНЬ II)! ☠\n" +
+                    "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН — [ФАЗА 2]! ☠\n" +
                     "  §cВОЛОДАРІ БЕЗОДНІ ТА ЗАХИСНІ ЧАРИ ЗАХОПИЛИ СВІТ!\n" +
                     "  §c4.5x HP, діамантове спорядження, орди до 18 монстрів!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ ДО СВІТАНКУ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
         } else {
             chatMsg = "\n§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                    "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ (РІВЕНЬ I)! 🩸\n" +
+                    "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ — [ФАЗА 1]! 🩸\n" +
                     "  §cКривавий Жнець та орди кровожерливих мерців вийшли на полювання!\n" +
                     "  §c2.5x HP, діамантова броня! Сон у ліжках заблоковано!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕ ЗБРОЮ!\n" +
@@ -526,10 +526,15 @@ public class BloodmoonMode implements FunMode, Listener {
                     ? "  §a⚔ Залишки монстрів (" + weakenedCount + " шт.) ослабли та втратили сили — добийте їх!\n"
                     : "  §a⚔ Залишки темряви розвіялися світанком!\n";
 
+            String phaseLine = (currentTier != null)
+                    ? "  §7Успішно подолано: §6[Фаза " + currentTier.getLevel() + ": §e" + currentTier.getName() + "§6]\n"
+                    : "";
+
             Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
                     "\n§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §a§l🌅 СВІТАНОК НАСТАВ! КРИВАВИЙ МІСЯЦЬ ВІДСТУПИВ! 🌅\n" +
                     "  §7Сервер успішно пережив ніч кошмару!\n" +
+                    phaseLine +
                     weakenedLine +
                     "  §7Відбито хвиль орд: §e" + hordesSpawned + "§7 | Знищено монстрів: §e" + mobsKilled + "\n" +
                     "§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -681,7 +686,8 @@ public class BloodmoonMode implements FunMode, Listener {
         String formatted = String.format("%02d:%02d", safeRemaining / 60, safeRemaining % 60);
 
         bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
-        bossBar.setTitle("§4§l🩸 КРИВАВИЙ МІСЯЦЬ §c[" + (currentTier != null ? currentTier.getName() : "") + "] §f[До світанку: §e" + formatted + "§f] §4§l🩸");
+        String tierLabel = currentTier != null ? "Фаза " + currentTier.getLevel() + ": §c" + currentTier.getName() : "";
+        bossBar.setTitle("§4§l🩸 КРИВАВИЙ МІСЯЦЬ §6[" + tierLabel + "§6] §f[До світанку: §e" + formatted + "§f] §4§l🩸");
     }
 
     private void applyVisualsToPlayer(Player player) {
@@ -1570,18 +1576,18 @@ public class BloodmoonMode implements FunMode, Listener {
 
             EmbedBuilder eb = new EmbedBuilder();
             if (tier.getLevel() >= 4) {
-                eb.setTitle("☠️ [РАҐНАРОК] СУДНИЙ ДЕНЬ — РІВЕНЬ IV! ☠️");
+                eb.setTitle("☠️ [ФАЗА 4] СУДНИЙ ДЕНЬ (РАҐНАРОК)! ☠️");
             } else if (tier.getLevel() == 3) {
-                eb.setTitle("🔥 [КАТАКЛІЗМ] ПЕКЕЛЬНИЙ КАТАКЛІЗМ — РІВЕНЬ III! 🔥");
+                eb.setTitle("🔥 [ФАЗА 3] ПЕКЕЛЬНИЙ КАТАКЛІЗМ! 🔥");
             } else if (tier.getLevel() == 2) {
-                eb.setTitle("☠️ [АРМАГЕДДОН] КРИВАВИЙ АРМАГЕДДОН — РІВЕНЬ II! ☠️");
+                eb.setTitle("☠️ [ФАЗА 2] КРИВАВИЙ АРМАГЕДДОН! ☠️");
             } else {
-                eb.setTitle("🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸");
+                eb.setTitle("🩸 [ФАЗА 1] КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ! 🩸");
             }
             eb.setColor(tier.getDiscordColorHex());
             String desc;
             if (tier.getLevel() >= 4) {
-                desc = "**Рівень загрози:** `☠ " + tier.getName() + " ☠` (МАКСИМАЛЬНИЙ РІВЕНЬ 4)\n\n" +
+                desc = "**Фаза події:** `[ФАЗА 4]` | **Рівень загрози:** `☠ " + tier.getName() + " ☠` (МАКСИМАЛЬНИЙ)\n\n" +
                         "🔥 **ТИХИЙ ЖАХ І ТИТАНИ ХАОСУ ПОГЛИНУЛИ СВІТ:**\n" +
                         "• Сон у ліжках повністю унеможливлено!\n" +
                         "• Монстри посилені у **10.0 разів** (10x HP, Сила IV, Опір II, Швидкість III)!\n" +
@@ -1592,7 +1598,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• За перемогу над босом: **3-4 Зірки Незеру, Блок Незериту, 3-4 Тотеми, Блоки Діамантів, Яблука Нотча та 10000 EXP**!\n\n" +
                         "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
-                desc = "**Рівень загрози:** `🔥 " + tier.getName() + " 🔥` (РІВЕНЬ 3)\n\n" +
+                desc = "**Фаза події:** `[ФАЗА 3]` | **Рівень загрози:** `🔥 " + tier.getName() + " 🔥`\n\n" +
                         "⚔️ **ПЕКЕЛЬНІ ЛЕГІОНИ ТА АРХІДЕМОНИ СМЕРТІ:**\n" +
                         "• Сон у ліжках заблоковано до настання світанку!\n" +
                         "• Монстри посилені у **6.5 разів** (6.5x HP, Сила III, Опір II)!\n" +
@@ -1603,7 +1609,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• За перемогу над босом: **2 Зірки Незеру, 2-4 незеритові зливки, 2-3 Тотеми, Блоки Діамантів та 6000 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
-                desc = "**Рівень загрози:** `☠ " + tier.getName() + " ☠` (РІВЕНЬ 2)\n\n" +
+                desc = "**Фаза події:** `[ФАЗА 2]` | **Рівень загрози:** `☠ " + tier.getName() + " ☠`\n\n" +
                         "⚡ **АРМАГЕДДОН ПРИЙШОВ НА СЕРВЕР:**\n" +
                         "• Сон у ліжках заблоковано!\n" +
                         "• Монстри посилені у **4.5 рази** (4.5x HP, Сила II, Опір I)!\n" +
@@ -1613,7 +1619,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• За перемогу над босом: **1 Зірка Незеру, 2-3 незеритові зливки, 2 Тотеми, Блоки Діамантів та 4000 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
             } else {
-                desc = "**Рівень загрози:** `" + tier.getName() + "` (РІВЕНЬ 1)\n\n" +
+                desc = "**Фаза події:** `[ФАЗА 1]` | **Рівень загрози:** `" + tier.getName() + "`\n\n" +
                         "⚠️ **Увага всім гравцям на сервері:**\n" +
                         "• Сон у ліжках заблоковано до світанку!\n" +
                         "• Монстри отримали **2.5x здоров'я**, бафи Швидкості та Сили!\n" +
@@ -1643,9 +1649,11 @@ public class BloodmoonMode implements FunMode, Listener {
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("🌅 СВІТАНОК НАСТАВ — КРИВАВИЙ МІСЯЦЬ ВІДСТУПИВ 🌅");
             eb.setColor(0x2ECC71);
+            String phaseInfo = currentTier != null ? "• Успішно подолано: `[ФАЗА " + currentTier.getLevel() + " — " + currentTier.getName() + "]`\n" : "";
             eb.setDescription(
                     "Ніч жаху завершилась. Гравці сервера успішно пережили випробування!\n\n" +
                     "📊 **Статистика ночі:**\n" +
+                    phaseInfo +
                     "• Відбито атак орд: `" + hordesSpawned + "`\n" +
                     "• Знищено кривавих монстрів: `" + mobsKilled + "`"
             );
@@ -1925,54 +1933,86 @@ public class BloodmoonMode implements FunMode, Listener {
             ));
 
         } else {
-            // Дроп зі звичайних мобів (збалансований лут без ламання економіки)
+            // Дроп зі звичайних мобів (збалансований помірний лут без ламання економіки)
             int lvl = currentTier.getLevel();
+            ThreadLocalRandom rnd = ThreadLocalRandom.current();
+
             if (lvl >= 4) {
-                // Tier 4: Алмази, скрап, блоки заліза/золота
-                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(1, 3)));
-                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_BLOCK : Material.IRON_BLOCK, 1));
-                if (ThreadLocalRandom.current().nextInt(100) < 35) {
+                // Tier 4 (Фаза IV - Судний день / Раґнарок)
+                if (rnd.nextInt(100) < 70) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(2, 5)));
+                }
+                if (rnd.nextInt(100) < 5) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_BLOCK : Material.IRON_BLOCK, 1));
+                }
+                if (rnd.nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 4)));
+                }
+                if (rnd.nextInt(100) < 15) {
+                    drops.add(new ItemStack(Material.DIAMOND, 1));
+                }
+                if (rnd.nextInt(100) < 4) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                if (ThreadLocalRandom.current().nextInt(100) < 25) {
+                if (rnd.nextInt(100) < 5) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (ThreadLocalRandom.current().nextInt(100) < 5) {
+                if (rnd.nextInt(1000) < 5) {
                     drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
                 }
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, ThreadLocalRandom.current().nextInt(2, 5)));
+                if (rnd.nextInt(100) < 40) {
+                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, rnd.nextInt(1, 3)));
+                }
             } else if (lvl == 3) {
-                // Tier 3: Алмази, зливки, скрап
-                drops.add(new ItemStack(Material.DIAMOND, 1));
-                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(4, 9)));
-                if (ThreadLocalRandom.current().nextInt(100) < 25) {
+                // Tier 3 (Фаза III - Пекельний Катаклізм)
+                if (rnd.nextInt(100) < 60) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 4)));
+                }
+                if (rnd.nextInt(100) < 30) {
+                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 3)));
+                }
+                if (rnd.nextInt(100) < 10) {
+                    drops.add(new ItemStack(Material.DIAMOND, 1));
+                }
+                if (rnd.nextInt(100) < 2) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                if (ThreadLocalRandom.current().nextInt(100) < 20) {
+                if (rnd.nextInt(100) < 3) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, ThreadLocalRandom.current().nextInt(1, 4)));
+                if (rnd.nextInt(100) < 30) {
+                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
+                }
             } else if (lvl == 2) {
-                // Tier 2: Діаманти, зливки, смарагди
-                if (ThreadLocalRandom.current().nextInt(100) < 50) {
+                // Tier 2 (Фаза II - Кривавий Армагеддон)
+                // Скрап видалено зі звичайних мобів (0%) - він залишається тільки в луті з боса!
+                if (rnd.nextInt(100) < 50) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 3)));
+                }
+                if (rnd.nextInt(100) < 25) {
+                    drops.add(new ItemStack(Material.EMERALD, rnd.nextInt(1, 2)));
+                }
+                if (rnd.nextInt(100) < 5) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(3, 7)));
-                if (ThreadLocalRandom.current().nextInt(100) < 10) {
-                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
-                }
-                if (ThreadLocalRandom.current().nextInt(100) < 10) {
+                if (rnd.nextInt(100) < 2) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                drops.add(new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 3)));
+                if (rnd.nextInt(100) < 20) {
+                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
+                }
             } else {
-                // Tier 1: Залізо, золото, смарагди, шанс на алмаз
-                if (ThreadLocalRandom.current().nextInt(100) < 30) {
+                // Tier 1 (Фаза I - Кривавий Місяць)
+                if (rnd.nextInt(100) < 35) {
+                    drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, rnd.nextInt(1, 3)));
+                }
+                if (rnd.nextInt(100) < 15) {
+                    drops.add(new ItemStack(Material.EMERALD, 1));
+                }
+                if (rnd.nextInt(100) < 2) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                drops.add(new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, ThreadLocalRandom.current().nextInt(2, 6)));
-                drops.add(new ItemStack(Material.EMERALD, ThreadLocalRandom.current().nextInt(1, 3)));
-                if (ThreadLocalRandom.current().nextInt(100) < 5) {
+                if (rnd.nextInt(100) < 1) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
             }
