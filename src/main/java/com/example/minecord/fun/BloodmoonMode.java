@@ -873,10 +873,20 @@ public class BloodmoonMode implements FunMode, Listener {
             monster.setGlowing(true);
         }
 
-        // Екіпірування бронею
-        if (ThreadLocalRandom.current().nextInt(100) < tier.getArmorChancePercent()) {
+        // Екіпірування бронею (тільки людиноподібні моби: зомбі, скелети, пігліни)
+        boolean canWearArmor = (monster instanceof Zombie || monster instanceof Skeleton || monster instanceof PiglinAbstract);
+        if (canWearArmor && ThreadLocalRandom.current().nextInt(100) < tier.getArmorChancePercent()) {
             EntityEquipment eq = monster.getEquipment();
             if (eq != null) {
+                // ОБОВ'ЯЗКОВО 0.0f шанс випадання надітої броні та зброї!
+                // Броня мобів призначена тільки для захисту мобів у бою, а не для дюпу алмазних/незеритових сетів!
+                eq.setHelmetDropChance(0.0f);
+                eq.setChestplateDropChance(0.0f);
+                eq.setLeggingsDropChance(0.0f);
+                eq.setBootsDropChance(0.0f);
+                eq.setItemInMainHandDropChance(0.0f);
+                eq.setItemInOffHandDropChance(0.0f);
+
                 if (tier.getLevel() >= 4) {
                     eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
                     eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
@@ -893,7 +903,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         sword.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                         eq.setItemInMainHand(sword);
                     }
-                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0, false, false));
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, effectDurationTicks, 0, false, false));
                 } else if (tier.getLevel() >= 3) {
                     eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
                     eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
@@ -1091,7 +1101,24 @@ public class BloodmoonMode implements FunMode, Listener {
         if (!active || activeWorld == null || currentTier == null) return;
         if (!event.getLocation().getWorld().equals(activeWorld)) return;
 
-        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
+        // Захист від ферм мобів: спавнери, розмноження чешуйниць, поділ слаймів НЕ беруть участі у Кривавому Місяці!
+        CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
+        if (reason == CreatureSpawnEvent.SpawnReason.SPAWNER
+                || reason == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG
+                || reason == CreatureSpawnEvent.SpawnReason.SLIME_SPLIT
+                || reason == CreatureSpawnEvent.SpawnReason.REINFORCEMENTS
+                || reason == CreatureSpawnEvent.SpawnReason.BUILD_IRONGOLEM
+                || reason == CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN
+                || reason == CreatureSpawnEvent.SpawnReason.BUILD_WITHER
+                || reason == CreatureSpawnEvent.SpawnReason.CUSTOM) {
+            return;
+        }
+
+        // Чешуйниці, ендерміти, слайми не беруть участі
+        LivingEntity entity = event.getEntity();
+        if (entity instanceof Silverfish || entity instanceof Endermite || entity instanceof Slime) {
+            return;
+        }
 
         if (event.getEntity() instanceof Monster monster) {
             buffMonster(monster, currentTier);
@@ -1146,9 +1173,18 @@ public class BloodmoonMode implements FunMode, Listener {
         if (!active || currentTier == null) return;
 
         LivingEntity entity = event.getEntity();
+        if (entity instanceof Silverfish || entity instanceof Endermite || entity instanceof Slime) {
+            return;
+        }
+
         PersistentDataContainer pdc = entity.getPersistentDataContainer();
 
         if (pdc.has(mobKey, PersistentDataType.BYTE)) {
+            // Захист від автоферм (за принципом BloodmoonReloaded): кастомний дроп тільки якщо моба вбив гравець
+            if (entity.getKiller() == null) {
+                return;
+            }
+
             mobsKilled++;
 
             // Збільшення досвіду
