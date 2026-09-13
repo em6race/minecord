@@ -40,7 +40,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                               "🔹 `/help` — Показує це повідомлення\n" +
                               "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
                               "🔹 `/serverinfo` — Інформація та стан сервера (TPS, RAM, онлайн)\n" +
-                              "🔹 `/top [категорія]` — Топ-10 гравців (час, вбивства, смерті, алмази, блоки)\n\n" +
+                              "🔹 `/top [категорія]` — Топ-10 гравців (абсолютний, час, відстань, вбивства, смерті, алмази, блоки)\n\n" +
                               "👑 **Команди адміністратора:**\n" +
                               "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
                               "🔸 `/autorestart <add|remove|list|clear|toggle>` — Управління авторестартами сервера\n" +
@@ -581,7 +581,7 @@ public class DiscordCommandListener extends ListenerAdapter {
         }
         else if (event.getName().equals("top")) {
             event.deferReply().queue();
-            String category = event.getOption("category") != null ? event.getOption("category").getAsString() : "time";
+            String category = event.getOption("category") != null ? event.getOption("category").getAsString() : "overall";
             String normCat = plugin.getLeaderboardManager().normalizeCategory(category);
             String catTitle = plugin.getLeaderboardManager().getCategoryTitle(normCat);
 
