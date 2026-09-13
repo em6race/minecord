@@ -64,20 +64,24 @@ public class LeaderboardManager {
     }
 
     public String normalizeCategory(String category) {
-        if (category == null) return "time";
+        if (category == null) return "overall";
         String lower = category.toLowerCase().trim();
         return switch (lower) {
+            case "overall", "absolute", "абсолютний", "абсолют", "топ", "all" -> "overall";
+            case "distance", "dist", "відстань", "дистанція" -> "distance";
             case "time", "playtime", "час", "плейтайм" -> "time";
             case "kills", "kill", "моби", "вбивства", "mobkills" -> "kills";
             case "deaths", "death", "смерті", "смертей" -> "deaths";
             case "diamonds", "diamond", "алмази", "алмаз" -> "diamonds";
             case "blocks", "block", "блоки", "блоків" -> "blocks";
-            default -> "time";
+            default -> "overall";
         };
     }
 
     public String getCategoryTitle(String category) {
         return switch (normalizeCategory(category)) {
+            case "overall" -> "👑 Абсолютний топ";
+            case "distance" -> "🏃 Подолана відстань";
             case "time" -> "⏱️ Награний час";
             case "kills" -> "⚔️ Вбито мобів";
             case "deaths" -> "💀 Смертей";
@@ -88,6 +92,10 @@ public class LeaderboardManager {
     }
 
     private List<TopEntry> computeTop(String category) {
+        if ("overall".equals(category)) {
+            return computeOverallTop();
+        }
+
         OfflinePlayer[] players = Bukkit.getOfflinePlayers();
         List<TopEntry> list = new ArrayList<>();
 
@@ -109,6 +117,37 @@ public class LeaderboardManager {
 
             try {
                 switch (category) {
+                    case "distance" -> {
+                        long cm = 0;
+                        Statistic[] distStats = {
+                            Statistic.WALK_ONE_CM,
+                            Statistic.SPRINT_ONE_CM,
+                            Statistic.SWIM_ONE_CM,
+                            Statistic.FALL_ONE_CM,
+                            Statistic.FLY_ONE_CM,
+                            Statistic.AVIATE_ONE_CM,
+                            Statistic.BOAT_ONE_CM,
+                            Statistic.HORSE_ONE_CM,
+                            Statistic.MINECART_ONE_CM,
+                            Statistic.PIG_ONE_CM,
+                            Statistic.STRIDER_ONE_CM,
+                            Statistic.CROUCH_ONE_CM,
+                            Statistic.CLIMB_ONE_CM
+                        };
+                        for (Statistic s : distStats) {
+                            try {
+                                cm += p.getStatistic(s);
+                            } catch (Throwable ignored) {}
+                        }
+                        val = cm;
+                        long meters = cm / 100;
+                        if (meters >= 1000) {
+                            double km = meters / 1000.0;
+                            formatted = String.format(java.util.Locale.US, "%.1f км", km);
+                        } else {
+                            formatted = meters + " м";
+                        }
+                    }
                     case "time" -> {
                         long ticks = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
                         val = ticks;
@@ -160,6 +199,61 @@ public class LeaderboardManager {
         }
 
         list.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+        return list;
+    }
+
+    private List<TopEntry> computeOverallTop() {
+        String[] categories = {"time", "distance", "kills", "diamonds", "blocks"};
+        Map<UUID, String> playerNames = new HashMap<>();
+        Map<UUID, Integer> totalScores = new HashMap<>();
+        Map<UUID, int[]> podiumCounts = new HashMap<>();
+
+        for (String cat : categories) {
+            List<TopEntry> catTop = computeTop(cat);
+            int topCount = Math.min(10, catTop.size());
+            for (int i = 0; i < topCount; i++) {
+                TopEntry entry = catTop.get(i);
+                UUID uuid = entry.getUuid();
+                playerNames.put(uuid, entry.getName());
+
+                int points = 10 - i;
+                totalScores.put(uuid, totalScores.getOrDefault(uuid, 0) + points);
+
+                int[] podium = podiumCounts.computeIfAbsent(uuid, k -> new int[3]);
+                if (i == 0) podium[0]++;
+                else if (i == 1) podium[1]++;
+                else if (i == 2) podium[2]++;
+            }
+        }
+
+        List<TopEntry> list = new ArrayList<>();
+        for (Map.Entry<UUID, Integer> entry : totalScores.entrySet()) {
+            UUID uuid = entry.getKey();
+            int score = entry.getValue();
+            String name = playerNames.getOrDefault(uuid, "Гравець");
+            int[] podium = podiumCounts.getOrDefault(uuid, new int[3]);
+
+            StringBuilder details = new StringBuilder();
+            if (podium[0] > 0) details.append("🥇x").append(podium[0]).append(" ");
+            if (podium[1] > 0) details.append("🥈x").append(podium[1]).append(" ");
+            if (podium[2] > 0) details.append("🥉x").append(podium[2]).append(" ");
+
+            String detailStr = details.toString().trim();
+            String formatted = score + " балів" + (detailStr.isEmpty() ? "" : " (" + detailStr + ")");
+
+            list.add(new TopEntry(name, uuid, score, formatted));
+        }
+
+        list.sort((a, b) -> {
+            int cmp = Long.compare(b.getValue(), a.getValue());
+            if (cmp != 0) return cmp;
+            int[] podA = podiumCounts.getOrDefault(a.getUuid(), new int[3]);
+            int[] podB = podiumCounts.getOrDefault(b.getUuid(), new int[3]);
+            if (podB[0] != podA[0]) return Integer.compare(podB[0], podA[0]);
+            if (podB[1] != podA[1]) return Integer.compare(podB[1], podA[1]);
+            return Integer.compare(podB[2], podA[2]);
+        });
+
         return list;
     }
 }

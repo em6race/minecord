@@ -30,6 +30,7 @@ public final class MineCord extends JavaPlugin {
     private com.example.minecord.utils.PlayerCacheManager playerCacheManager;
     private com.example.minecord.utils.PlayerTipManager playerTipManager;
     private com.example.minecord.utils.RoleSyncManager roleSyncManager;
+    private com.example.minecord.fun.FunManager funManager;
 
     @Override
     public void onEnable() {
@@ -86,6 +87,10 @@ public final class MineCord extends JavaPlugin {
         // Initialize BlueMap auto-reload manager
         this.blueMapManager = new BlueMapManager(this);
         this.blueMapManager.start();
+
+        // Initialize Fun Manager for future server modes & mini-games
+        this.funManager = new com.example.minecord.fun.FunManager(this);
+        this.funManager.initialize();
 
         // Register commands
         MineCordCommand cmd = new MineCordCommand(this);
@@ -207,6 +212,9 @@ public final class MineCord extends JavaPlugin {
         if (roleSyncManager != null) {
             roleSyncManager.stop();
         }
+        if (funManager != null) {
+            funManager.shutdown();
+        }
     }
     
     public void reloadPlugin() {
@@ -268,6 +276,10 @@ public final class MineCord extends JavaPlugin {
         // Reload AI moderator
         this.openAIModerator = new OpenAIModerator(this);
 
+        if (funManager != null) {
+            funManager.reload();
+        }
+
         if (playerCacheManager != null) {
             playerCacheManager.refreshCache();
         }
@@ -319,5 +331,9 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.RoleSyncManager getRoleSyncManager() {
         return roleSyncManager;
+    }
+
+    public com.example.minecord.fun.FunManager getFunManager() {
+        return funManager;
     }
 }

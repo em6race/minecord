@@ -21,7 +21,7 @@ import java.util.List;
 public class TopCommand implements CommandExecutor, TabCompleter {
 
     private final MineCord plugin;
-    private static final List<String> CATEGORIES = Arrays.asList("time", "kills", "deaths", "diamonds", "blocks");
+    private static final List<String> CATEGORIES = Arrays.asList("overall", "time", "distance", "kills", "deaths", "diamonds", "blocks");
 
     public TopCommand(MineCord plugin) {
         this.plugin = plugin;
@@ -69,7 +69,9 @@ public class TopCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GOLD + "=== " + ChatColor.YELLOW + "🏆 Топи гравців сервера MineCord" + ChatColor.GOLD + " ===");
         sender.sendMessage(ChatColor.GRAY + "Оберіть категорію для перегляду (клікніть по рядку):");
 
+        sendClickableOption(sender, "👑 Абсолютний топ", "/top overall", "Переглянути абсолютний рейтинг гравців за зайнятими місцями");
         sendClickableOption(sender, "⏱️ Награний час", "/top time", "Переглянути топ гравців за часом у грі");
+        sendClickableOption(sender, "🏃 Подолана відстань", "/top distance", "Переглянути топ гравців за подоланою відстанню");
         sendClickableOption(sender, "⚔️ Вбито мобів", "/top kills", "Переглянути топ за кількістю вбивств");
         sendClickableOption(sender, "💀 Смертей", "/top deaths", "Переглянути топ за кількістю смертей");
         sendClickableOption(sender, "💎 Добуто алмазів", "/top diamonds", "Переглянути топ за видобутою алмазною рудою");

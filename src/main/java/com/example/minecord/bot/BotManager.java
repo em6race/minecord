@@ -111,7 +111,9 @@ public class BotManager {
                         Commands.slash("serverinfo", "Інформація та стан сервера (TPS, оперативна пам'ять, онлайн)"),
                         Commands.slash("top", "Рейтинг найкращих гравців сервера")
                                 .addOptions(new net.dv8tion.jda.api.interactions.commands.build.OptionData(OptionType.STRING, "category", "Категорія рейтингу", false)
+                                        .addChoice("👑 Абсолютний топ", "overall")
                                         .addChoice("⏱️ Награний час", "time")
+                                        .addChoice("🏃 Подолана відстань", "distance")
                                         .addChoice("⚔️ Вбито мобів", "kills")
                                         .addChoice("💀 Смертей", "deaths")
                                         .addChoice("💎 Добуто алмазів", "diamonds")
