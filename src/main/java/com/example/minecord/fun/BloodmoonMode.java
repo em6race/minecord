@@ -446,35 +446,35 @@ public class BloodmoonMode implements FunMode, Listener {
         // Повідомлення в ігровий чат
         String chatMsg;
         if (tier.getLevel() >= 4) {
-            chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
+            chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — [ФАЗА 4]! ☠\n" +
                     "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
                     "  §c10x HP, повний незерит, смертельні орди до 36 мобів!\n" +
                     "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
-                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
+                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else if (tier.getLevel() == 3) {
-            chatMsg = "\n§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
+            chatMsg = "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
                     "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ — [ФАЗА 3]! 🔥\n" +
                     "  §cАРХІДЕМОНИ СМЕРТІ ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
                     "  §c6.5x HP, незеритова броня, гігантські орди та заряджені кріпери!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕСЯ ДО БОЮ!\n" +
-                    "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n";
+                    "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥";
         } else if (tier.getLevel() == 2) {
-            chatMsg = "\n§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
+            chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН — [ФАЗА 2]! ☠\n" +
                     "  §cВОЛОДАРІ БЕЗОДНІ ТА ЗАХИСНІ ЧАРИ ЗАХОПИЛИ СВІТ!\n" +
                     "  §c4.5x HP, діамантове спорядження, орди до 18 монстрів!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ ДО СВІТАНКУ!\n" +
-                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n";
+                    "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else {
-            chatMsg = "\n§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+            chatMsg = "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ — [ФАЗА 1]! 🩸\n" +
                     "  §cКривавий Жнець та орди кровожерливих мерців вийшли на полювання!\n" +
                     "  §c2.5x HP, діамантова броня! Сон у ліжках заблоковано!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕ ЗБРОЮ!\n" +
-                    "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
         }
-        Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(chatMsg));
+        broadcastBloodmoonMessage(chatMsg);
 
         // Відправка повідомлення в Discord
         sendDiscordStartEmbed(tier);
@@ -485,6 +485,22 @@ public class BloodmoonMode implements FunMode, Listener {
         startBomberTask();
 
         plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць активовано! Рівень: " + tier.getName() + " (" + tier.getLevel() + ")");
+    }
+
+    /**
+     * Безпечне розсилання повідомлень усім гравцям і в консоль сервера.
+     * Розбиває рядки та доставляє напряму кожному підключеному гравцю,
+     * що гарантує 100% доставку на будь-якому клієнті без обрізання чи втрати через права.
+     */
+    public void broadcastBloodmoonMessage(String message) {
+        if (message == null) return;
+        for (String line : message.split("\n")) {
+            if (line.trim().isEmpty()) continue;
+            Bukkit.getConsoleSender().sendMessage(line);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage(line);
+            }
+        }
     }
 
     public void stopBloodmoon(boolean naturallyEnded) {
@@ -530,15 +546,14 @@ public class BloodmoonMode implements FunMode, Listener {
                     ? "  §7Успішно подолано: §6[Фаза " + currentTier.getLevel() + ": §e" + currentTier.getName() + "§6]\n"
                     : "";
 
-            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                    "\n§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+            String endMsg = "§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §a§l🌅 СВІТАНОК НАСТАВ! КРИВАВИЙ МІСЯЦЬ ВІДСТУПИВ! 🌅\n" +
                     "  §7Сервер успішно пережив ніч кошмару!\n" +
                     phaseLine +
                     weakenedLine +
                     "  §7Відбито хвиль орд: §e" + hordesSpawned + "§7 | Знищено монстрів: §e" + mobsKilled + "\n" +
-                    "§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            ));
+                    "§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+            broadcastBloodmoonMessage(endMsg);
 
             sendDiscordEndEmbed();
         }
@@ -613,9 +628,7 @@ public class BloodmoonMode implements FunMode, Listener {
                     }
                     String bName = entity.getCustomName() != null ? entity.getCustomName() : "Бос";
                     String bossWord = (bName.toLowerCase().contains("титан")) ? "титана" : "боса";
-                    Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§c«Ви не встигли подолати " + bossWord + " до світанку!» §r" + bName + " §cзник у кривавому тумані"
-                    ));
+                    broadcastBloodmoonMessage("§c«Ви не встигли подолати " + bossWord + " до світанку!» §r" + bName + " §cзник у кривавому тумані");
                     entity.remove();
                     continue;
 
@@ -1078,9 +1091,7 @@ public class BloodmoonMode implements FunMode, Listener {
                     "§4§l☠ БОС " + currentTier.getBossName() + " §4§lПОВСТАВ ПОРУЧ! (" + distInt + "м) ☠"
             ));
 
-            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                    "§cПовстав §r" + currentTier.getBossName() + " §cбіля гравця §e" + player.getName()
-            ));
+            broadcastBloodmoonMessage("§cПовстав §r" + currentTier.getBossName() + " §cбіля гравця §e" + player.getName());
             if (currentTier.getLevel() >= 3) {
                 player.getWorld().playSound(spawnLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.8f, 0.6f);
             }
@@ -1945,9 +1956,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
 
             String killerName = killer.getName();
-            Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                    "§aГравець §e" + killerName + " §aздолав §r" + entity.getCustomName()
-            ));
+            broadcastBloodmoonMessage("§aГравець §e" + killerName + " §aздолав §r" + entity.getCustomName());
 
         } else {
             // Дроп зі звичайних мобів (суворо обмежений: максимум 1-2 цінних предмети за всю ніч)
