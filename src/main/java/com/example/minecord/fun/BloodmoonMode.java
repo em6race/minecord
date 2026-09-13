@@ -608,10 +608,11 @@ public class BloodmoonMode implements FunMode, Listener {
                     }
                     String bName = entity.getCustomName() != null ? entity.getCustomName() : "Титан";
                     Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            "§4§l[!] §c«Ви не встигли подолати титана до світанку!» §r" + bName + " §cзник у кривавому тумані, зловісно регочучи..."
+                            "§c«Ви не встигли подолати титана до світанку!» §r" + bName + " §cзник у кривавому тумані"
                     ));
                     entity.remove();
                     continue;
+
                 }
 
 
