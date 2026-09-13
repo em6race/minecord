@@ -339,70 +339,70 @@ fun:
       # Світи, в яких активний Кривавий Місяць
       worlds:
         - "world"
-      # Рівні загрози (Tiers) - Хардкорна система (Рівні 1-4)
-      # Вага (weight) визначає ймовірність вибору рівня (рівень 1: 40%, рівень 2: 35%, рівень 3: 18%, рівень 4: 7%)
+      # Рівні загрози (Tiers) - Збалансована хардкорна система (Рівні 1-4)
+      # Вага (weight) визначає ймовірність вибору рівня (рівень 1: 60%, рівень 2: 25%, рівень 3: 12%, рівень 4: 3%)
       tiers:
         tier_1:
           level: 1
           name: "Кривавий Місяць"
-          weight: 40
-          health_multiplier: 2.5
-          speed_level: 1
-          strength_level: 1
-          resistance_level: 1
-          armor_chance: 70
-          exp_multiplier: 2.5
-          boss_chance: 30.0
-          horde_min: 6
-          horde_max: 12
+          weight: 60
+          health_multiplier: 1.6
+          speed_level: 0
+          strength_level: 0
+          resistance_level: 0
+          armor_chance: 40
+          exp_multiplier: 2.0
+          boss_chance: 20.0
+          horde_min: 4
+          horde_max: 8
           boss_name: "§5§lКривавий Жнець"
           bar_color: "RED"
           discord_color: 14483456 # 0xDD0000
         tier_2:
           level: 2
           name: "Кривавий Армагеддон"
-          weight: 35
-          health_multiplier: 4.5
-          speed_level: 2
-          strength_level: 2
-          resistance_level: 1
-          armor_chance: 85
-          exp_multiplier: 4.0
-          boss_chance: 50.0
-          horde_min: 10
-          horde_max: 18
+          weight: 25
+          health_multiplier: 2.5
+          speed_level: 1
+          strength_level: 1
+          resistance_level: 0
+          armor_chance: 60
+          exp_multiplier: 3.0
+          boss_chance: 35.0
+          horde_min: 6
+          horde_max: 12
           boss_name: "§4§l☠ Володар Безодні ☠"
           bar_color: "RED"
           discord_color: 11141120 # 0xAA0000
         tier_3:
           level: 3
           name: "Пекельний Катаклізм"
-          weight: 18
-          health_multiplier: 6.5
-          speed_level: 2
-          strength_level: 3
-          resistance_level: 2
-          armor_chance: 95
-          exp_multiplier: 6.0
-          boss_chance: 65.0
-          horde_min: 16
-          horde_max: 26
+          weight: 12
+          health_multiplier: 3.5
+          speed_level: 1
+          strength_level: 2
+          resistance_level: 1
+          armor_chance: 80
+          exp_multiplier: 5.0
+          boss_chance: 50.0
+          horde_min: 10
+          horde_max: 18
           boss_name: "§4§l☠ Архідемон Смерті ☠"
           bar_color: "PURPLE"
           discord_color: 6701875 # 0x660033
         tier_4:
           level: 4
           name: "☠ Судний День (Раґнарок) ☠"
-          weight: 7
-          health_multiplier: 10.0
-          speed_level: 3
-          strength_level: 4
-          resistance_level: 2
-          armor_chance: 100
-          exp_multiplier: 10.0
-          boss_chance: 80.0
-          horde_min: 22
-          horde_max: 36
+          weight: 3
+          health_multiplier: 5.0
+          speed_level: 2
+          strength_level: 2
+          resistance_level: 1
+          armor_chance: 90
+          exp_multiplier: 8.0
+          boss_chance: 70.0
+          horde_min: 14
+          horde_max: 24
           boss_name: "§0§l☠ §4§lТИТАН ХАОСУ §0§l☠"
           bar_color: "PURPLE"
           discord_color: 2752512 # 0x2A0000
