@@ -254,24 +254,42 @@ public class BloodmoonMode implements FunMode, Listener {
         long time = world.getTime();
 
         if (!active) {
-            // Перевірка заходу сонця (між 13000 та 13150 тіків)
-            if (time >= 13000 && time <= 13150) {
-                long currentDay = world.getFullTime() / 24000L;
-                if (currentDay != lastCheckedDay) {
-                    lastCheckedDay = currentDay;
-                    double roll = ThreadLocalRandom.current().nextDouble(100.0);
-                    if (roll < chancePercent) {
-                        BloodmoonTier tier = rollTier();
-                        startBloodmoon(world, tier, false);
-                    }
-                }
-            }
+            checkDuskRoll(world);
         } else {
             // Кривавий Місяць активний: перевірка чи настав світанок
-            if (time >= 23000 || time < 13000) {
+            if (time >= 23000 || time < 12541) {
                 stopBloodmoon(true);
             } else {
                 updateBossBar(time);
+                // Захист від сну: якщо будь-який гравець спить у ліжку, негайно вибити його
+                if (blockBeds && activeWorld != null) {
+                    for (Player p : activeWorld.getPlayers()) {
+                        if (p.isSleeping()) {
+                            p.wakeup(false);
+                            p.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                                    "§4§l[!] §cКривавий Місяць не дає вам спати!"
+                            ));
+                            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void checkDuskRoll(World world) {
+        if (!enabled || active || world == null) return;
+        long time = world.getTime();
+        // Перевірка заходу сонця (між 12541 та 13150 тіків)
+        if (time >= 12541 && time <= 13150) {
+            long currentDay = world.getFullTime() / 24000L;
+            if (currentDay != lastCheckedDay) {
+                lastCheckedDay = currentDay;
+                double roll = ThreadLocalRandom.current().nextDouble(100.0);
+                if (roll < chancePercent) {
+                    BloodmoonTier tier = rollTier();
+                    startBloodmoon(world, tier, false);
+                }
             }
         }
     }
@@ -315,7 +333,7 @@ public class BloodmoonMode implements FunMode, Listener {
     public void startBloodmoon(World world, BloodmoonTier tier, boolean manual) {
         if (world == null || tier == null) return;
 
-        if (manual && (world.getTime() < 13000 || world.getTime() >= 23000)) {
+        if (world.getTime() < 13000 || world.getTime() >= 23000) {
             world.setTime(13000L);
         }
 
@@ -338,15 +356,30 @@ public class BloodmoonMode implements FunMode, Listener {
         );
         bossBar.setVisible(true);
 
-        // Накладання візуалу та звуків для всіх гравців
+        // Накладання візуалу та звуків для всіх гравців + примусовий викид із ліжок
         for (Player p : world.getPlayers()) {
             bossBar.addPlayer(p);
             applyVisualsToPlayer(p);
-            p.sendTitle(
-                    "§4§lКРИВАВИЙ МІСЯЦЬ",
-                    "§cРівень загрози: §f" + tier.getName(),
-                    10, 80, 20
-            );
+
+            if (p.isSleeping()) {
+                p.wakeup(false);
+                p.sendTitle(
+                        "§4§lНЕ ЧАС ДЛЯ СНУ!",
+                        "§cКривавий Місяць викинув вас із ліжка!",
+                        10, 70, 20
+                );
+                p.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                        "§4§l[!] §cКривавий Місяць зриває ваші сни! Прокидайтеся!"
+                ));
+                p.playSound(p.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1.0f, 0.9f);
+            } else {
+                p.sendTitle(
+                        "§4§lКРИВАВИЙ МІСЯЦЬ",
+                        "§cРівень загрози: §f" + tier.getName(),
+                        10, 80, 20
+                );
+            }
+
             p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.7f);
             p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
         }
@@ -813,7 +846,7 @@ public class BloodmoonMode implements FunMode, Listener {
     // Event Handlers
     // ==========================================
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onBedEnter(PlayerBedEnterEvent event) {
         if (!active || !blockBeds) return;
         if (activeWorld != null && event.getPlayer().getWorld().equals(activeWorld)) {
@@ -920,6 +953,10 @@ public class BloodmoonMode implements FunMode, Listener {
 
     public boolean isBloodmoonActive() {
         return active;
+    }
+
+    public World getActiveWorld() {
+        return activeWorld;
     }
 
     public boolean isActive() {

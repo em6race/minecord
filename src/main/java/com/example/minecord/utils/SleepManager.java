@@ -1,11 +1,13 @@
 package com.example.minecord.utils;
 
 import com.example.minecord.MineCord;
+import com.example.minecord.fun.BloodmoonMode;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -34,13 +36,30 @@ public class SleepManager implements Listener {
     public void stop() {
         HandlerList.unregisterAll(this);
     }
+
+    private boolean isBloodmoonPreventingSleep(World world) {
+        if (plugin.getFunManager() == null) return false;
+        BloodmoonMode bm = (BloodmoonMode) plugin.getFunManager().getMode("bloodmoon");
+        if (bm == null) return false;
+
+        // Check dusk roll in case Bloodmoon should start tonight
+        bm.checkDuskRoll(world);
+
+        return bm.isBloodmoonActive() && (bm.getActiveWorld() == null || bm.getActiveWorld().equals(world));
+    }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBedEnter(PlayerBedEnterEvent event) {
         if (event.getBedEnterResult() != PlayerBedEnterEvent.BedEnterResult.OK) return;
         
         World world = event.getPlayer().getWorld();
         if (world.getEnvironment() != World.Environment.NORMAL) return;
+
+        if (isBloodmoonPreventingSleep(world)) {
+            event.setCancelled(true);
+            event.getPlayer().wakeup(false);
+            return;
+        }
         
         // Wait 10 ticks (half a second) to ensure the player is considered "sleeping"
         Bukkit.getScheduler().runTaskLater(plugin, () -> checkSleep(world, event.getPlayer()), 10L);
@@ -65,6 +84,15 @@ public class SleepManager implements Listener {
     private long lastNightSkipTime = 0;
 
     private void checkSleep(World world, Player bedEnterer) {
+        if (isBloodmoonPreventingSleep(world)) {
+            for (Player p : world.getPlayers()) {
+                if (p.isSleeping()) {
+                    p.wakeup(false);
+                }
+            }
+            return;
+        }
+
         long time = world.getTime();
         boolean isNight = time >= 12541 && time <= 23458;
         if (!isNight && !world.hasStorm()) return;
