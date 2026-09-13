@@ -67,6 +67,7 @@ public class BloodmoonMode implements FunMode, Listener {
     private int durationMinutes = 10;
     private int durationSeconds = 600;
     private int elapsedSeconds = 0;
+    private boolean weakenMobsOnEnd = true;
 
     private final Map<Integer, BloodmoonTier> tiers = new HashMap<>();
 
@@ -203,6 +204,7 @@ public class BloodmoonMode implements FunMode, Listener {
         hordesEnabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.hordes_enabled", true);
         hordeIntervalSeconds = plugin.getConfig().getInt("fun.modes.bloodmoon.horde_interval_seconds", 120);
         discordAnnouncements = plugin.getConfig().getBoolean("fun.modes.bloodmoon.discord_announcements", true);
+        weakenMobsOnEnd = plugin.getConfig().getBoolean("fun.modes.bloodmoon.weaken_mobs_on_end", true);
 
         targetWorldNames.clear();
         List<String> wList = plugin.getConfig().getStringList("fun.modes.bloodmoon.worlds");
@@ -498,6 +500,11 @@ public class BloodmoonMode implements FunMode, Listener {
         stopBomberTask();
         clearAllMobGlowing();
 
+        int weakenedCount = 0;
+        if (weakenMobsOnEnd) {
+            weakenedCount = weakenRemainingMobs();
+        }
+
         if (naturallyEnded && activeWorld != null) {
             activeWorld.setTime(0L);
             if (activeWorld.hasStorm()) {
@@ -508,16 +515,21 @@ public class BloodmoonMode implements FunMode, Listener {
             for (Player p : activeWorld.getPlayers()) {
                 p.sendTitle(
                         "§6§lСВІТАНОК НАСТАВ",
-                        "§aКривавий Місяць відступив. Ви вижили!",
+                        "§aКривавий Місяць відступив. Монстри ослабли!",
                         10, 70, 20
                 );
                 p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
             }
 
+            String weakenedLine = (weakenedCount > 0)
+                    ? "  §a⚔ Залишки монстрів (" + weakenedCount + " шт.) ослабли та втратили сили — добийте їх!\n"
+                    : "  §a⚔ Залишки темряви розвіялися світанком!\n";
+
             Bukkit.broadcast(LegacyComponentSerializer.legacySection().deserialize(
                     "\n§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §a§l🌅 СВІТАНОК НАСТАВ! КРИВАВИЙ МІСЯЦЬ ВІДСТУПИВ! 🌅\n" +
                     "  §7Сервер успішно пережив ніч кошмару!\n" +
+                    weakenedLine +
                     "  §7Відбито хвиль орд: §e" + hordesSpawned + "§7 | Знищено монстрів: §e" + mobsKilled + "\n" +
                     "§2§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             ));
@@ -525,9 +537,114 @@ public class BloodmoonMode implements FunMode, Listener {
             sendDiscordEndEmbed();
         }
 
-        plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць завершено.");
+        plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць завершено." + (weakenedCount > 0 ? " Ослаблено монстрів: " + weakenedCount : ""));
         this.activeWorld = null;
         this.currentTier = null;
+    }
+
+    /**
+     * Ослаблює залишки монстрів після завершення Кривавого Місяця:
+     * знімає позитивні бафи, накладає Слабкість III та Сповільнення II,
+     * знижує HP (до 1-2 ударів для звичайних мобів та до 30-40 HP для босів),
+     * підсвічує їх контурами та підпалює нежить на сонці, щоб гравцям було легко їх добити.
+     */
+    public int weakenRemainingMobs() {
+        int count = 0;
+        Set<World> worldsToScan = new HashSet<>();
+        if (activeWorld != null) {
+            worldsToScan.add(activeWorld);
+        }
+        for (String wName : targetWorldNames) {
+            World w = Bukkit.getWorld(wName);
+            if (w != null) worldsToScan.add(w);
+        }
+        if (worldsToScan.isEmpty()) {
+            worldsToScan.addAll(Bukkit.getWorlds());
+        }
+
+        for (World world : worldsToScan) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                if (entity instanceof Player || entity instanceof ArmorStand || entity.isDead()) {
+                    continue;
+                }
+
+                PersistentDataContainer pdc = entity.getPersistentDataContainer();
+                boolean isBmMob = pdc.has(mobKey, PersistentDataType.BYTE);
+                boolean isBoss = pdc.has(bossKey, PersistentDataType.BYTE);
+                boolean isBomber = pdc.has(bomberKey, PersistentDataType.BYTE);
+
+                if (!isBmMob && !isBoss && !isBomber && !(entity instanceof Monster)) {
+                    continue;
+                }
+
+                // 1. Зняти всі позитивні бойові ефекти
+                entity.removePotionEffect(PotionEffectType.INCREASE_DAMAGE);
+                entity.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
+                entity.removePotionEffect(PotionEffectType.SPEED);
+                entity.removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
+                entity.removePotionEffect(PotionEffectType.REGENERATION);
+                entity.removePotionEffect(PotionEffectType.ABSORPTION);
+                entity.removePotionEffect(PotionEffectType.HEALTH_BOOST);
+
+                // 2. Накласти сильні дебафи: Слабкість III (удар майже не шкодить) та Сповільнення II
+                entity.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 240, 2, false, true, true));
+                entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 240, 1, false, true, true));
+
+                // 3. Підсвітити мобів на 2 хвилини, щоб гравці легко знаходили їх на місцевості
+                entity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 120, 0, false, false, false));
+
+                // 4. Суттєво зменшити здоров'я
+                if (isBoss) {
+                    AttributeInstance maxHpAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    if (maxHpAttr != null) {
+                        maxHpAttr.setBaseValue(40.0);
+                    }
+                    double bossHp = Math.min(entity.getHealth() * 0.20, 30.0);
+                    bossHp = Math.max(1.0, Math.min(bossHp, 40.0));
+                    entity.setHealth(bossHp);
+                } else {
+                    AttributeInstance maxHpAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    if (maxHpAttr != null) {
+                        maxHpAttr.setBaseValue(20.0);
+                    }
+                    double newHp = Math.min(entity.getHealth() * 0.20, 6.0);
+                    newHp = Math.max(1.0, Math.min(newHp, 20.0));
+                    entity.setHealth(newHp);
+                }
+
+                // 5. Зняти шоломи з нежиті, щоб ранкове сонце спалювало їх
+                if (entity instanceof Zombie || entity instanceof Skeleton || entity instanceof Phantom) {
+                    EntityEquipment eq = entity.getEquipment();
+                    if (eq != null && eq.getHelmet() != null) {
+                        eq.setHelmet(null);
+                    }
+                    entity.setFireTicks(Math.max(entity.getFireTicks(), 20 * 20));
+                }
+
+                // 6. Знешкодження кріперів: зняти зарядженість та уповільнити запал
+                if (entity instanceof Creeper creeper) {
+                    creeper.setPowered(false);
+                    creeper.setMaxFuseTicks(60);
+                    AttributeInstance spd = creeper.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+                    if (spd != null) {
+                        spd.setBaseValue(0.25);
+                    }
+                }
+
+                // 7. Знешкодження фантомів-бомбардувальників
+                if (entity instanceof Phantom phantom) {
+                    phantom.eject();
+                    phantom.setFireTicks(20 * 20);
+                }
+
+                // 8. Візуальний ефект розвіювання темряви
+                Location loc = entity.getLocation();
+                world.spawnParticle(Particle.SMOKE_LARGE, loc.clone().add(0, 0.8, 0), 6, 0.2, 0.4, 0.2, 0.02);
+
+                count++;
+            }
+        }
+        return count;
     }
 
     public int clearAllMobGlowing() {
