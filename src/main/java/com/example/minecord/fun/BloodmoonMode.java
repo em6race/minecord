@@ -59,6 +59,9 @@ public class BloodmoonMode implements FunMode, Listener {
     private boolean hordesEnabled = true;
     private int hordeIntervalSeconds = 120;
     private boolean discordAnnouncements = true;
+    private int durationMinutes = 10;
+    private int durationSeconds = 600;
+    private int elapsedSeconds = 0;
 
     private final Map<Integer, BloodmoonTier> tiers = new HashMap<>();
 
@@ -180,6 +183,8 @@ public class BloodmoonMode implements FunMode, Listener {
     private void reloadConfig() {
         enabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.enabled", true);
         chancePercent = plugin.getConfig().getDouble("fun.modes.bloodmoon.chance_percent", 5.0);
+        durationMinutes = plugin.getConfig().getInt("fun.modes.bloodmoon.duration_minutes", 10);
+        durationSeconds = Math.max(60, durationMinutes * 60);
         blockBeds = plugin.getConfig().getBoolean("fun.modes.bloodmoon.block_beds", true);
         redSkyEffects = plugin.getConfig().getBoolean("fun.modes.bloodmoon.red_sky_effects", true);
         hordesEnabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.hordes_enabled", true);
@@ -262,11 +267,17 @@ public class BloodmoonMode implements FunMode, Listener {
         if (!active) {
             checkDuskRoll(world);
         } else {
-            // Кривавий Місяць активний: перевірка чи настав світанок
-            if (time >= 23000 || time < 12541) {
+            elapsedSeconds++;
+            if (elapsedSeconds >= durationSeconds) {
                 stopBloodmoon(true);
             } else {
-                updateBossBar(time);
+                double progress = (double) elapsedSeconds / durationSeconds;
+                long targetTime = 13000L + (long) (progress * 10000L);
+                if (activeWorld != null) {
+                    activeWorld.setTime(targetTime);
+                }
+                updateBossBar(durationSeconds - elapsedSeconds, progress);
+
                 // Захист від сну: якщо будь-який гравець спить у ліжку, негайно вибити його
                 if (blockBeds && activeWorld != null) {
                     for (Player p : activeWorld.getPlayers()) {
@@ -348,6 +359,7 @@ public class BloodmoonMode implements FunMode, Listener {
         this.currentTier = tier;
         this.hordesSpawned = 0;
         this.mobsKilled = 0;
+        this.elapsedSeconds = 0;
 
         saveState();
 
@@ -355,11 +367,13 @@ public class BloodmoonMode implements FunMode, Listener {
         if (bossBar != null) {
             bossBar.removeAll();
         }
+        String formattedTime = String.format("%02d:%02d", durationSeconds / 60, durationSeconds % 60);
         bossBar = Bukkit.createBossBar(
-                "§4§l🩸 КРИВАВИЙ МІСЯЦЬ §c[" + tier.getName() + "] §4§l🩸",
+                "§4§l🩸 КРИВАВИЙ МІСЯЦЬ §c[" + tier.getName() + "] §f[До світанку: §e" + formattedTime + "§f] §4§l🩸",
                 tier.getBarColor(),
                 BarStyle.SOLID
         );
+        bossBar.setProgress(0.0);
         bossBar.setVisible(true);
 
         // Накладання візуалу та звуків для всіх гравців + примусовий викид із ліжок
@@ -433,11 +447,19 @@ public class BloodmoonMode implements FunMode, Listener {
         this.active = false;
         clearStateFile();
 
+        this.elapsedSeconds = 0;
+
         cleanUpVisuals();
         stopHordes();
         stopParticleTask();
 
         if (naturallyEnded && activeWorld != null) {
+            activeWorld.setTime(0L);
+            if (activeWorld.hasStorm()) {
+                activeWorld.setStorm(false);
+                activeWorld.setThundering(false);
+            }
+
             for (Player p : activeWorld.getPlayers()) {
                 p.sendTitle(
                         "§6§lСВІТАНОК НАСТАВ",
@@ -463,15 +485,13 @@ public class BloodmoonMode implements FunMode, Listener {
         this.currentTier = null;
     }
 
-    private void updateBossBar(long time) {
+    private void updateBossBar(long remainingSeconds, double progress) {
         if (bossBar == null) return;
 
-        long remainingTicks = Math.max(0, 23000 - time);
-        long remainingSeconds = remainingTicks / 20;
-        String formatted = String.format("%02d:%02d", remainingSeconds / 60, remainingSeconds % 60);
+        long safeRemaining = Math.max(0, remainingSeconds);
+        String formatted = String.format("%02d:%02d", safeRemaining / 60, safeRemaining % 60);
 
-        double progress = Math.max(0.0, Math.min(1.0, (double) (time - 13000) / 10000.0));
-        bossBar.setProgress(progress);
+        bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
         bossBar.setTitle("§4§l🩸 КРИВАВИЙ МІСЯЦЬ §c[" + (currentTier != null ? currentTier.getName() : "") + "] §f[До світанку: §e" + formatted + "§f] §4§l🩸");
     }
 
@@ -893,6 +913,7 @@ public class BloodmoonMode implements FunMode, Listener {
             yaml.set("tier_level", currentTier.getLevel());
             yaml.set("hordes_spawned", hordesSpawned);
             yaml.set("mobs_killed", mobsKilled);
+            yaml.set("elapsed_seconds", elapsedSeconds);
         }
         try {
             yaml.save(file);
@@ -925,16 +946,20 @@ public class BloodmoonMode implements FunMode, Listener {
             return;
         }
 
-        long time = world.getTime();
-        // Якщо в цьому світі все ще триває ніч
-        if (time >= 13000 && time < 23000) {
+        int savedElapsed = yaml.getInt("elapsed_seconds", 0);
+        if (savedElapsed < durationSeconds) {
             int tierLvl = yaml.getInt("tier_level", 2);
             BloodmoonTier tier = tiers.getOrDefault(tierLvl, tiers.get(2));
             this.hordesSpawned = yaml.getInt("hordes_spawned", 0);
             this.mobsKilled = yaml.getInt("mobs_killed", 0);
 
             startBloodmoon(world, tier, false);
-            plugin.getLogger().info("[BloodmoonMode] Стан Кривавого Місяця відновлено після рестарту! Світ: " + world.getName());
+            this.elapsedSeconds = savedElapsed;
+            double progress = (double) elapsedSeconds / durationSeconds;
+            long targetTime = 13000L + (long) (progress * 10000L);
+            world.setTime(targetTime);
+            updateBossBar(durationSeconds - elapsedSeconds, progress);
+            plugin.getLogger().info("[BloodmoonMode] Стан Кривавого Місяця відновлено після рестарту! Світ: " + world.getName() + " (Пройшло: " + savedElapsed + "с / " + durationSeconds + "с)");
         } else {
             clearStateFile();
         }
