@@ -12,6 +12,9 @@ public class FunManager {
 
     public FunManager(MineCord plugin) {
         this.plugin = plugin;
+        registerMode(new RiptideMode(plugin));
+        registerMode(new SpearHungerMode(plugin));
+        registerMode(new SmartAnvilMode(plugin));
     }
 
     /**
