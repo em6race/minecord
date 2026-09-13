@@ -28,7 +28,10 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("map")) {
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
+            if (mapUrl == null || mapUrl.trim().isEmpty() || mapUrl.contains("localhost")) {
+                mapUrl = "http://localhost:8100/";
+            }
             if (!mapUrl.endsWith("/")) mapUrl += "/";
 
             String fullUrl;

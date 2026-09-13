@@ -77,7 +77,10 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
             else if (event.getName().equals("map")) {
                 event.deferReply(true).queue();
-                String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
+                String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
+                if (mapUrl == null || mapUrl.trim().isEmpty() || mapUrl.contains("localhost")) {
+                    mapUrl = "http://localhost:8100/";
+                }
                 if (!mapUrl.endsWith("/")) mapUrl += "/";
                 String fullUrl = mapUrl.contains("#") ? mapUrl : (mapUrl + "#world:0:0:0:1500:0:0:0:0:flat");
                 event.getHook().sendMessage("🗺️ **Веб-мапа сервера (2D Flat):**\n[Натисніть тут, щоб відкрити мапу](" + fullUrl + ")").queue();

@@ -197,7 +197,10 @@ public class PlayerEventListener implements Listener {
             String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
                     loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
             
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8123/");
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
+            if (mapUrl == null || mapUrl.trim().isEmpty() || mapUrl.contains("localhost")) {
+                mapUrl = "http://localhost:8100/";
+            }
             if (!mapUrl.endsWith("/")) mapUrl += "/";
             
             // Link format for BlueMap (version 4/5+ requires 10 parameters)

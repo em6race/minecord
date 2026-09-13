@@ -11,7 +11,7 @@ discord:
   # ID вашого Discord сервера
   guild-id: "000000000000000000"
   # Посилання на веб-мапу сервера (BlueMap / Dynmap)
-  map-url: ""
+  map-url: "http://localhost:8100/"
 
 # Система приватного доступу (White-list)
 whitelist:
