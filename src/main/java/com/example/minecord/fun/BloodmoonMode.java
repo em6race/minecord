@@ -594,27 +594,12 @@ public class BloodmoonMode implements FunMode, Listener {
                 boolean isBoss = pdc.has(bossKey, PersistentDataType.BYTE);
                 boolean isBomber = pdc.has(bomberKey, PersistentDataType.BYTE);
 
-                if (!isBmMob && !isBoss && !isBomber && !(entity instanceof Monster)) {
+                // Не чіпати звичайних мобів у печерах/світі — тільки тих, кого було спавнено або бафнуто івентом!
+                if (!isBmMob && !isBoss && !isBomber) {
                     continue;
                 }
 
-                // 1. Зняти всі позитивні бойові ефекти
-                entity.removePotionEffect(PotionEffectType.INCREASE_DAMAGE);
-                entity.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-                entity.removePotionEffect(PotionEffectType.SPEED);
-                entity.removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
-                entity.removePotionEffect(PotionEffectType.REGENERATION);
-                entity.removePotionEffect(PotionEffectType.ABSORPTION);
-                entity.removePotionEffect(PotionEffectType.HEALTH_BOOST);
-
-                // 2. Накласти сильні дебафи: Слабкість III (удар майже не шкодить) та Сповільнення II
-                entity.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 240, 2, false, true, true));
-                entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 240, 1, false, true, true));
-
-                // 3. Підсвітити мобів на 2 хвилини, щоб гравці легко знаходили їх на місцевості
-                entity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 120, 0, false, false, false));
-
-                // 4. Захист від абузу: якщо бос дожив до світанку, він розсіюється у кривавому тумані
+                // 1. Захист від абузу: якщо бос дожив до світанку, він розсіюється у кривавому тумані
                 if (isBoss) {
                     Location bLoc = entity.getLocation();
                     World bWorld = bLoc.getWorld();
@@ -631,47 +616,64 @@ public class BloodmoonMode implements FunMode, Listener {
                     broadcastBloodmoonMessage("§c«Ви не встигли подолати " + bossWord + " до світанку!» §r" + bName + " §cзник у кривавому тумані");
                     entity.remove();
                     continue;
-
-
                 }
 
+                // 2. Знешкодження фантомів-бомбардувальників
+                if (isBomber || entity instanceof Phantom) {
+                    entity.eject();
+                    if (entity instanceof Phantom) {
+                        entity.remove();
+                        continue;
+                    }
+                }
 
+                // 3. Зняти мітку кривавого моба (стає звичайним ванільним мобом, без кастомного дропу)
+                pdc.remove(mobKey);
+
+                // 4. Зняти всі бойові бафи та ефекти підсвічування
+                entity.removePotionEffect(PotionEffectType.INCREASE_DAMAGE);
+                entity.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
+                entity.removePotionEffect(PotionEffectType.SPEED);
+                entity.removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
+                entity.removePotionEffect(PotionEffectType.REGENERATION);
+                entity.removePotionEffect(PotionEffectType.ABSORPTION);
+                entity.removePotionEffect(PotionEffectType.HEALTH_BOOST);
+                entity.removePotionEffect(PotionEffectType.GLOWING);
+
+                // 5. Повернути стандартні ванільні параметри здоров'я та радіусу агро
+                AttributeInstance follow = entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+                if (follow != null) {
+                    follow.setBaseValue(16.0);
+                }
                 AttributeInstance maxHpAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 if (maxHpAttr != null) {
                     maxHpAttr.setBaseValue(20.0);
                 }
-                double newHp = Math.min(entity.getHealth() * 0.20, 6.0);
-                newHp = Math.max(1.0, Math.min(newHp, 20.0));
-                entity.setHealth(newHp);
+                if (entity.getHealth() > 20.0) {
+                    entity.setHealth(20.0);
+                }
 
-                // 5. Зняти шоломи з нежиті, щоб ранкове сонце спалювало їх
-                if (entity instanceof Zombie || entity instanceof Skeleton || entity instanceof Phantom) {
+                // 6. Зняти шоломи з нежиті, щоб ранкове сонце спалювало їх на поверхні
+                if (entity instanceof Zombie || entity instanceof Skeleton) {
                     EntityEquipment eq = entity.getEquipment();
                     if (eq != null && eq.getHelmet() != null) {
                         eq.setHelmet(null);
                     }
-                    entity.setFireTicks(Math.max(entity.getFireTicks(), 20 * 20));
                 }
 
-                // 6. Знешкодження кріперів: зняти зарядженість та уповільнити запал
+                // 7. Повернути кріперам стандартний стан
                 if (entity instanceof Creeper creeper) {
                     creeper.setPowered(false);
-                    creeper.setMaxFuseTicks(60);
+                    creeper.setMaxFuseTicks(30);
                     AttributeInstance spd = creeper.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
                     if (spd != null) {
                         spd.setBaseValue(0.25);
                     }
                 }
 
-                // 7. Знешкодження фантомів-бомбардувальників
-                if (entity instanceof Phantom phantom) {
-                    phantom.eject();
-                    phantom.setFireTicks(20 * 20);
-                }
-
-                // 8. Візуальний ефект розвіювання темряви
+                // 8. Легкий димок розвіювання темряви
                 Location loc = entity.getLocation();
-                world.spawnParticle(Particle.SMOKE_LARGE, loc.clone().add(0, 0.8, 0), 6, 0.2, 0.4, 0.2, 0.02);
+                world.spawnParticle(Particle.SMOKE_LARGE, loc.clone().add(0, 0.8, 0), 4, 0.2, 0.3, 0.2, 0.02);
 
                 count++;
             }
@@ -797,8 +799,11 @@ public class BloodmoonMode implements FunMode, Listener {
                 List<Player> players = new ArrayList<>(activeWorld.getPlayers());
                 if (players.isEmpty()) return;
 
-                Player target = players.get(ThreadLocalRandom.current().nextInt(players.size()));
-                spawnHordeNearPlayer(target);
+                for (Player target : players) {
+                    if (target.getGameMode() == org.bukkit.GameMode.SURVIVAL || target.getGameMode() == org.bukkit.GameMode.ADVENTURE) {
+                        spawnHordeNearPlayer(target);
+                    }
+                }
             }
         }.runTaskTimer(plugin, hordeIntervalSeconds * 20L, hordeIntervalSeconds * 20L);
     }
@@ -1969,92 +1974,95 @@ public class BloodmoonMode implements FunMode, Listener {
 
             if (lvl >= 4) {
                 // Tier 4 (Фаза IV - Судний день / Раґнарок)
-                if (rnd.nextInt(100) < 30) {
+                if (rnd.nextInt(100) < 35) {
                     drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 18) {
+                if (rnd.nextInt(100) < 20) {
                     drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                // Алмаз: 2.0% шанс (1 на 50 мобів -> 1-2 за всю ніч)
-                if (rnd.nextInt(100) < 2) {
+                // Алмаз: 2.5% шанс (1 на 40 мобів -> ~1-3 за всю ніч)
+                if (rnd.nextInt(1000) < 25) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
                 // Незеритовий скрап: 1.0% шанс (1 на 100 мобів -> 1-2 за всю ніч)
                 if (rnd.nextInt(1000) < 10) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                // Золоте яблуко: 1.0% шанс
-                if (rnd.nextInt(100) < 1) {
+                // Золоте яблуко: 1.2% шанс
+                if (rnd.nextInt(1000) < 12) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                // Зачароване яблуко: 0.05% (1 на 2000)
-                if (rnd.nextInt(2000) == 0) {
+                // Зачароване яблуко: 0.08% (1 на 1250)
+                if (rnd.nextInt(1250) == 0) {
                     drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 16) {
+                if (rnd.nextInt(100) < 18) {
                     drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else if (lvl == 3) {
                 // Tier 3 (Фаза III - Пекельний Катаклізм)
-                if (rnd.nextInt(100) < 24) {
+                if (rnd.nextInt(100) < 28) {
                     drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 14) {
+                if (rnd.nextInt(100) < 16) {
                     drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                // Алмаз: 1.5% шанс (1 на 66 мобів -> ~1 алмаз за ніч)
-                if (rnd.nextInt(1000) < 15) {
+                // Алмаз: 1.8% шанс (1 на 55 мобів -> ~1-2 алмази за ніч)
+                if (rnd.nextInt(1000) < 18) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
                 // Незеритовий лом (скрап): 0.7% шанс (1 на 142 мобів -> ~1, у рідких випадках 2 за ніч)
                 if (rnd.nextInt(1000) < 7) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                // Золоте яблуко: 0.6% шанс (1 на 166)
-                if (rnd.nextInt(1000) < 6) {
+                // Золоте яблуко: 0.8% шанс (1 на 125)
+                if (rnd.nextInt(1000) < 8) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 12) {
+                if (rnd.nextInt(100) < 14) {
                     drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else if (lvl == 2) {
                 // Tier 2 (Фаза II - Кривавий Армагеддон)
-                if (rnd.nextInt(100) < 18) {
+                if (rnd.nextInt(100) < 22) {
                     drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 10) {
+                if (rnd.nextInt(100) < 12) {
                     drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                // Алмаз: 1.0% шанс (1 на 100 мобів -> за ніч 0-1, у рідких випадках 2)
-                if (rnd.nextInt(100) < 1) {
+                // Алмаз: 1.2% шанс (1 на 83 мобів -> за ніч 1, у рідких випадках 2)
+                if (rnd.nextInt(1000) < 12) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
                 // Незеритовий лом (скрап): 0.5% шанс (1 на 200 мобів -> за ніч 0-1, у рідких випадках 2)
                 if (rnd.nextInt(1000) < 5) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
-                // Золоте яблуко: 0.4% шанс (1 на 250)
-                if (rnd.nextInt(1000) < 4) {
+                // Золоте яблуко: 0.5% шанс (1 на 200)
+                if (rnd.nextInt(1000) < 5) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
                 }
-                if (rnd.nextInt(100) < 8) {
+                if (rnd.nextInt(100) < 10) {
                     drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             } else {
                 // Tier 1 (Фаза I - Кривавий Місяць)
-                if (rnd.nextInt(100) < 12) {
+                if (rnd.nextInt(100) < 15) {
                     drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
-                if (rnd.nextInt(100) < 6) {
+                if (rnd.nextInt(100) < 8) {
                     drops.add(new ItemStack(Material.EMERALD, 1));
                 }
-                // Алмаз: 0.4% шанс (1 на 250 мобів -> 0 або вкрай рідко 1 за ніч)
-                if (rnd.nextInt(1000) < 4) {
+                // Алмаз: 0.6% шанс (1 на 166 мобів -> 0 або 1 за ніч)
+                if (rnd.nextInt(1000) < 6) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                // Золоте яблуко: 0.2% шанс
-                if (rnd.nextInt(1000) < 2) {
+                // Золоте яблуко: 0.3% шанс
+                if (rnd.nextInt(1000) < 3) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
+                }
+                if (rnd.nextInt(100) < 6) {
+                    drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 1));
                 }
             }
         }
