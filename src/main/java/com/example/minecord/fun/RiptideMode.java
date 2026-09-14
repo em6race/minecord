@@ -7,11 +7,14 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
+import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -188,11 +191,22 @@ public class RiptideMode implements FunMode, Listener {
         // 6. Захист від падіння
         if (preventFallDamage) {
             fallImmunePlayers.add(player.getUniqueId());
+            protectPassengersFromFall(player);
         }
 
         // 7. Таранна шкода сутностям на шляху польоту
         if (damageEntities) {
             startDashCollisionTracker(player);
+        }
+    }
+
+    private void protectPassengersFromFall(Entity vehicle) {
+        if (vehicle == null) return;
+        for (Entity p : vehicle.getPassengers()) {
+            if (p instanceof Player pp) {
+                fallImmunePlayers.add(pp.getUniqueId());
+            }
+            protectPassengersFromFall(p);
         }
     }
 
@@ -218,6 +232,11 @@ public class RiptideMode implements FunMode, Listener {
                 for (Entity entity : player.getNearbyEntities(1.5, 1.5, 1.5)) {
                     if (entity instanceof LivingEntity target && !(entity instanceof ArmorStand)) {
                         if (target.getUniqueId().equals(player.getUniqueId())) continue;
+                        // Не завдавати шкоди пасажирам (гравцям на плечах / GSit) або їздовим тваринам
+                        if (isMountOrPassenger(player, target)) continue;
+                        // Не шкодити прирученим улюбленцям гравця
+                        if (target instanceof Tameable tameable && player.equals(tameable.getOwner())) continue;
+
                         if (hitEntities.add(target.getUniqueId())) {
                             target.damage(damageAmount, player);
                             player.getWorld().playSound(target.getLocation(), Sound.ITEM_TRIDENT_HIT, 1.0f, 1.0f);
@@ -226,6 +245,78 @@ public class RiptideMode implements FunMode, Listener {
                 }
             }
         }.runTaskTimer(plugin, 1L, 1L);
+    }
+
+    /**
+     * Блокує випадкову шкоду тризубцем (кидок або удар) по гравцеві, який сидить на нападникові (GSit).
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTridentDamagePassenger(EntityDamageByEntityEvent event) {
+        if (!enabled) return;
+
+        Player attacker = null;
+        if (event.getDamager() instanceof Trident trident) {
+            if (trident.getShooter() instanceof Player p) {
+                attacker = p;
+            }
+        } else if (event.getDamager() instanceof Player p) {
+            ItemStack item = p.getInventory().getItemInMainHand();
+            if (item != null && item.getType() == Material.TRIDENT) {
+                attacker = p;
+            }
+        }
+
+        if (attacker != null && isMountOrPassenger(attacker, event.getEntity())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isMountOrPassenger(Entity a, Entity b) {
+        if (a == null || b == null) return false;
+        if (a.getUniqueId().equals(b.getUniqueId())) return true;
+
+        // Перевірка: b є транспортом або предком-транспортом a
+        Entity v = a.getVehicle();
+        while (v != null) {
+            if (v.getUniqueId().equals(b.getUniqueId())) return true;
+            v = v.getVehicle();
+        }
+
+        // Перевірка: a є транспортом або предком-транспортом b
+        v = b.getVehicle();
+        while (v != null) {
+            if (v.getUniqueId().equals(a.getUniqueId())) return true;
+            v = v.getVehicle();
+        }
+
+        // Перевірка: обидва сидять на одному кореневому транспорті
+        Entity rootA = getRootVehicle(a);
+        Entity rootB = getRootVehicle(b);
+        if (rootA != null && rootB != null && rootA.getUniqueId().equals(rootB.getUniqueId())) {
+            return true;
+        }
+
+        // Рекурсивна перевірка дерева пасажирів (GSit сидіння)
+        return hasPassengerRecursive(a, b) || hasPassengerRecursive(b, a);
+    }
+
+    private Entity getRootVehicle(Entity entity) {
+        if (entity == null) return null;
+        Entity v = entity.getVehicle();
+        if (v == null) return null;
+        while (v.getVehicle() != null) {
+            v = v.getVehicle();
+        }
+        return v;
+    }
+
+    private boolean hasPassengerRecursive(Entity vehicle, Entity target) {
+        if (vehicle == null || target == null) return false;
+        for (Entity p : vehicle.getPassengers()) {
+            if (p.getUniqueId().equals(target.getUniqueId())) return true;
+            if (hasPassengerRecursive(p, target)) return true;
+        }
+        return false;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
