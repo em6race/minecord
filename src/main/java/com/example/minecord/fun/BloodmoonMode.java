@@ -1979,8 +1979,8 @@ public class BloodmoonMode implements FunMode, Listener {
                 if (rnd.nextInt(100) < 2) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
-                // Незеритовий скрап: 0.4% шанс (1 на 250 мобів -> вкрай рідкісний випадок 1 шт)
-                if (rnd.nextInt(1000) < 4) {
+                // Незеритовий скрап: 1.0% шанс (1 на 100 мобів -> 1-2 за всю ніч)
+                if (rnd.nextInt(1000) < 10) {
                     drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
                 // Золоте яблуко: 1.0% шанс
@@ -2006,6 +2006,10 @@ public class BloodmoonMode implements FunMode, Listener {
                 if (rnd.nextInt(1000) < 15) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
                 }
+                // Незеритовий лом (скрап): 0.7% шанс (1 на 142 мобів -> ~1, у рідких випадках 2 за ніч)
+                if (rnd.nextInt(1000) < 7) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
+                }
                 // Золоте яблуко: 0.6% шанс (1 на 166)
                 if (rnd.nextInt(1000) < 6) {
                     drops.add(new ItemStack(Material.GOLDEN_APPLE, 1));
@@ -2015,7 +2019,6 @@ public class BloodmoonMode implements FunMode, Listener {
                 }
             } else if (lvl == 2) {
                 // Tier 2 (Фаза II - Кривавий Армагеддон)
-                // Скрап повністю відсутній у звичайних мобів (0%)!
                 if (rnd.nextInt(100) < 18) {
                     drops.add(new ItemStack(rnd.nextBoolean() ? Material.GOLD_INGOT : Material.IRON_INGOT, 1));
                 }
@@ -2025,6 +2028,10 @@ public class BloodmoonMode implements FunMode, Listener {
                 // Алмаз: 1.0% шанс (1 на 100 мобів -> за ніч 0-1, у рідких випадках 2)
                 if (rnd.nextInt(100) < 1) {
                     drops.add(new ItemStack(Material.DIAMOND, 1));
+                }
+                // Незеритовий лом (скрап): 0.5% шанс (1 на 200 мобів -> за ніч 0-1, у рідких випадках 2)
+                if (rnd.nextInt(1000) < 5) {
+                    drops.add(new ItemStack(Material.NETHERITE_SCRAP, 1));
                 }
                 // Золоте яблуко: 0.4% шанс (1 на 250)
                 if (rnd.nextInt(1000) < 4) {
