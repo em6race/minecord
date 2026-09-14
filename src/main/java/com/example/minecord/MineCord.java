@@ -236,8 +236,8 @@ public final class MineCord extends JavaPlugin {
         }
         
         if (roleSyncManager != null) {
-            roleSyncManager.cleanupScoreboardTeams();
-            roleSyncManager.reloadConfig();
+            roleSyncManager.stop();
+            roleSyncManager.start();
             roleSyncManager.syncAllOnlinePlayers();
         }
         
