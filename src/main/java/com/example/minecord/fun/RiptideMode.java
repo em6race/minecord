@@ -260,8 +260,11 @@ public class RiptideMode implements FunMode, Listener {
                 attacker = p;
             }
         } else if (event.getDamager() instanceof Player p) {
-            ItemStack item = p.getInventory().getItemInMainHand();
-            if (item != null && item.getType() == Material.TRIDENT) {
+            ItemStack main = p.getInventory().getItemInMainHand();
+            ItemStack off = p.getInventory().getItemInOffHand();
+            boolean hasTrident = (main != null && main.getType() == Material.TRIDENT)
+                              || (off != null && off.getType() == Material.TRIDENT);
+            if (hasTrident || p.isRiptiding()) {
                 attacker = p;
             }
         }
