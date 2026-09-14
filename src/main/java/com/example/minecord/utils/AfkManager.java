@@ -122,6 +122,7 @@ public class AfkManager implements Listener {
     }
 
     private void setAfk(Player player, AfkData data, boolean afk, long now) {
+        if (data.isAfk == afk) return;
         data.isAfk = afk;
         if (afk) {
             data.afkStartTime = now;
@@ -183,6 +184,32 @@ public class AfkManager implements Listener {
             
             player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");
         }
+
+        // Notify SleepManager that an AFK transition occurred
+        if (plugin.getSleepManager() != null) {
+            try {
+                plugin.getSleepManager().onAfkStateChanged(player);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public void toggleAfk(Player player, String reason) {
+        if (!isEnabled()) {
+            player.sendMessage(ChatColor.RED + "Система AFK вимкнена в конфігурації сервера.");
+            return;
+        }
+        AfkData data = afkDataMap.computeIfAbsent(player.getUniqueId(), k -> new AfkData(player.getLocation(), System.currentTimeMillis()));
+        boolean newStatus = !data.isAfk;
+        setAfk(player, data, newStatus, System.currentTimeMillis());
+        if (newStatus) {
+            if (reason != null && !reason.trim().isEmpty()) {
+                Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " тепер АФК: " + ChatColor.YELLOW + reason.trim());
+            } else {
+                Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " тепер в режимі АФК.");
+            }
+        } else {
+            Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " повернувся до гри.");
+        }
     }
 
     private String formatTime(long seconds) {
@@ -210,7 +237,7 @@ public class AfkManager implements Listener {
     }
 
     public boolean isAfk(Player player) {
-        if (!isEnabled()) return false;
+        if (!isEnabled() || player == null) return false;
         AfkData data = afkDataMap.get(player.getUniqueId());
         return data != null && data.isAfk;
     }

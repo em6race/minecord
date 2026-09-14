@@ -58,6 +58,20 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (command.getName().equalsIgnoreCase("afk")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(ChatColor.RED + "Цю команду можуть використовувати лише гравці.");
+                return true;
+            }
+            String reason = args.length > 0 ? String.join(" ", args) : null;
+            if (plugin.getAfkManager() != null) {
+                plugin.getAfkManager().toggleAfk(player, reason);
+            } else {
+                player.sendMessage(ChatColor.RED + "Система AFK недоступна.");
+            }
+            return true;
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                 sender.sendMessage(ChatColor.YELLOW + "Перезавантаження конфігурації та бота MineCord...");
