@@ -30,11 +30,23 @@
 ### 2. 🩸 Хардкорний «Кривавий Місяць» (Bloodmoon) — 4 Рівні Складності
 Повномасштабна система нічних катаклізмів з унікальними мобами, окупацією неба та грандіозними босами:
 * **Блокування сну**: Сон у ліжках повністю заборонено до настання світанку.
-* **4 Хардкорні Рівні (Tiers)**:
-  * **Рівень 1 («Кривавий Місяць»)**: Множник HP 2.5x, бафи Швидкості та Сили, 70% діамантової броні, бос **«Кривавий Жнець»** (300 HP).
-  * **Рівень 2 («Кривавий Армагеддон»)**: Множник HP 4.5x, 85% діамантової/незеритової броні, заряджені кріпери, бос **«Володар Безодні»** (550 HP).
-  * **Рівень 3 («Пекельний Катаклізм»)**: Множник HP 6.5x, 95% зачарованого незериту, бос **«☠ Архідемон Смерті ☠»** (850 HP).
-  * **Рівень 4 («☠ Судний День (Раґнарок) ☠»)**: Екстремальний множник HP 10.0x, Сила IV, Опір II, 100% максимальний незерит, орди до 36 монстрів та фінальний супербос **«☠ ТИТАН ХАОСУ ☠»** (1400 HP).
+* **4 Хардкорні Рівні та Збалансований Лут**:
+  * **Рівень 1 («Кривавий Місяць»)**: Множник HP 2.5x, бафи Швидкості та Сили, 70% діамантової броні, бос **«Кривавий Жнець»** (300 HP). Дроп: залізо, золото, поодинокі діаманти (незерит відсутній).
+  * **Рівень 2 («Кривавий Армагеддон»)**: Множник HP 4.5x, 85% діамантової/незеритової броні, заряджені кріпери, бос **«Володар Безодні»** (550 HP). Суворий ліміт: **максимум 2 незеритові скрапи** за ніч на гравця! Шанс з мобів — 0.3% (~1 на 333 вбивства), з боса — 60% шанс на 1 скрап (в межах ліміту). Отримати 2 скрапи — справжня рідкісна удача.
+  * **Рівень 3 («Пекельний Катаклізм»)**: Множник HP 6.5x, 95% зачарованого незериту, бос **«☠ Архідемон Смерті ☠»** (850 HP). Шанс скрапу з мобів — 0.8% (~1–2 за ніч). Бос гарантовано дає 1–2 скрапи, 30% шанс на Зірку Незеру та 75% шанс на Тотем безсмертя.
+  * **Рівень 4 («☠ Судний День (Раґнарок) ☠»)**: Екстремальний множник HP 10.0x, Сила IV, Опір II, 100% максимальний незерит, орди до 36 монстрів та фінальний супербос **«☠ ТИТАН ХАОСУ ☠»** (1400 HP). Шанс скрапу з мобів — 1.5% (~2–4 за ніч), 3.5% на алмази, 0.1% на зачароване яблуко Нотча. Бос гарантовано дропає **1 чистий Незеритовий злиток**, Зірку Незеру та 1–2 Тотеми!
+* **🎲 5 Випадкових Архетипів Орд та Тактика Бою**:
+  * **Хаотична засідка (Chaos Ambush)**: Збалансована хвиля зомбі, скелетів, швидких павуків, хасків та кріперів.
+  * **Павуче нашестя (Spider Swarm)**: Рої печерних отруйних павуків та спринтерських звичайних павуків із бафами швидкості.
+  * **Легіон немертвих (Undead Legion)**: Важкоброньовані зомбі в латах та влучні скелети-лучники з покращеними луками.
+  * **Загін саперів (Sapper Squad)**: Група швидких кріперів-підривників під прикриттям стінки зомбі-авангарду.
+  * **Пекельний авангард (Nether Vanguard)**: Скелети-висушувачі з мечами та агресивні піґліни.
+  * **Кліщова атака (Pincer Flank)**: 50% шанс появи мобів з двох протилежних боків від гравця (взяття в кліщі).
+  * **Темна підтримка**: 15% шанс появи бойової Відьми у складі хвилі.
+  * **Персональні таймери**: Кожен гравець має індивідуальний кулдаун між хвилями (58–122 с) зі зміщеним першим спавном (20–75 с) — атаки непередбачувані й не б'ють по всіх одночасно.
+* **🌅 Чистий Світанок (Clean Dawn)**:
+  * Повна відмова від ефекту підсвічування (`GLOWING`).
+  * Жодного примусового вбивства мобів у печерах чи на фермах: з івентових монстрів на світанку просто чисто знімаються бафи та модифікатори, перетворюючи їх на звичайних ванільних мобів.
 * **✈️ Фантоми-Камікадзе (Phantom Bombers)**:
   * У повітрі з'являються фантоми з кріперами-наїзниками на голові/спині.
   * Пікірують прямо на гравців; на відстані 4.5 м кріпер запалюється зі звуком шипіння та попередженням в Actionbar, а при зіткненні (≤ 2.2 м або ударі фантома) детонує миттєво.
@@ -98,9 +110,14 @@
 * **Стильний TabList**: Інформативний таб із відображенням пінгів, онлайну, TPS та привітання сервера.
 * **Команди статистики та топів**: Перегляд ігрового часу, смертей, блоків та досягнень (`/stats`, `/top`).
 * **Режим технічних робіт (`/maintenance`)**: Швидке закриття сервера на обслуговування з персоналізованим повідомленням про причину робіт.
-* **Автооновлення BlueMap**: Періодичне виконання `/bluemap reload` для автоматичної актуалізації веб-карти.
-* **Поради та факти при вході**: З невеликим шансом (за замовчуванням 20%) гравець при підключенні отримує персональну корисну пораду.
+* **Періодичні підказки та корисні поради**: Індивідуальне надсилання практичних порад кожному онлайн-гравцю у випадковий час.
 * **Діагностика бота**: Команди `/minecord bot status` та `/minecord bot reconnect` для контролю підключення бота без перезапуску сервера.
+
+### 12. ⚙️ Підтримка ванільних механік та ферм (Vanilla Exploits)
+* **Ламання бедроку**: Дозволено класичні способи видалення бедроку та рамок порталу в Енд (`allow-permanent-block-break-exploits: true`).
+* **Безголові поршні**: Розблоковано створення headless pistons (`allow-headless-pistons: true`).
+* **Дюп падаючих блоків**: Портали в Енд дозволяють класичний дюп піску, гравію та бетону для масштабних будівельних ферм (`allow-unsafe-end-portal-teleportation: true`).
+* **Дюп динаміту (TNT) та рейок**: Поршневе копіювання активованого TNT для кар'єрів та тунелебудівників повністю працює (`allow-piston-duplication: true`).
 
 ---
 
@@ -165,11 +182,23 @@
 ### 2. 🩸 Hardcore Bloodmoon Event — 4 Difficulty Tiers
 A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers, and epic boss battles:
 * **Bed Sleep Blocked**: Sleeping in beds is completely locked out until sunrise.
-* **4 Scaled Tiers**:
-  * **Tier 1 ("Bloodmoon")**: 2.5x mob HP multiplier, Speed & Strength buffs, 70% diamond gear, boss **"Blood Reaper"** (300 HP).
-  * **Tier 2 ("Blood Armageddon")**: 4.5x mob HP multiplier, 85% diamond/netherite gear, charged creepers, boss **"Abyssal Lord"** (550 HP).
-  * **Tier 3 ("Infernal Cataclysm")**: 6.5x mob HP multiplier, 95% full enchanted netherite, boss **"☠ Archdemon of Death ☠"** (850 HP).
-  * **Tier 4 ("☠ Doomsday (Ragnarok) ☠")**: Extreme 10.0x mob HP multiplier, Strength IV, Resistance II, 100% max netherite, massive hordes up to 36 monsters, and the final colossal boss **"☠ TITAN OF CHAOS ☠"** (1400 HP).
+* **4 Scaled Tiers & Rebalanced Loot Progression**:
+  * **Tier 1 ("Bloodmoon")**: 2.5x mob HP multiplier, Speed & Strength buffs, 70% diamond gear, boss **"Blood Reaper"** (300 HP). Drops: iron, gold, occasional diamonds (no netherite).
+  * **Tier 2 ("Blood Armageddon")**: 4.5x mob HP multiplier, 85% diamond/netherite gear, charged creepers, boss **"Abyssal Lord"** (550 HP). Hard cap: **maximum 2 netherite scraps** per player per night! Regular mob drop chance is 0.3% (~1 in 333 kills); boss has a 60% chance to drop 1 scrap (within the cap). Getting 2 scraps is a true feat of luck.
+  * **Tier 3 ("Infernal Cataclysm")**: 6.5x mob HP multiplier, 95% full enchanted netherite, boss **"☠ Archdemon of Death ☠"** (850 HP). 0.8% mob scrap drop (~1–2 per night). Boss drops 1–2 scraps, 30% Nether Star chance, and 75% Totem of Undying chance.
+  * **Tier 4 ("☠ Doomsday (Ragnarok) ☠")**: Extreme 10.0x mob HP multiplier, Strength IV, Resistance II, 100% max netherite, massive hordes up to 36 monsters, and colossal final boss **"☠ TITAN OF CHAOS ☠"** (1400 HP). Mob scrap drop: 1.5% (~2–4 per night), 3.5% diamonds, 0.1% Notch apples. Boss drops **1 pure Netherite Ingot**, 1 Nether Star, and 1–2 Totems!
+* **🎲 5 Randomized Horde Archetypes & Combat Tactics**:
+  * **Chaos Ambush**: Balanced wave of zombies, skeletons, fast spiders, husks, and creepers.
+  * **Spider Swarm**: Infestation of venomous cave spiders and sprinting spiders with speed buffs.
+  * **Undead Legion**: Heavily armored zombies and dead-eye skeleton snipers with enhanced bows.
+  * **Sapper Squad**: Fast creeper breachers shielded by a zombie vanguard frontline.
+  * **Nether Vanguard**: Wither skeletons with swords and aggressive piglins.
+  * **Pincer Flank**: 50% chance that horde spawns split on opposite sides of the player to surround them.
+  * **Dark Witch Support**: 15% chance to spawn a battle Witch providing potion support.
+  * **Individual Player Timers**: Every player has an independent horde countdown (58–122s) with staggered initial starts (20–75s) — spawns are personal, dynamic, and desynchronized.
+* **🌅 Clean Dawn Mechanics**:
+  * Complete removal of artificial `GLOWING` outlines.
+  * No despawning of cave mobs or mob farms: event mobs simply have their buffs cleanly stripped and revert to peaceful vanilla daylight state.
 * **✈️ Phantom Kamikaze Bombers**:
   * Phantoms fly into battle carrying Creepers on their backs/heads.
   * Actively dive-bomb survival players; ignites at 4.5m with warning hiss and Actionbar alert, and detonates instantly upon collision (≤ 2.2m or bite strike).
@@ -233,9 +262,14 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 * **Custom TabList**: Clean header and footer showing online count, TPS, ping, and server branding.
 * **Stats Command**: Inspect player playtime, death count, broken blocks, and achievements (`/stats`, `/top`).
 * **Maintenance Mode (`/maintenance`)**: Close the server to non-staff players with a custom kick screen.
-* **BlueMap Auto-Reload**: Periodic execution of `/bluemap reload` to keep web maps constantly refreshed.
-* **Join Tips & Facts**: With a configurable chance (default 20%), connecting players receive a private, helpful tip or fun fact about server features.
+* **Periodic Player Tips**: Personalized, scheduled in-game tips and advice sent individually to active online players.
 * **Bot Diagnostics**: `/minecord bot status` and `/minecord bot reconnect` commands for managing Discord bot connectivity on the fly.
+
+### 12. ⚙️ Vanilla Tech & Farm Exploits Support
+* **Bedrock Breaking**: Vanilla methods to break bedrock and End portal frames are enabled (`allow-permanent-block-break-exploits: true`).
+* **Headless Pistons**: Retaining headless pistons enabled for tech machinery (`allow-headless-pistons: true`).
+* **Falling Block Duplication**: End portals allow vanilla sand, gravel, and concrete powder duping for large-scale farms (`allow-unsafe-end-portal-teleportation: true`).
+* **TNT & Rail Duplication**: Piston duplication for primed TNT and rails is fully supported for tunnel bores and world eaters (`allow-piston-duplication: true`).
 
 ---
 
