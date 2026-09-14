@@ -116,6 +116,10 @@ public final class MineCord extends JavaPlugin {
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(cmd);
         }
+        if (getCommand("afk") != null) {
+            getCommand("afk").setExecutor(cmd);
+            getCommand("afk").setTabCompleter(cmd);
+        }
         // Initialize leaderboard manager
         this.leaderboardManager = new com.example.minecord.utils.LeaderboardManager(this);
 
@@ -331,6 +335,10 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.RoleSyncManager getRoleSyncManager() {
         return roleSyncManager;
+    }
+
+    public com.example.minecord.utils.SleepManager getSleepManager() {
+        return sleepManager;
     }
 
     public com.example.minecord.fun.FunManager getFunManager() {

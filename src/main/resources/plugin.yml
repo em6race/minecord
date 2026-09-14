@@ -42,3 +42,6 @@ commands:
     aliases: [coords]
     description: Поділитися координатами з описом місця
     usage: /sharecoords [X Y Z] <опис місця>
+  afk:
+    description: Ввійти або вийти з режиму АФК
+    usage: /afk [причина]

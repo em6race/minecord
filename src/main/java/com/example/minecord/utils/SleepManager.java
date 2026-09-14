@@ -11,6 +11,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 
 public class SleepManager implements Listener {
     private final MineCord plugin;
+    private int checkTaskId = -1;
+    private long lastNightSkipTime = 0;
     
     public SleepManager(MineCord plugin) {
         this.plugin = plugin;
@@ -25,16 +29,32 @@ public class SleepManager implements Listener {
     
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        // Disable vanilla sleep skipping by setting the gamerule very high
+        // Disable vanilla sleep skipping by setting the gamerule very high so our custom system has full control
         for (World world : Bukkit.getWorlds()) {
             if (world.getEnvironment() == World.Environment.NORMAL) {
                 world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 101);
             }
         }
+
+        // Repeating task: check every second if anyone is sleeping to handle AFK transitions or time changes smoothly
+        checkTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            for (World world : Bukkit.getWorlds()) {
+                if (world.getEnvironment() == World.Environment.NORMAL) {
+                    boolean hasSleeping = world.getPlayers().stream().anyMatch(Player::isSleeping);
+                    if (hasSleeping) {
+                        checkSleep(world, null);
+                    }
+                }
+            }
+        }, 20L, 20L);
     }
     
     public void stop() {
         HandlerList.unregisterAll(this);
+        if (checkTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(checkTaskId);
+            checkTaskId = -1;
+        }
     }
 
     private boolean isBloodmoonPreventingSleep(World world) {
@@ -61,8 +81,20 @@ public class SleepManager implements Listener {
             return;
         }
         
-        // Wait 10 ticks (half a second) to ensure the player is considered "sleeping"
+        // Wait 10 ticks (half a second) to ensure the player is registered as "sleeping" by Bukkit
         Bukkit.getScheduler().runTaskLater(plugin, () -> checkSleep(world, event.getPlayer()), 10L);
+    }
+
+    @EventHandler
+    public void onBedLeave(PlayerBedLeaveEvent event) {
+        World world = event.getPlayer().getWorld();
+        if (world.getEnvironment() == World.Environment.NORMAL) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (world.getPlayers().stream().anyMatch(Player::isSleeping)) {
+                    checkSleep(world, null);
+                }
+            }, 5L);
+        }
     }
 
     @EventHandler
@@ -70,20 +102,42 @@ public class SleepManager implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (World world : Bukkit.getWorlds()) {
                 if (world.getEnvironment() == World.Environment.NORMAL) {
-                    for (Player p : world.getPlayers()) {
-                        if (p.isSleeping()) {
-                            checkSleep(world, p);
-                            break;
-                        }
+                    if (world.getPlayers().stream().anyMatch(Player::isSleeping)) {
+                        checkSleep(world, null);
                     }
                 }
             }
         }, 1L);
     }
-    
-    private long lastNightSkipTime = 0;
 
-    private void checkSleep(World world, Player bedEnterer) {
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        World fromWorld = event.getFrom();
+        if (fromWorld.getEnvironment() == World.Environment.NORMAL) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (fromWorld.getPlayers().stream().anyMatch(Player::isSleeping)) {
+                    checkSleep(fromWorld, null);
+                }
+            }, 5L);
+        }
+    }
+
+    /**
+     * Called whenever a player enters or exits AFK status so sleep voting updates immediately.
+     */
+    public void onAfkStateChanged(Player player) {
+        if (player == null) return;
+        World world = player.getWorld();
+        if (world != null && world.getEnvironment() == World.Environment.NORMAL) {
+            if (world.getPlayers().stream().anyMatch(Player::isSleeping)) {
+                checkSleep(world, null);
+            }
+        }
+    }
+
+    public void checkSleep(World world, Player bedEnterer) {
+        if (world == null || world.getEnvironment() != World.Environment.NORMAL) return;
+
         if (isBloodmoonPreventingSleep(world)) {
             for (Player p : world.getPlayers()) {
                 if (p.isSleeping()) {
@@ -96,50 +150,36 @@ public class SleepManager implements Listener {
         long time = world.getTime();
         boolean isNight = time >= 12541 && time <= 23458;
         if (!isNight && !world.hasStorm()) return;
-        
-        List<Player> nonSpectators = world.getPlayers().stream()
-            .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)
-            .collect(Collectors.toList());
-            
-        int totalInWorld = nonSpectators.size();
-        if (totalInWorld == 0) return;
 
-        long totalOnline = Bukkit.getOnlinePlayers().stream()
+        List<Player> sleepingPlayers = world.getPlayers().stream()
             .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)
-            .count();
-
-        boolean isSmallGroup = totalInWorld <= 2 || totalOnline <= 2;
-        
-        List<Player> activePlayers;
-        int required;
-        
-        if (isSmallGroup) {
-            // When 1 or 2 players are on the server/world, AFK players are NOT ignored and do not auto-skip night
-            activePlayers = nonSpectators;
-            required = totalInWorld; // 1 -> 1, 2 -> 2
-        } else {
-            // 3+ players: ignore AFK players
-            activePlayers = nonSpectators.stream()
-                .filter(p -> plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
-                .collect(Collectors.toList());
-            int totalActive = activePlayers.size();
-            if (totalActive == 0) totalActive = 1;
-            
-            if (totalActive <= 2) {
-                required = totalActive;
-            } else {
-                required = (int) Math.ceil(totalActive / 2.0);
-            }
-        }
-        
-        long sleepingCount = activePlayers.stream()
             .filter(Player::isSleeping)
-            .filter(p -> plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
-            .count();
-        
+            .collect(Collectors.toList());
+
+        long sleepingCount = sleepingPlayers.size();
+        if (sleepingCount == 0 && bedEnterer == null) return;
+
+        // Active players in this world:
+        // Ignore spectators and AFK players.
+        // A player currently sleeping is ALWAYS counted as active!
+        boolean ignoreAfk = plugin.getConfig().getBoolean("sleep.ignore-afk", true);
+        List<Player> activePlayers = world.getPlayers().stream()
+            .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)
+            .filter(p -> p.isSleeping() || !ignoreAfk || plugin.getAfkManager() == null || !plugin.getAfkManager().isAfk(p))
+            .collect(Collectors.toList());
+
+        int totalActive = activePlayers.size();
+        if (totalActive <= 0) totalActive = 1;
+
+        int percent = plugin.getConfig().getInt("sleep.percentage", 50);
+        if (percent <= 0) percent = 50;
+        if (percent > 100) percent = 100;
+
+        int required = Math.max(1, (int) Math.ceil(totalActive * (percent / 100.0)));
+
         if (sleepingCount >= required) {
             long now = System.currentTimeMillis();
-            if (now - lastNightSkipTime < 5000) return;
+            if (now - lastNightSkipTime < 4000) return;
             lastNightSkipTime = now;
 
             world.setTime(0);
@@ -150,8 +190,7 @@ public class SleepManager implements Listener {
             Bukkit.broadcastMessage(ChatColor.GOLD + "🌙 Світло перемогло темряву! Ніч пропущено.");
 
             if (plugin.getConfig().getBoolean("events.night-skip", true) && plugin.getBotManager() != null) {
-                List<String> sleepingNames = activePlayers.stream()
-                        .filter(Player::isSleeping)
+                List<String> sleepingNames = sleepingPlayers.stream()
                         .map(Player::getName)
                         .collect(Collectors.toList());
 
@@ -170,14 +209,11 @@ public class SleepManager implements Listener {
 
                 plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
             }
-        } else {
-            String poolLabel = totalInWorld == 1 ? "гравця" : "гравців";
-            if (!isSmallGroup) {
-                poolLabel = "активних";
-            }
-            int poolSize = isSmallGroup ? totalInWorld : activePlayers.size();
+        } else if (bedEnterer != null) {
+            int remaining = required - (int) sleepingCount;
+            String poolLabel = totalActive == 1 ? "активного гравця" : "активних гравців";
             Bukkit.broadcastMessage(ChatColor.YELLOW + "🛏 " + ChatColor.WHITE + 
-                bedEnterer.getName() + " ліг спати. Потрібно ще " + (required - sleepingCount) + " (всього " + required + " з " + poolSize + " " + poolLabel + ").");
+                bedEnterer.getName() + " ліг спати. Потрібно ще " + remaining + " (всього " + required + " з " + totalActive + " " + poolLabel + ").");
         }
     }
 }
