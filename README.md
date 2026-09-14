@@ -144,6 +144,7 @@
 | `/mail send <гравець> <текст>` | Надіслати офлайн-повідомлення гравцю | Усі |
 | `/mail read` | Прочитати отримані вхідні повідомлення | Усі |
 | `/togglerestart` | Увімкнути/вимкнути для себе сповіщення про авторестарт | Усі |
+| `/afk [причина]` | Ввійти або вийти з режиму AFK (захист від мобів, не блокує сон іншим) | Усі |
 
 ### Slash-команди в Discord:
 | Команда | Опис | Доступ |
@@ -296,6 +297,7 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 | `/mail send <player> <text>` | Send an offline message to a player | Everyone |
 | `/mail read` | View received offline mail | Everyone |
 | `/togglerestart` | Toggle auto-restart countdown messages on or off | Everyone |
+| `/afk [reason]` | Toggle AFK status manually (mob invulnerable, never blocks night skip) | Everyone |
 
 ### Discord Slash Commands:
 | Command | Description | Permission |
