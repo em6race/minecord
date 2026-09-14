@@ -203,7 +203,7 @@ public class BloodmoonMode implements FunMode, Listener {
         blockBeds = plugin.getConfig().getBoolean("fun.modes.bloodmoon.block_beds", true);
         redSkyEffects = plugin.getConfig().getBoolean("fun.modes.bloodmoon.red_sky_effects", true);
         hordesEnabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.hordes_enabled", true);
-        hordeIntervalSeconds = plugin.getConfig().getInt("fun.modes.bloodmoon.horde_interval_seconds", 120);
+        hordeIntervalSeconds = plugin.getConfig().getInt("fun.modes.bloodmoon.horde_interval_seconds", 90);
         discordAnnouncements = plugin.getConfig().getBoolean("fun.modes.bloodmoon.discord_announcements", true);
         weakenMobsOnEnd = plugin.getConfig().getBoolean("fun.modes.bloodmoon.weaken_mobs_on_end", true);
 

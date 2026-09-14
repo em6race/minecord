@@ -314,7 +314,7 @@ fun:
       # Чи спавнити періодичні орди агресивних мобів біля гравців
       hordes_enabled: true
       # Інтервал між спавном орд (у секундах)
-      horde_interval_seconds: 120
+      horde_interval_seconds: 90
       # Чи надсилати ембеди про початок та кінець ночі в Discord
       discord_announcements: true
       # Чи ослабляти монстрів, що залишились після закінчення ночі
