@@ -63,7 +63,8 @@ public class BloodmoonMode implements FunMode, Listener {
     private boolean blockBeds = true;
     private boolean redSkyEffects = true;
     private boolean hordesEnabled = true;
-    private int hordeIntervalSeconds = 120;
+    private int hordeIntervalSeconds = 90;
+    private final Map<UUID, Long> nextHordeTimeByPlayer = new ConcurrentHashMap<>();
     private boolean discordAnnouncements = true;
     private int durationMinutes = 10;
     private int durationSeconds = 600;
@@ -654,7 +655,7 @@ public class BloodmoonMode implements FunMode, Listener {
                 }
 
                 // 6. Зняти шоломи з нежиті, щоб ранкове сонце спалювало їх на поверхні
-                if (entity instanceof Zombie || entity instanceof Skeleton) {
+                if (entity instanceof Zombie || entity instanceof Skeleton || entity instanceof AbstractSkeleton) {
                     EntityEquipment eq = entity.getEquipment();
                     if (eq != null && eq.getHelmet() != null) {
                         eq.setHelmet(null);
@@ -775,9 +776,99 @@ public class BloodmoonMode implements FunMode, Listener {
         }
     }
 
+    private enum HordeArchetype {
+        CHAOS_AMBUSH(
+                "§4§l☠ §cОрда Кривавого Місяця атакує вас! §4§l☠",
+                Sound.EVENT_RAID_HORN, 1.0f, 0.85f
+        ),
+        SPIDER_SWARM(
+                "§4§l🕸 §cНавала отруйних павуків оточує вас! §4§l🕸",
+                Sound.ENTITY_SPIDER_AMBIENT, 1.4f, 0.7f
+        ),
+        UNDEAD_LEGION(
+                "§4§l⚔ §cБроньований Легіон Нежиті йде на штурм! §4§l⚔",
+                Sound.ITEM_ARMOR_EQUIP_NETHERITE, 1.0f, 0.7f
+        ),
+        SAPPER_SQUAD(
+                "§4§l💣 §cУВАГА: Прорив підривного загону кріперів! §4§l💣",
+                Sound.ENTITY_CREEPER_PRIMED, 1.3f, 0.8f
+        ),
+        NETHER_VANGUARD(
+                "§4§l🔥 §cПЕКЕЛЬНИЙ ПРОРИВ: Авангард Безодні насувається! §4§l🔥",
+                Sound.ENTITY_WITHER_SKELETON_AMBIENT, 1.3f, 0.6f
+        );
+
+        private final String title;
+        private final Sound sound;
+        private final float volume;
+        private final float pitch;
+
+        HordeArchetype(String title, Sound sound, float volume, float pitch) {
+            this.title = title;
+            this.sound = sound;
+            this.volume = volume;
+            this.pitch = pitch;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void playSound(Player player) {
+            if (player != null && player.isOnline()) {
+                player.playSound(player.getLocation(), sound, volume, pitch);
+            }
+        }
+    }
+
+    private EntityType pickHordeMobType(HordeArchetype archetype, BloodmoonTier tier) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        switch (archetype) {
+            case SPIDER_SWARM -> {
+                return (rnd.nextInt(100) < 45) ? EntityType.CAVE_SPIDER : EntityType.SPIDER;
+            }
+            case UNDEAD_LEGION -> {
+                int r = rnd.nextInt(100);
+                if (r < 35) return EntityType.ZOMBIE;
+                if (r < 65) return EntityType.SKELETON;
+                if (r < 85) return EntityType.HUSK;
+                return EntityType.STRAY;
+            }
+            case SAPPER_SQUAD -> {
+                return (rnd.nextInt(100) < 65) ? EntityType.CREEPER : EntityType.ZOMBIE;
+            }
+            case NETHER_VANGUARD -> {
+                int r = rnd.nextInt(100);
+                if (r < 50) return EntityType.WITHER_SKELETON;
+                if (r < 85) return EntityType.ZOMBIFIED_PIGLIN;
+                return EntityType.CREEPER;
+            }
+            default -> { // CHAOS_AMBUSH
+                int r = rnd.nextInt(100);
+                if (r < 30) return EntityType.ZOMBIE;
+                if (r < 55) return EntityType.SKELETON;
+                if (r < 75) return EntityType.SPIDER;
+                if (r < 90) return EntityType.CREEPER;
+                return rnd.nextBoolean() ? EntityType.HUSK : EntityType.STRAY;
+            }
+        }
+    }
+
     private void startHordes() {
         stopHordes();
         if (!hordesEnabled) return;
+
+        nextHordeTimeByPlayer.clear();
+        long now = System.currentTimeMillis();
+        long baseIntervalMs = Math.max(30, hordeIntervalSeconds) * 1000L;
+
+        if (activeWorld != null) {
+            for (Player p : activeWorld.getPlayers()) {
+                // Індивідуальний випадковий час першої атаки для кожного гравця (від 20 до 75 сек)
+                long initialDelay = ThreadLocalRandom.current().nextLong(20000L, Math.max(25000L, (long) (baseIntervalMs * 0.85)));
+                nextHordeTimeByPlayer.put(p.getUniqueId(), now + initialDelay);
+            }
+        }
 
         hordeTask = new BukkitRunnable() {
             @Override
@@ -787,7 +878,7 @@ public class BloodmoonMode implements FunMode, Listener {
                     return;
                 }
 
-                // Захист від лагів: якщо TPS < 18.0, пропускаємо хвилю
+                // Захист від лагів: якщо TPS < 18.0, тимчасово пропускаємо спавн орд
                 double currentTps = 20.0;
                 try {
                     currentTps = Bukkit.getServer().getTPS()[0];
@@ -796,16 +887,43 @@ public class BloodmoonMode implements FunMode, Listener {
                     return;
                 }
 
-                List<Player> players = new ArrayList<>(activeWorld.getPlayers());
-                if (players.isEmpty()) return;
+                long current = System.currentTimeMillis();
+                for (Player player : activeWorld.getPlayers()) {
+                    if (player == null || !player.isOnline()) {
+                        continue;
+                    }
+                    if (player.getGameMode() != org.bukkit.GameMode.SURVIVAL && player.getGameMode() != org.bukkit.GameMode.ADVENTURE) {
+                        continue;
+                    }
 
-                for (Player target : players) {
-                    if (target.getGameMode() == org.bukkit.GameMode.SURVIVAL || target.getGameMode() == org.bukkit.GameMode.ADVENTURE) {
-                        spawnHordeNearPlayer(target);
+                    Long scheduledTime = nextHordeTimeByPlayer.get(player.getUniqueId());
+                    if (scheduledTime == null) {
+                        // Гравець щойно зайшов у світ або перемкнув режим виживання
+                        long delay = ThreadLocalRandom.current().nextLong(25000L, Math.max(30000L, (long) (baseIntervalMs * 0.75)));
+                        nextHordeTimeByPlayer.put(player.getUniqueId(), current + delay);
+                        continue;
+                    }
+
+                    if (player.isDead()) {
+                        // Якщо гравець мертвий, відкладаємо орду на 15 секунд після відродження
+                        nextHordeTimeByPlayer.put(player.getUniqueId(), current + 15000L);
+                        continue;
+                    }
+
+                    if (current >= scheduledTime) {
+                        // Спавн персональної випадкової орди для цього гравця
+                        spawnHordeNearPlayer(player);
+
+                        // Індивідуальний рандомний інтервал для наступної орди (від 65% до 135% від базового часу)
+                        // При базі 90 с: діапазон становить від 58 до 122 секунд персонально!
+                        long minDelay = (long) (baseIntervalMs * 0.65);
+                        long maxDelay = (long) (baseIntervalMs * 1.35);
+                        long nextDelay = ThreadLocalRandom.current().nextLong(minDelay, maxDelay + 1);
+                        nextHordeTimeByPlayer.put(player.getUniqueId(), current + nextDelay);
                     }
                 }
             }
-        }.runTaskTimer(plugin, hordeIntervalSeconds * 20L, hordeIntervalSeconds * 20L);
+        }.runTaskTimer(plugin, 40L, 40L); // кожні 2 секунди
     }
 
     private void stopHordes() {
@@ -813,12 +931,17 @@ public class BloodmoonMode implements FunMode, Listener {
             hordeTask.cancel();
             hordeTask = null;
         }
+        nextHordeTimeByPlayer.clear();
     }
 
     /**
      * Знаходить безпечну точку для спавну мобів/боса на рівні гравця (в кімнаті, печері або на поверхні).
      */
     private Location findSafeSpawnLocation(Location center, double minRadius, double maxRadius, int heightRequired) {
+        return findSafeSpawnLocation(center, minRadius, maxRadius, heightRequired, 0.0, Math.PI * 2);
+    }
+
+    private Location findSafeSpawnLocation(Location center, double minRadius, double maxRadius, int heightRequired, double baseAngle, double angleSpread) {
         World world = center.getWorld();
         if (world == null) return null;
 
@@ -826,7 +949,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
         // 1. Пошук підлоги на рівні гравця (+3 до -6 блоків)
         for (int attempt = 0; attempt < 25; attempt++) {
-            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double angle = baseAngle + (ThreadLocalRandom.current().nextDouble() - 0.5) * angleSpread;
             double dist = ThreadLocalRandom.current().nextDouble(minRadius, maxRadius);
             int x = center.getBlockX() + (int) (Math.cos(angle) * dist);
             int z = center.getBlockZ() + (int) (Math.sin(angle) * dist);
@@ -858,7 +981,7 @@ public class BloodmoonMode implements FunMode, Listener {
         int highestY = world.getHighestBlockYAt(center.getBlockX(), center.getBlockZ());
         if (Math.abs(highestY - playerY) <= 8) {
             for (int attempt = 0; attempt < 10; attempt++) {
-                double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+                double angle = baseAngle + (ThreadLocalRandom.current().nextDouble() - 0.5) * angleSpread;
                 double dist = ThreadLocalRandom.current().nextDouble(minRadius, maxRadius);
                 int x = center.getBlockX() + (int) (Math.cos(angle) * dist);
                 int z = center.getBlockZ() + (int) (Math.sin(angle) * dist);
@@ -886,23 +1009,66 @@ public class BloodmoonMode implements FunMode, Listener {
         if (player == null || !player.isOnline()) return;
 
         Location pLoc = player.getLocation();
-        int count = ThreadLocalRandom.current().nextInt(currentTier.getHordeMin(), currentTier.getHordeMax() + 1);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+
+        int count = rnd.nextInt(currentTier.getHordeMin(), currentTier.getHordeMax() + 1);
+        int modifierRoll = rnd.nextInt(100);
+        String modifierSuffix = "";
+        boolean isBlitz = false;
+
+        if (modifierRoll < 15) {
+            // Масивна хвиля (+35% мобів)
+            count = (int) Math.round(count * 1.35);
+            modifierSuffix = " §e(Велика хвиля!)";
+        } else if (modifierRoll < 30) {
+            // Бліц-напад (менше мобів, але вони швидкі)
+            count = Math.max(3, (int) Math.round(count * 0.75));
+            modifierSuffix = " §b(Бліц-атака!)";
+            isBlitz = true;
+        }
 
         hordesSpawned++;
         saveState();
 
-        player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize("§4§l[!] §cОрда Кривавого Місяця атакує вас! §4§l[!]"));
-        player.playSound(pLoc, Sound.EVENT_RAID_HORN, 1.0f, 0.8f);
+        // Вибір випадкового архетипу
+        int archRoll = rnd.nextInt(100);
+        HordeArchetype archetype;
+        if (currentTier.getLevel() >= 2 && archRoll < 15) {
+            archetype = HordeArchetype.NETHER_VANGUARD;
+        } else if (archRoll < 35) {
+            archetype = HordeArchetype.SPIDER_SWARM;
+        } else if (archRoll < 55) {
+            archetype = HordeArchetype.UNDEAD_LEGION;
+        } else if (archRoll < 70) {
+            archetype = HordeArchetype.SAPPER_SQUAD;
+        } else {
+            archetype = HordeArchetype.CHAOS_AMBUSH;
+        }
 
-        EntityType[] possibleTypes = {EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER, EntityType.CREEPER};
+        player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(archetype.getTitle() + modifierSuffix));
+        archetype.playSound(player);
+
+        // Тактика появи: 50% шанс на спавн у кліщі (з двох протилежних боків)
+        boolean pincerAttack = rnd.nextBoolean();
+        double baseAngle = rnd.nextDouble() * Math.PI * 2;
+        Location locA = findSafeSpawnLocation(pLoc, 7.0, 15.0, 2, baseAngle, Math.PI * 0.7);
+        Location locB = pincerAttack ? findSafeSpawnLocation(pLoc, 7.0, 15.0, 2, baseAngle + Math.PI, Math.PI * 0.7) : null;
+        if (locA == null) {
+            locA = pLoc.clone().add(rnd.nextDouble(-4, 4), 0, rnd.nextDouble(-4, 4));
+        }
+        if (pincerAttack && locB == null) {
+            locB = locA;
+        }
 
         for (int i = 0; i < count; i++) {
-            Location spawnLoc = findSafeSpawnLocation(pLoc, 6.0, 14.0, 2);
-            if (spawnLoc == null) {
-                spawnLoc = pLoc.clone().add(ThreadLocalRandom.current().nextDouble(-3, 3), 0, ThreadLocalRandom.current().nextDouble(-3, 3));
+            Location spawnLoc;
+            if (pincerAttack && i % 2 == 1 && locB != null) {
+                spawnLoc = locB.clone().add(rnd.nextDouble(-1.5, 1.5), 0, rnd.nextDouble(-1.5, 1.5));
+            } else {
+                spawnLoc = locA.clone().add(rnd.nextDouble(-1.5, 1.5), 0, rnd.nextDouble(-1.5, 1.5));
             }
 
-            EntityType type = possibleTypes[ThreadLocalRandom.current().nextInt(possibleTypes.length)];
+            EntityType type = pickHordeMobType(archetype, currentTier);
             Entity entity = player.getWorld().spawnEntity(spawnLoc, type, CreatureSpawnEvent.SpawnReason.CUSTOM);
             if (entity instanceof Monster monster) {
                 buffMonster(monster, currentTier);
@@ -910,6 +1076,29 @@ public class BloodmoonMode implements FunMode, Listener {
                 AttributeInstance followAttr = monster.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
                 if (followAttr != null) {
                     followAttr.setBaseValue(40.0);
+                }
+                if (isBlitz) {
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 45 * 20, 1, false, false));
+                }
+                if (archetype == HordeArchetype.SPIDER_SWARM && monster instanceof Spider) {
+                    monster.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 60 * 20, 1, false, false));
+                }
+                if (entity instanceof PigZombie pz) {
+                    pz.setAngry(true);
+                    pz.setAnger(9999);
+                    pz.setTarget(player);
+                }
+            }
+        }
+
+        // Рідкісна підтримка Відьми (15% шанс)
+        if (rnd.nextInt(100) < 15) {
+            Location witchLoc = findSafeSpawnLocation(pLoc, 8.0, 16.0, 2);
+            if (witchLoc != null) {
+                Entity witchEnt = player.getWorld().spawnEntity(witchLoc, EntityType.WITCH, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                if (witchEnt instanceof Monster witch) {
+                    buffMonster(witch, currentTier);
+                    witch.setTarget(player);
                 }
             }
         }
@@ -922,15 +1111,15 @@ public class BloodmoonMode implements FunMode, Listener {
             default -> 20;
         };
 
-        if (ThreadLocalRandom.current().nextInt(100) < bomberChance) {
+        if (rnd.nextInt(100) < bomberChance) {
             int maxBombers = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : 1);
-            int bomberCount = ThreadLocalRandom.current().nextInt(1, maxBombers + 1);
+            int bomberCount = rnd.nextInt(1, maxBombers + 1);
 
             for (int b = 0; b < bomberCount; b++) {
                 Location skyLoc = pLoc.clone().add(
-                        ThreadLocalRandom.current().nextDouble(-10, 10),
-                        ThreadLocalRandom.current().nextDouble(12, 18),
-                        ThreadLocalRandom.current().nextDouble(-10, 10)
+                        rnd.nextDouble(-12, 12),
+                        rnd.nextDouble(12, 18),
+                        rnd.nextDouble(-12, 12)
                 );
                 spawnPhantomBomber(skyLoc, player, currentTier);
             }
@@ -942,7 +1131,7 @@ public class BloodmoonMode implements FunMode, Listener {
         }
 
         // Перевірка на спавн міні-боса
-        if (currentTier.getBossChancePercent() > 0 && ThreadLocalRandom.current().nextDouble(100.0) < currentTier.getBossChancePercent()) {
+        if (currentTier.getBossChancePercent() > 0 && rnd.nextDouble(100.0) < currentTier.getBossChancePercent()) {
             spawnBossNearPlayer(player);
         }
     }
