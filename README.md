@@ -1,7 +1,7 @@
 # MineCord 🎮💬
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lines_of_Code-6.5k-blue?style=flat-square&logo=java&logoColor=white" alt="Lines of Code">
+  <img src="https://img.shields.io/badge/Lines_of_Code-7.5k-blue?style=flat-square&logo=java&logoColor=white" alt="Lines of Code">
   <img src="https://img.shields.io/badge/Platform-Paper%20%2F%20Purpur%2026.2%2B-orange?style=flat-square&logo=minecraft&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
 </p>
@@ -118,6 +118,12 @@
 * **Безголові поршні**: Розблоковано створення headless pistons (`allow-headless-pistons: true`).
 * **Дюп падаючих блоків**: Портали в Енд дозволяють класичний дюп піску, гравію та бетону для масштабних будівельних ферм (`allow-unsafe-end-portal-teleportation: true`).
 * **Дюп динаміту (TNT) та рейок**: Поршневе копіювання активованого TNT для кар'єрів та тунелебудівників повністю працює (`allow-piston-duplication: true`).
+
+### 13. ⚡ Кастомні розширені механіки (Fun Modes)
+* **Тягун без дощу (Riptide without Rain)**: Можливість запускатися тризубцем із чарами Тягун на суші без води й дощу. Включає захист від падіння на перше приземлення та повний захист пасажирів човна/коня від випадкового дружнього вогню. *(Для плавної швидкості провантаження чанків під час польотів на елітрах рекомендується вчасно рестартувати сервер за розкладом)*.
+* **Розумне ковадло (Smart Anvil)**: Знімає штучне ванільне обмеження 40 рівнів («Занадто дорого!»), дозволяючи ремонтувати та покращувати предмети будь-яку кількість разів.
+* **Списи без голоду (Spear No Hunger)**: Усі види списів не витрачають очки голоду та виснаження гравця.
+* **Ріг достатку (Horn of Plenty)**: Використання козиного рогу відновлює ситість та накладає ефекти насичення.
 
 ---
 
@@ -271,6 +277,12 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 * **Headless Pistons**: Retaining headless pistons enabled for tech machinery (`allow-headless-pistons: true`).
 * **Falling Block Duplication**: End portals allow vanilla sand, gravel, and concrete powder duping for large-scale farms (`allow-unsafe-end-portal-teleportation: true`).
 * **TNT & Rail Duplication**: Piston duplication for primed TNT and rails is fully supported for tunnel bores and world eaters (`allow-piston-duplication: true`).
+
+### 13. ⚡ Extended Custom Mechanics (Fun Modes)
+* **Riptide without Rain**: Launch yourself with Riptide-enchanted tridents on dry land without rain or water. Features fall-damage protection on initial landing and friendly-fire protection for boat/horse passengers. *(Regular server restarts are recommended to ensure seamless chunk loading during high-speed elytra flights)*.
+* **Smart Anvil**: Removes the vanilla 40-level limit ("Too Expensive!"), allowing items to be repaired and combined infinitely.
+* **Spear No Hunger**: All spear types do not consume player hunger or exhaustion points.
+* **Horn of Plenty (Cornucopia)**: Sounding the goat horn restores player hunger and applies saturation.
 
 ---
 

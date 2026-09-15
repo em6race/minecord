@@ -14,3 +14,4 @@ __pycache__/
 *.local*
 *.secrets*
 scripts/
+graphify-out/
