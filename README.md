@@ -333,10 +333,11 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 2. Place the jar file in your server's `plugins/` directory.
 3. Start or restart the server to generate `plugins/MineCord/config.yml`.
 4. Configure `config.yml`:
-   * `discord.token` — Discord Bot Token;
+   * `discord.token` — Discord Bot Token (from Discord Developer Portal);
    * `discord.chat-channel-id` — Channel ID for cross-chat;
    * `discord.console-channel-id` — Private channel ID for remote console;
-   * `discord.webhook-url` — Discord webhook URL for player avatars;
+   * `discord.guild-id` — Discord Server (Guild) ID;
+   *(Note: Discord Webhook for player avatars is created automatically by the bot — just ensure the bot role has the `Manage Webhooks` permission in the chat channel!)*
 5. Run `/minecord reload` or restart your server.
 
 ---
