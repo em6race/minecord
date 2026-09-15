@@ -282,6 +282,10 @@ fun:
   modes:
     # 1. Тягун без дощу (Riptide without rain)
     # Дозволяє запускатися тризубцем з чарами Тягун на суші без води та дощу
+    # NOTE: It is recommended to enable flight in server.properties (allow-flight=true) or disable
+    # flight checks. If flight checks are active (allow-flight=false), high-speed elytra flight with
+    # trident boosts may trigger server position corrections ("moved wrongly!"), packet flooding,
+    # and severe ping spikes for players.
     riptide_no_rain:
       enabled: true
       # Затримка між ривками у тіках (20 тіків = 1 секунда)
