@@ -123,7 +123,6 @@
 * **Тягун без дощу (Riptide without Rain)**: Можливість запускатися тризубцем із чарами Тягун на суші без води й дощу. Включає захист від падіння на перше приземлення та повний захист пасажирів човна/коня від випадкового дружнього вогню. *(Для плавної швидкості провантаження чанків під час польотів на елітрах рекомендується вчасно рестартувати сервер за розкладом)*.
 * **Розумне ковадло (Smart Anvil)**: Знімає штучне ванільне обмеження 40 рівнів («Занадто дорого!»), дозволяючи ремонтувати та покращувати предмети будь-яку кількість разів.
 * **Списи без голоду (Spear No Hunger)**: Усі види списів не витрачають очки голоду та виснаження гравця.
-* **Ріг достатку (Horn of Plenty)**: Використання козиного рогу відновлює ситість та накладає ефекти насичення.
 
 ---
 
@@ -282,7 +281,6 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 * **Riptide without Rain**: Launch yourself with Riptide-enchanted tridents on dry land without rain or water. Features fall-damage protection on initial landing and friendly-fire protection for boat/horse passengers. *(Regular server restarts are recommended to ensure seamless chunk loading during high-speed elytra flights)*.
 * **Smart Anvil**: Removes the vanilla 40-level limit ("Too Expensive!"), allowing items to be repaired and combined infinitely.
 * **Spear No Hunger**: All spear types do not consume player hunger or exhaustion points.
-* **Horn of Plenty (Cornucopia)**: Sounding the goat horn restores player hunger and applies saturation.
 
 ---
 
