@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 
 /**
  * Режим: Кривавий Місяць (Bloodmoon Mode).
@@ -1713,7 +1714,7 @@ public class BloodmoonMode implements FunMode, Listener {
         try {
             yaml.save(file);
         } catch (IOException e) {
-            plugin.getLogger().warning("[BloodmoonMode] Не вдалося зберегти bloodmoon_state.yml: " + e.getMessage());
+            plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Не вдалося зберегти bloodmoon_state.yml", e);
         }
     }
 
@@ -1842,10 +1843,10 @@ public class BloodmoonMode implements FunMode, Listener {
             eb.setFooter("MineCord Bloodmoon Event");
 
             channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
-                plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду початку в Discord API: " + err.getMessage());
+                plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду початку в Discord API", err);
             });
         } catch (Throwable t) {
-            plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду початку в Discord: " + t.getMessage());
+            plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду початку в Discord", t);
         }
     }
 
@@ -1871,10 +1872,10 @@ public class BloodmoonMode implements FunMode, Listener {
             eb.setFooter("MineCord Bloodmoon Event");
 
             channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
-                plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду світанку в Discord API: " + err.getMessage());
+                plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду світанку в Discord API", err);
             });
         } catch (Throwable t) {
-            plugin.getLogger().warning("[BloodmoonMode] Помилка надсилання ембеду світанку в Discord: " + t.getMessage());
+            plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду світанку в Discord", t);
         }
     }
 
