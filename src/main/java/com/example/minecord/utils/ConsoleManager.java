@@ -182,9 +182,12 @@ public class ConsoleManager {
                     embed.setTitle("⚠️ Помилка Плагіну!");
                     embed.setColor(0xFF0000);
                     
+                    final String safeTitle;
                     if (title != null && !title.isEmpty()) {
-                        if (title.length() > 256) title = title.substring(0, 253) + "...";
-                        embed.addField("Опис", title, false);
+                        safeTitle = title.length() > 256 ? title.substring(0, 253) + "..." : title;
+                        embed.addField("Опис", safeTitle, false);
+                    } else {
+                        safeTitle = "Невідома помилка";
                     }
                     
                     if (stackTrace != null && !stackTrace.isEmpty()) {
@@ -196,7 +199,7 @@ public class ConsoleManager {
                     }
                     
                     channel.sendMessageEmbeds(embed.build()).queue(null, (err) -> {
-                        channel.sendMessage("⚠️ **Помилка:** " + (title != null ? title : "Невідома помилка")).queue(null, (e) -> {});
+                        channel.sendMessage("⚠️ **Помилка:** " + safeTitle).queue(null, (e) -> {});
                     });
                 }
             }
