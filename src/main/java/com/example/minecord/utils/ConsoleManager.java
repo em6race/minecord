@@ -173,29 +173,35 @@ public class ConsoleManager {
     }
 
     private void sendErrorEmbed(String title, String stackTrace) {
-        String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
-        if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null && consoleChannelId != null) {
-            TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
-            if (channel != null) {
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                embed.setTitle("⚠️ Помилка Плагіну!");
-                embed.setColor(0xFF0000);
-                
-                if (title != null && !title.isEmpty()) {
-                    if (title.length() > 256) title = title.substring(0, 253) + "...";
-                    embed.addField("Опис", title, false);
-                }
-                
-                if (stackTrace != null && !stackTrace.isEmpty()) {
-                    String cleanTrace = org.bukkit.ChatColor.stripColor(stackTrace);
-                    if (cleanTrace.length() > 3900) {
-                        cleanTrace = cleanTrace.substring(0, 3900) + "\n... (зрізано)";
+        try {
+            String consoleChannelId = plugin.getConfig().getString("discord.console-channel-id");
+            if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null && consoleChannelId != null) {
+                TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(consoleChannelId);
+                if (channel != null) {
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    embed.setTitle("⚠️ Помилка Плагіну!");
+                    embed.setColor(0xFF0000);
+                    
+                    if (title != null && !title.isEmpty()) {
+                        if (title.length() > 256) title = title.substring(0, 253) + "...";
+                        embed.addField("Опис", title, false);
                     }
-                    embed.setDescription("```java\n" + cleanTrace + "\n```");
+                    
+                    if (stackTrace != null && !stackTrace.isEmpty()) {
+                        String cleanTrace = org.bukkit.ChatColor.stripColor(stackTrace);
+                        if (cleanTrace.length() > 3900) {
+                            cleanTrace = cleanTrace.substring(0, 3900) + "\n... (зрізано)";
+                        }
+                        embed.setDescription("```java\n" + cleanTrace + "\n```");
+                    }
+                    
+                    channel.sendMessageEmbeds(embed.build()).queue(null, (err) -> {
+                        channel.sendMessage("⚠️ **Помилка:** " + (title != null ? title : "Невідома помилка")).queue(null, (e) -> {});
+                    });
                 }
-                
-                channel.sendMessageEmbeds(embed.build()).queue();
             }
+        } catch (Throwable ignored) {
+            // Failsafe in case JDA classes or embed construction fail
         }
     }
 
