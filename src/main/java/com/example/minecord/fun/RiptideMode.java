@@ -37,7 +37,9 @@ public class RiptideMode implements FunMode, Listener {
     private final MineCord plugin;
     private boolean enabled = true;
     private int cooldownTicks = 15;
+    private int elytraCooldownTicks = 30;
     private double velocityMultiplier = 1.0;
+    private double elytraMaxSpeed = 1.8;
     private boolean preventFallDamage = true;
     private boolean damageEntities = true;
     private double damageAmount = 8.0;
@@ -96,7 +98,9 @@ public class RiptideMode implements FunMode, Listener {
     private void reloadConfig() {
         enabled = plugin.getConfig().getBoolean("fun.modes.riptide_no_rain.enabled", true);
         cooldownTicks = plugin.getConfig().getInt("fun.modes.riptide_no_rain.cooldown_ticks", 15);
+        elytraCooldownTicks = plugin.getConfig().getInt("fun.modes.riptide_no_rain.elytra_cooldown_ticks", 30);
         velocityMultiplier = plugin.getConfig().getDouble("fun.modes.riptide_no_rain.velocity_multiplier", 1.0);
+        elytraMaxSpeed = plugin.getConfig().getDouble("fun.modes.riptide_no_rain.elytra_max_speed", 1.8);
         preventFallDamage = plugin.getConfig().getBoolean("fun.modes.riptide_no_rain.prevent_fall_damage", true);
         damageEntities = plugin.getConfig().getBoolean("fun.modes.riptide_no_rain.damage_entities", true);
         damageAmount = plugin.getConfig().getDouble("fun.modes.riptide_no_rain.damage_amount", 8.0);
@@ -140,8 +144,12 @@ public class RiptideMode implements FunMode, Listener {
         event.setCancelled(true);
 
         // 1. Обчислюємо та задаємо швидкість ривка
+        boolean isGliding = player.isGliding();
         Vector direction = player.getLocation().getDirection().normalize();
         double speed = (1.25 + 0.65 * riptideLevel) * velocityMultiplier;
+        if (isGliding && elytraMaxSpeed > 0) {
+            speed = Math.min(speed, elytraMaxSpeed);
+        }
         player.setVelocity(direction.multiply(speed));
 
         // 2. Звуковий ефект
@@ -183,9 +191,10 @@ public class RiptideMode implements FunMode, Listener {
             }
         }
 
-        // 5. Встановлення кулдауну
-        if (cooldownTicks > 0) {
-            player.setCooldown(Material.TRIDENT, cooldownTicks);
+        // 5. Встановлення кулдауну (на елітрах використовується окремий кулдаун для запобігання спаму)
+        int activeCooldown = isGliding ? Math.max(cooldownTicks, elytraCooldownTicks) : cooldownTicks;
+        if (activeCooldown > 0) {
+            player.setCooldown(Material.TRIDENT, activeCooldown);
         }
 
         // 6. Захист від падіння
