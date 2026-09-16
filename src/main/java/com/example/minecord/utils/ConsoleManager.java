@@ -18,11 +18,17 @@ import java.util.logging.LogRecord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+
 public class ConsoleManager {
     private final MineCord plugin;
     private final List<String> logBuffer = new ArrayList<>();
     private int taskId = -1;
     private Handler logHandler;
+    private MineCordLog4jAppender log4jAppender;
+    private boolean usingLog4j = false;
 
     public ConsoleManager(MineCord plugin) {
         this.plugin = plugin;
@@ -34,44 +40,47 @@ public class ConsoleManager {
             return;
         }
 
+        try {
+            log4jAppender = new MineCordLog4jAppender(this::handleLog4jEvent);
+            log4jAppender.start();
+            Logger rootLogger = (Logger) LogManager.getRootLogger();
+            rootLogger.addAppender(log4jAppender);
+            usingLog4j = true;
+            plugin.getLogger().info("[ConsoleManager] Успішно підключено Log4j2 перехоплювач (підтримка SLF4J / BlueMap).");
+        } catch (Throwable t) {
+            plugin.getLogger().warning("[ConsoleManager] Не вдалося підключити Log4j2 (" + t.getMessage() + "), використовуємо fallback JUL.");
+            setupJulHandler();
+        }
+
+        taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this::flushLogsAsync, 20L, 20L);
+    }
+
+    private void handleLog4jEvent(LogEvent event) {
+        String loggerName = event.getLoggerName();
+        // Ignore internal JDA verbose logs
+        if (loggerName != null && loggerName.startsWith("net.dv8tion.jda")) {
+            if (event.getLevel().isLessSpecificThan(org.apache.logging.log4j.Level.WARN)) {
+                return;
+            }
+        }
+
+        String msg = event.getMessage() != null ? event.getMessage().getFormattedMessage() : "";
+        if (msg == null || msg.trim().isEmpty()) {
+            return;
+        }
+
+        String level = event.getLevel() != null ? event.getLevel().name() : "INFO";
+        processLogEntry(level, msg, event.getThrown());
+    }
+
+    private void setupJulHandler() {
         logHandler = new Handler() {
             @Override
             public void publish(LogRecord record) {
-                
                 String msg = record.getMessage();
                 if (msg != null && !msg.isEmpty()) {
-                    synchronized (logBuffer) {
-                        logBuffer.add("[" + record.getLevel().getName() + "] " + msg);
-                        if (record.getThrown() != null) {
-                            StringWriter sw = new StringWriter();
-                            record.getThrown().printStackTrace(new PrintWriter(sw));
-                            String[] lines = sw.toString().split("\n");
-                            for (int i = 0; i < Math.min(lines.length, 15); i++) {
-                                logBuffer.add(lines[i].replace("\r", ""));
-                            }
-                            if (lines.length > 15) logBuffer.add("... (" + (lines.length - 15) + " more lines)");
-                        }
-                    }
-                }
-                
-                if (record.getThrown() != null && plugin.getConfig().getBoolean("technical.error-catcher.enabled", true)) {
-                    StringWriter sw = new StringWriter();
-                    record.getThrown().printStackTrace(new PrintWriter(sw));
-                    String stackTrace = sw.toString();
-                    
-                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                        String title = record.getLevel().getName() + ": " + (msg != null ? msg : record.getThrown().getMessage());
-                        if (title.length() > 200) title = title.substring(0, 197) + "...";
-                        sendErrorEmbed(title, stackTrace);
-                        
-                        if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
-                            try {
-                                io.sentry.Sentry.captureException(record.getThrown());
-                            } catch (Throwable ignored) {
-                                // Sentry library not available or ClassLoader conflict — ignore
-                            }
-                        }
-                    });
+                    String level = record.getLevel() != null ? record.getLevel().getName() : "INFO";
+                    processLogEntry(level, msg, record.getThrown());
                 }
             }
 
@@ -81,11 +90,44 @@ public class ConsoleManager {
             @Override
             public void close() throws SecurityException {}
         };
-        
+
         Bukkit.getLogger().addHandler(logHandler);
         java.util.logging.Logger.getLogger("").addHandler(logHandler);
+    }
 
-        taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this::flushLogsAsync, 20L, 20L);
+    private void processLogEntry(String level, String msg, Throwable thrown) {
+        synchronized (logBuffer) {
+            logBuffer.add("[" + level + "] " + msg);
+            if (thrown != null) {
+                StringWriter sw = new StringWriter();
+                thrown.printStackTrace(new PrintWriter(sw));
+                String[] lines = sw.toString().split("\n");
+                for (int i = 0; i < Math.min(lines.length, 15); i++) {
+                    logBuffer.add(lines[i].replace("\r", ""));
+                }
+                if (lines.length > 15) logBuffer.add("... (" + (lines.length - 15) + " more lines)");
+            }
+        }
+
+        if (thrown != null && plugin.getConfig().getBoolean("technical.error-catcher.enabled", true)) {
+            StringWriter sw = new StringWriter();
+            thrown.printStackTrace(new PrintWriter(sw));
+            String stackTrace = sw.toString();
+
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                String title = level + ": " + (msg != null ? msg : thrown.getMessage());
+                if (title.length() > 200) title = title.substring(0, 197) + "...";
+                sendErrorEmbed(title, stackTrace);
+
+                if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
+                    try {
+                        io.sentry.Sentry.captureException(thrown);
+                    } catch (Throwable ignored) {
+                        // Sentry library not available or ClassLoader conflict — ignore
+                    }
+                }
+            });
+        }
     }
 
     private void flushLogsAsync() {
@@ -215,9 +257,20 @@ public class ConsoleManager {
         try {
             flushLogsSync();
         } catch (Exception e) {}
+
+        if (usingLog4j && log4jAppender != null) {
+            try {
+                Logger rootLogger = (Logger) LogManager.getRootLogger();
+                rootLogger.removeAppender(log4jAppender);
+                log4jAppender.stop();
+            } catch (Throwable ignored) {}
+        }
+
         if (logHandler != null) {
-            Bukkit.getLogger().removeHandler(logHandler);
-            java.util.logging.Logger.getLogger("").removeHandler(logHandler);
+            try {
+                Bukkit.getLogger().removeHandler(logHandler);
+                java.util.logging.Logger.getLogger("").removeHandler(logHandler);
+            } catch (Throwable ignored) {}
         }
     }
 }
