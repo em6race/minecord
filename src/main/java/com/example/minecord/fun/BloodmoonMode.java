@@ -1189,6 +1189,10 @@ public class BloodmoonMode implements FunMode, Listener {
             boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, bDuration, speedAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, bDuration, strAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, bDuration, 0, false, false));
+            if (currentTier.getLevel() >= 4) {
+                // Помірна регенерація I (~0.4 HP/сек, як у Візера) — бос повільно загоює рани, якщо гравець відійшов, але вона не нескінченна в активному бою
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 0, false, false));
+            }
 
             EntityEquipment eq = boss.getEquipment();
             if (eq != null) {
@@ -1794,7 +1798,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Посилене спорядження: незеритовий та діамантовий захист!\n" +
                         "• Великі орди до 24 монстрів та швидкісні заряджені кріпери!\n" +
                         "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом!\n" +
-                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (550 HP)! Незеритовий захист, Сила II та свита вартових!\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (550 HP)! Незеритовий захист, Сила II, регенерація I та свита вартових!\n" +
                         "• За перемогу над босом: **Зірка Незеру, 2 Незеритові зливки, 2 Тотеми, 2 Яблука Нотча, 8-16 Алмазів та 5000 EXP**!\n\n" +
                         "⚰️ *Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
