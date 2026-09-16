@@ -451,28 +451,28 @@ public class BloodmoonMode implements FunMode, Listener {
         if (tier.getLevel() >= 4) {
             chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — [ФАЗА 4]! ☠\n" +
-                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ (450 HP) ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
+                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ (550 HP) ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
                     "  §c5x HP, незеритова броня, свита вартових та орди до 24 мобів!\n" +
                     "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else if (tier.getLevel() == 3) {
             chatMsg = "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
                     "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ — [ФАЗА 3]! 🔥\n" +
-                    "  §cАРХІДЕМОНИ СМЕРТІ (280 HP) ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
+                    "  §cАРХІДЕМОНИ СМЕРТІ (380 HP) ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
                     "  §c3.5x HP, діамантове спорядження, гігантські орди та заряджені кріпери!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕСЯ ДО БОЮ!\n" +
                     "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥";
         } else if (tier.getLevel() == 2) {
             chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН — [ФАЗА 2]! ☠\n" +
-                    "  §cВОЛОДАРІ БЕЗОДНІ (180 HP) ЗАХОПИЛИ СВІТ!\n" +
+                    "  §cВОЛОДАРІ БЕЗОДНІ (240 HP) ЗАХОПИЛИ СВІТ!\n" +
                     "  §c2.5x HP, діамантове спорядження, орди до 12 монстрів!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ ДО СВІТАНКУ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else {
             chatMsg = "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ — [ФАЗА 1]! 🩸\n" +
-                    "  §cКривавий Жнець (100 HP) та орди мерців вийшли на полювання!\n" +
+                    "  §cКривавий Жнець (120 HP) та орди мерців вийшли на полювання!\n" +
                     "  §c1.6x HP монстрів, залізне спорядження та бафи швидкості!\n" +
                     "  §4§lСПАВН МОБІВ ПІДВИЩЕНО! ЛІЖКА НЕ ПРАЦЮЮТЬ!\n" +
                     "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
@@ -1168,13 +1168,13 @@ public class BloodmoonMode implements FunMode, Listener {
 
             double bossHp;
             if (currentTier.getLevel() >= 4) {
-                bossHp = 450.0;
+                bossHp = 550.0;
             } else if (currentTier.getLevel() == 3) {
-                bossHp = 280.0;
+                bossHp = 380.0;
             } else if (currentTier.getLevel() == 2) {
-                bossHp = 180.0;
+                bossHp = 240.0;
             } else {
-                bossHp = 100.0;
+                bossHp = 120.0;
             }
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
@@ -1201,19 +1201,19 @@ public class BloodmoonMode implements FunMode, Listener {
 
                 if (currentTier.getLevel() >= 4) {
                     ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
-                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setHelmet(helm);
 
                     ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
-                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setChestplate(chest);
 
                     ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
-                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setLeggings(legs);
 
                     ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
-                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setBoots(boots);
 
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
@@ -1221,26 +1221,6 @@ public class BloodmoonMode implements FunMode, Listener {
                     weapon.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                     eq.setItemInMainHand(weapon);
                 } else if (currentTier.getLevel() == 3) {
-                    ItemStack helm = new ItemStack(Material.DIAMOND_HELMET);
-                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
-                    eq.setHelmet(helm);
-
-                    ItemStack chest = new ItemStack(Material.DIAMOND_CHESTPLATE);
-                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
-                    eq.setChestplate(chest);
-
-                    ItemStack legs = new ItemStack(Material.DIAMOND_LEGGINGS);
-                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
-                    eq.setLeggings(legs);
-
-                    ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS);
-                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
-                    eq.setBoots(boots);
-
-                    ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
-                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 2);
-                    eq.setItemInMainHand(weapon);
-                } else if (currentTier.getLevel() == 2) {
                     ItemStack helm = new ItemStack(Material.DIAMOND_HELMET);
                     helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setHelmet(helm);
@@ -1256,6 +1236,15 @@ public class BloodmoonMode implements FunMode, Listener {
                     ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS);
                     boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setBoots(boots);
+
+                    ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 2);
+                    eq.setItemInMainHand(weapon);
+                } else if (currentTier.getLevel() == 2) {
+                    eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
+                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 
                     ItemStack weapon = new ItemStack(Material.DIAMOND_SWORD);
                     weapon.addEnchantment(Enchantment.DAMAGE_ALL, 1);
@@ -1805,7 +1794,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Посилене спорядження: незеритовий та діамантовий захист!\n" +
                         "• Великі орди до 24 монстрів та швидкісні заряджені кріпери!\n" +
                         "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом!\n" +
-                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (450 HP)! Незеритовий захист, Сила II та свита вартових!\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (550 HP)! Незеритовий захист, Сила II та свита вартових!\n" +
                         "• За перемогу над босом: **Зірка Незеру, 2 Незеритові зливки, 2 Тотеми, 2 Яблука Нотча, 8-16 Алмазів та 5000 EXP**!\n\n" +
                         "⚰️ *Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
@@ -1816,7 +1805,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Діамантова броня та зброя!\n" +
                         "• Заряджені кріпери та невпинні орди до 18 монстрів!\n" +
                         "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із кріперами-камікадзе!\n" +
-                        "• Повстає **☠ Архідемон Смерті ☠** (280 HP, діамантова броня)!\n" +
+                        "• Повстає **☠ Архідемон Смерті ☠** (380 HP, діамантова броня)!\n" +
                         "• За перемогу над босом: **1-2 Незеритові скрапи, 3-5 Алмазів, Тотем, 30% Зірка Незеру та 2200 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
@@ -1826,7 +1815,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Монстри посилені у **2.5 рази** (2.5x HP, Сила I)!\n" +
                         "• Діамантове та залізне спорядження, орди до 12 монстрів!\n" +
                         "• ✈️ **Повітряні бомбардувальники:** фантоми з авіабомбами-кріперами на голові!\n" +
-                        "• Повстає **Володар Безодні** (180 HP, діамантова броня)!\n" +
+                        "• Повстає **Володар Безодні** (240 HP, діамантова броня)!\n" +
                         "• За перемогу над босом: **1 Незеритовий скрап, 2-3 Алмази, Золоте яблуко, Зливки та 1500 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
             } else {
@@ -1836,7 +1825,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Монстри отримали **1.6x здоров'я**, бафи Швидкості та Сили!\n" +
                         "• Орди монстрів до 8 створінь у залізному спорядженні!\n" +
                         "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами!\n" +
-                        "• Повстає бос **«Кривавий Жнець»** (100 HP, залізна броня)!\n" +
+                        "• Повстає бос **«Кривавий Жнець»** (120 HP, залізна броня)!\n" +
                         "• За перемогу над босом: **1-2 Алмази, Золоте яблуко, Зливки заліза/золота та 800 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
             }
