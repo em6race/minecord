@@ -26,6 +26,7 @@ repositories {
 dependencies {
     // Використовуємо Paper API замість Spigot API (Paper містить метод getTPS())
     compileOnly 'io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT'
+    compileOnly 'org.apache.logging.log4j:log4j-core:2.20.0'
     
     // Бібліотека JDA для роботи з Discord
     implementation('net.dv8tion:JDA:5.0.0-beta.21') {
