@@ -451,30 +451,30 @@ public class BloodmoonMode implements FunMode, Listener {
         if (tier.getLevel() >= 4) {
             chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — [ФАЗА 4]! ☠\n" +
-                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ (2500 HP) ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
-                    "  §c10x HP, незерит із шипами, свита вартових та орди до 36 мобів!\n" +
+                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ (450 HP) ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
+                    "  §c5x HP, незеритова броня, свита вартових та орди до 24 мобів!\n" +
                     "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else if (tier.getLevel() == 3) {
             chatMsg = "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥\n" +
                     "  §c§l🔥 НАСТАВ ПЕКЕЛЬНИЙ КАТАКЛІЗМ — [ФАЗА 3]! 🔥\n" +
-                    "  §cАРХІДЕМОНИ СМЕРТІ ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
-                    "  §c6.5x HP, незеритова броня, гігантські орди та заряджені кріпери!\n" +
+                    "  §cАРХІДЕМОНИ СМЕРТІ (280 HP) ВЕДУТЬ ВІЙСЬКА ПЕКЛА!\n" +
+                    "  §c3.5x HP, діамантове спорядження, гігантські орди та заряджені кріпери!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕСЯ ДО БОЮ!\n" +
                     "§c§l🔥━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔥";
         } else if (tier.getLevel() == 2) {
             chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ КРИВАВИЙ АРМАГЕДДОН — [ФАЗА 2]! ☠\n" +
-                    "  §cВОЛОДАРІ БЕЗОДНІ ТА ЗАХИСНІ ЧАРИ ЗАХОПИЛИ СВІТ!\n" +
-                    "  §c4.5x HP, діамантове спорядження, орди до 18 монстрів!\n" +
+                    "  §cВОЛОДАРІ БЕЗОДНІ (180 HP) ЗАХОПИЛИ СВІТ!\n" +
+                    "  §c2.5x HP, діамантове спорядження, орди до 12 монстрів!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ ДО СВІТАНКУ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else {
             chatMsg = "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ — [ФАЗА 1]! 🩸\n" +
-                    "  §cКривавий Жнець (120 HP) та орди мерців вийшли на полювання!\n" +
-                    "  §c2.0x HP, залізна броня! Сон у ліжках заблоковано!\n" +
-                    "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕ ЗБРОЮ!\n" +
+                    "  §cКривавий Жнець (100 HP) та орди мерців вийшли на полювання!\n" +
+                    "  §c1.6x HP монстрів, залізне спорядження та бафи швидкості!\n" +
+                    "  §4§lСПАВН МОБІВ ПІДВИЩЕНО! ЛІЖКА НЕ ПРАЦЮЮТЬ!\n" +
                     "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
         }
         broadcastBloodmoonMessage(chatMsg);
@@ -1168,13 +1168,13 @@ public class BloodmoonMode implements FunMode, Listener {
 
             double bossHp;
             if (currentTier.getLevel() >= 4) {
-                bossHp = 2500.0;
+                bossHp = 450.0;
             } else if (currentTier.getLevel() == 3) {
-                bossHp = 800.0;
+                bossHp = 280.0;
             } else if (currentTier.getLevel() == 2) {
-                bossHp = 400.0;
+                bossHp = 180.0;
             } else {
-                bossHp = 120.0;
+                bossHp = 100.0;
             }
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
@@ -1182,22 +1182,13 @@ public class BloodmoonMode implements FunMode, Listener {
                 boss.setHealth(bossHp);
             }
 
-            int speedAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : (currentTier.getLevel() >= 2 ? 1 : 0));
-            int strAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : (currentTier.getLevel() >= 2 ? 1 : 0));
-            int resAmp = (currentTier.getLevel() >= 4) ? 2 : (currentTier.getLevel() >= 3 ? 1 : (currentTier.getLevel() >= 2 ? 0 : -1));
+            int speedAmp = (currentTier.getLevel() >= 4) ? 1 : 0;
+            int strAmp = (currentTier.getLevel() >= 4) ? 1 : (currentTier.getLevel() >= 3 ? 1 : 0);
 
             int bDuration = (durationMinutes + 5) * 60 * 20;
             boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, bDuration, speedAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, bDuration, strAmp, false, false));
-            if (resAmp >= 0) {
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, bDuration, resAmp, false, false));
-            }
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, bDuration, 0, false, false));
-            if (currentTier.getLevel() >= 4) {
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 2, false, false));
-            } else if (currentTier.getLevel() == 3) {
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 1, false, false));
-            }
 
             EntityEquipment eq = boss.getEquipment();
             if (eq != null) {
@@ -1210,71 +1201,64 @@ public class BloodmoonMode implements FunMode, Listener {
 
                 if (currentTier.getLevel() >= 4) {
                     ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
-                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
-                    helm.addEnchantment(Enchantment.THORNS, 3);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setHelmet(helm);
 
                     ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
-                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
-                    chest.addEnchantment(Enchantment.THORNS, 3);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setChestplate(chest);
 
                     ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
-                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
-                    legs.addEnchantment(Enchantment.THORNS, 3);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setLeggings(legs);
 
                     ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
-                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
-                    boots.addEnchantment(Enchantment.THORNS, 3);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setBoots(boots);
 
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
-                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 5);
-                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
-                    weapon.addEnchantment(Enchantment.KNOCKBACK, 2);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 3);
+                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 1);
                     eq.setItemInMainHand(weapon);
                 } else if (currentTier.getLevel() == 3) {
-                    ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
-                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    ItemStack helm = new ItemStack(Material.DIAMOND_HELMET);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setHelmet(helm);
 
-                    ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
-                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
-                    chest.addEnchantment(Enchantment.THORNS, 2);
+                    ItemStack chest = new ItemStack(Material.DIAMOND_CHESTPLATE);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setChestplate(chest);
 
-                    ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
-                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    ItemStack legs = new ItemStack(Material.DIAMOND_LEGGINGS);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setLeggings(legs);
 
-                    ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
-                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 2);
                     eq.setBoots(boots);
 
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
-                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 5);
-                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 2);
                     eq.setItemInMainHand(weapon);
                 } else if (currentTier.getLevel() == 2) {
-                    ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
-                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    ItemStack helm = new ItemStack(Material.DIAMOND_HELMET);
+                    helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setHelmet(helm);
 
-                    ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
-                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    ItemStack chest = new ItemStack(Material.DIAMOND_CHESTPLATE);
+                    chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setChestplate(chest);
 
-                    ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
-                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    ItemStack legs = new ItemStack(Material.DIAMOND_LEGGINGS);
+                    legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setLeggings(legs);
 
-                    ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
-                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+                    ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS);
+                    boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
                     eq.setBoots(boots);
 
-                    ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
-                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
+                    ItemStack weapon = new ItemStack(Material.DIAMOND_SWORD);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 1);
                     eq.setItemInMainHand(weapon);
                 } else {
                     eq.setHelmet(new ItemStack(Material.IRON_HELMET));
@@ -1303,8 +1287,8 @@ public class BloodmoonMode implements FunMode, Listener {
             player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.4f, 0.7f);
 
             if (currentTier.getLevel() >= 4) {
-                for (int i = 0; i < 4; i++) {
-                    Location gLoc = spawnLoc.clone().add((i % 2 == 0 ? 2 : -2), 0, (i > 1 ? 2 : -2));
+                for (int i = 0; i < 2; i++) {
+                    Location gLoc = spawnLoc.clone().add((i % 2 == 0 ? 2 : -2), 0, (i > 0 ? 2 : -2));
                     Entity gEnt = player.getWorld().spawnEntity(gLoc, EntityType.WITHER_SKELETON, CreatureSpawnEvent.SpawnReason.CUSTOM);
                     if (gEnt instanceof Monster guard) {
                         guard.setCustomName("§4§lВартовий Хаосу");
@@ -1817,42 +1801,42 @@ public class BloodmoonMode implements FunMode, Listener {
                 desc = "**Фаза події:** `[ФАЗА 4]` | **Рівень загрози:** `☠ " + tier.getName() + " ☠` (МАКСИМАЛЬНИЙ)\n\n" +
                         "🔥 **ТИХИЙ ЖАХ І ТИТАНИ ХАОСУ ПОГЛИНУЛИ СВІТ:**\n" +
                         "• Сон у ліжках повністю унеможливлено!\n" +
-                        "• Монстри посилені у **10.0 разів** (10x HP, Сила IV, Опір II, Швидкість III)!\n" +
-                        "• 100% захист: повні комплекти зачарованого незериту (Захист IV, Шипи III)!\n" +
-                        "• Гігантські орди до 36 монстрів та швидкісні заряджені кріпери!\n" +
-                        "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом при таранному ударі!\n" +
-                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (2500 HP)! Повний незерит із Шипами III, Сила IV, Регенерація III та свита вартових!\n" +
+                        "• Монстри посилені у **5.0 разів** (5x HP, Сила II, Швидкість II)!\n" +
+                        "• Посилене спорядження: незеритовий та діамантовий захист!\n" +
+                        "• Великі орди до 24 монстрів та швидкісні заряджені кріпери!\n" +
+                        "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом!\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (450 HP)! Незеритовий захист, Сила II та свита вартових!\n" +
                         "• За перемогу над босом: **Зірка Незеру, 2 Незеритові зливки, 2 Тотеми, 2 Яблука Нотча, 8-16 Алмазів та 5000 EXP**!\n\n" +
-                        "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
+                        "⚰️ *Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
                 desc = "**Фаза події:** `[ФАЗА 3]` | **Рівень загрози:** `🔥 " + tier.getName() + " 🔥`\n\n" +
                         "⚔️ **ПЕКЕЛЬНІ ЛЕГІОНИ ТА АРХІДЕМОНИ СМЕРТІ:**\n" +
                         "• Сон у ліжках заблоковано до настання світанку!\n" +
-                        "• Монстри посилені у **6.5 разів** (6.5x HP, Сила III, Опір II)!\n" +
-                        "• 95% монстрів у зачарованому незериті з гострими мечами!\n" +
-                        "• Заряджені кріпери та невпинні орди до 26 монстрів!\n" +
-                        "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із зарядженими кріперами-камікадзе!\n" +
-                        "• Повстає **☠ Архідемон Смерті ☠** (800 HP)!\n" +
-                        "• За перемогу над босом: **1-2 Незеритові скрапи, 2-3 Алмази, Тотем, Зливки та 2200 EXP**!\n\n" +
+                        "• Монстри посилені у **3.5 рази** (3.5x HP, Сила I)!\n" +
+                        "• Діамантова броня та зброя!\n" +
+                        "• Заряджені кріпери та невпинні орди до 18 монстрів!\n" +
+                        "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із кріперами-камікадзе!\n" +
+                        "• Повстає **☠ Архідемон Смерті ☠** (280 HP, діамантова броня)!\n" +
+                        "• За перемогу над босом: **1-2 Незеритові скрапи, 3-5 Алмазів, Тотем, 30% Зірка Незеру та 2200 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
                 desc = "**Фаза події:** `[ФАЗА 2]` | **Рівень загрози:** `☠ " + tier.getName() + " ☠`\n\n" +
                         "⚡ **АРМАГЕДДОН ПРИЙШОВ НА СЕРВЕР:**\n" +
                         "• Сон у ліжках заблоковано!\n" +
-                        "• Монстри посилені у **4.5 рази** (4.5x HP, Сила II, Опір I)!\n" +
-                        "• Незеритова й діамантова броня, заряджені кріпери та орди до 18 монстрів!\n" +
+                        "• Монстри посилені у **2.5 рази** (2.5x HP, Сила I)!\n" +
+                        "• Діамантове та залізне спорядження, орди до 12 монстрів!\n" +
                         "• ✈️ **Повітряні бомбардувальники:** фантоми з авіабомбами-кріперами на голові!\n" +
-                        "• Повстає **Володар Безодні** (400 HP)!\n" +
-                        "• За перемогу над босом: **1 Незеритовий скрап, 1-2 Алмази, Золоте яблуко, Зливки та 1500 EXP**!\n\n" +
+                        "• Повстає **Володар Безодні** (180 HP, діамантова броня)!\n" +
+                        "• За перемогу над босом: **1 Незеритовий скрап, 2-3 Алмази, Золоте яблуко, Зливки та 1500 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
             } else {
                 desc = "**Фаза події:** `[ФАЗА 1]` | **Рівень загрози:** `" + tier.getName() + "`\n\n" +
                         "⚠️ **Увага всім гравцям на сервері:**\n" +
                         "• Сон у ліжках заблоковано до світанку!\n" +
-                        "• Монстри отримали **2.0x здоров'я**, бафи Швидкості та Сили!\n" +
-                        "• Орди монстрів до 12 створінь у залізному та діамантовому спорядженні!\n" +
-                        "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами, що пікірують на гравців!\n" +
-                        "• Повстає бос **«Кривавий Жнець»** (120 HP, залізна броня)!\n" +
+                        "• Монстри отримали **1.6x здоров'я**, бафи Швидкості та Сили!\n" +
+                        "• Орди монстрів до 8 створінь у залізному спорядженні!\n" +
+                        "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами!\n" +
+                        "• Повстає бос **«Кривавий Жнець»** (100 HP, залізна броня)!\n" +
                         "• За перемогу над босом: **1-2 Алмази, Золоте яблуко, Зливки заліза/золота та 800 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
             }
