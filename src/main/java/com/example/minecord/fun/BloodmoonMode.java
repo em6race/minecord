@@ -59,7 +59,7 @@ public class BloodmoonMode implements FunMode, Listener {
     private final NamespacedKey bomberKey;
 
     private boolean enabled = true;
-    private double chancePercent = 5.0;
+    private double chancePercent = 10.0;
     private final List<String> targetWorldNames = new ArrayList<>();
     private boolean blockBeds = true;
     private boolean redSkyEffects = true;
@@ -200,7 +200,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void reloadConfig() {
         enabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.enabled", true);
-        chancePercent = plugin.getConfig().getDouble("fun.modes.bloodmoon.chance_percent", 5.0);
+        chancePercent = plugin.getConfig().getDouble("fun.modes.bloodmoon.chance_percent", 10.0);
         durationMinutes = plugin.getConfig().getInt("fun.modes.bloodmoon.duration_minutes", 10);
         durationSeconds = Math.max(60, durationMinutes * 60);
         blockBeds = plugin.getConfig().getBoolean("fun.modes.bloodmoon.block_beds", true);
