@@ -451,8 +451,8 @@ public class BloodmoonMode implements FunMode, Listener {
         if (tier.getLevel() >= 4) {
             chatMsg = "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠\n" +
                     "  §4§l☠ НАСТАВ СУДНИЙ ДЕНЬ (РАҐНАРОК) — [ФАЗА 4]! ☠\n" +
-                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
-                    "  §c10x HP, повний незерит, смертельні орди до 36 мобів!\n" +
+                    "  §cТИХИЙ ЖАХ ТА ТИТАНИ ХАОСУ (2500 HP) ПРИЙШЛИ ЗА ВАШИМИ ДУШАМИ!\n" +
+                    "  §c10x HP, незерит із шипами, свита вартових та орди до 36 мобів!\n" +
                     "  §4§lНЕМАЄ КУДИ ТІКАТИ — БИЙТЕСЯ ДО ОСТАННЬОЇ КРАПЛІ КРОВІ!\n" +
                     "§4§l☠━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☠";
         } else if (tier.getLevel() == 3) {
@@ -472,8 +472,8 @@ public class BloodmoonMode implements FunMode, Listener {
         } else {
             chatMsg = "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                     "  §4§l🩸 КРИВАВИЙ МІСЯЦЬ ЗІЙШОВ НАД СВІТОМ — [ФАЗА 1]! 🩸\n" +
-                    "  §cКривавий Жнець та орди кровожерливих мерців вийшли на полювання!\n" +
-                    "  §c2.5x HP, діамантова броня! Сон у ліжках заблоковано!\n" +
+                    "  §cКривавий Жнець (120 HP) та орди мерців вийшли на полювання!\n" +
+                    "  §c2.0x HP, залізна броня! Сон у ліжках заблоковано!\n" +
                     "  §4§lТРИМАЙТЕ ОБОРОНУ БАЗ ТА ГОТУЙТЕ ЗБРОЮ!\n" +
                     "§4§l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
         }
@@ -1168,13 +1168,13 @@ public class BloodmoonMode implements FunMode, Listener {
 
             double bossHp;
             if (currentTier.getLevel() >= 4) {
-                bossHp = 900.0;
+                bossHp = 2500.0;
             } else if (currentTier.getLevel() == 3) {
-                bossHp = 600.0;
+                bossHp = 800.0;
             } else if (currentTier.getLevel() == 2) {
-                bossHp = 380.0;
+                bossHp = 400.0;
             } else {
-                bossHp = 200.0;
+                bossHp = 120.0;
             }
             AttributeInstance hpAttr = boss.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (hpAttr != null) {
@@ -1182,16 +1182,20 @@ public class BloodmoonMode implements FunMode, Listener {
                 boss.setHealth(bossHp);
             }
 
-            int speedAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 2 ? 2 : 1);
-            int strAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : 1);
-            int resAmp = (currentTier.getLevel() >= 3) ? 2 : 1;
+            int speedAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : (currentTier.getLevel() >= 2 ? 1 : 0));
+            int strAmp = (currentTier.getLevel() >= 4) ? 3 : (currentTier.getLevel() >= 3 ? 2 : (currentTier.getLevel() >= 2 ? 1 : 0));
+            int resAmp = (currentTier.getLevel() >= 4) ? 2 : (currentTier.getLevel() >= 3 ? 1 : (currentTier.getLevel() >= 2 ? 0 : -1));
 
             int bDuration = (durationMinutes + 5) * 60 * 20;
             boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, bDuration, speedAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, bDuration, strAmp, false, false));
-            boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, bDuration, resAmp, false, false));
+            if (resAmp >= 0) {
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, bDuration, resAmp, false, false));
+            }
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, bDuration, 0, false, false));
-            if (currentTier.getLevel() >= 3) {
+            if (currentTier.getLevel() >= 4) {
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 2, false, false));
+            } else if (currentTier.getLevel() == 3) {
                 boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 1, false, false));
             }
 
@@ -1207,6 +1211,7 @@ public class BloodmoonMode implements FunMode, Listener {
                 if (currentTier.getLevel() >= 4) {
                     ItemStack helm = new ItemStack(Material.NETHERITE_HELMET);
                     helm.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    helm.addEnchantment(Enchantment.THORNS, 3);
                     eq.setHelmet(helm);
 
                     ItemStack chest = new ItemStack(Material.NETHERITE_CHESTPLATE);
@@ -1216,10 +1221,12 @@ public class BloodmoonMode implements FunMode, Listener {
 
                     ItemStack legs = new ItemStack(Material.NETHERITE_LEGGINGS);
                     legs.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    legs.addEnchantment(Enchantment.THORNS, 3);
                     eq.setLeggings(legs);
 
                     ItemStack boots = new ItemStack(Material.NETHERITE_BOOTS);
                     boots.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+                    boots.addEnchantment(Enchantment.THORNS, 3);
                     eq.setBoots(boots);
 
                     ItemStack weapon = new ItemStack(Material.NETHERITE_SWORD);
@@ -1270,12 +1277,12 @@ public class BloodmoonMode implements FunMode, Listener {
                     weapon.addEnchantment(Enchantment.FIRE_ASPECT, 2);
                     eq.setItemInMainHand(weapon);
                 } else {
-                    eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
-                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
-                    eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
-                    eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
-                    ItemStack weapon = new ItemStack(Material.DIAMOND_SWORD);
-                    weapon.addEnchantment(Enchantment.FIRE_ASPECT, 1);
+                    eq.setHelmet(new ItemStack(Material.IRON_HELMET));
+                    eq.setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.IRON_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.IRON_BOOTS));
+                    ItemStack weapon = new ItemStack(Material.IRON_SWORD);
+                    weapon.addEnchantment(Enchantment.DAMAGE_ALL, 1);
                     eq.setItemInMainHand(weapon);
                 }
             }
@@ -1295,6 +1302,17 @@ public class BloodmoonMode implements FunMode, Listener {
             }
             player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.4f, 0.7f);
 
+            if (currentTier.getLevel() >= 4) {
+                for (int i = 0; i < 4; i++) {
+                    Location gLoc = spawnLoc.clone().add((i % 2 == 0 ? 2 : -2), 0, (i > 1 ? 2 : -2));
+                    Entity gEnt = player.getWorld().spawnEntity(gLoc, EntityType.WITHER_SKELETON, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    if (gEnt instanceof Monster guard) {
+                        guard.setCustomName("§4§lВартовий Хаосу");
+                        guard.setCustomNameVisible(true);
+                        guard.setTarget(player);
+                    }
+                }
+            }
         }
     }
 
@@ -1803,8 +1821,8 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• 100% захист: повні комплекти зачарованого незериту (Захист IV, Шипи III)!\n" +
                         "• Гігантські орди до 36 монстрів та швидкісні заряджені кріпери!\n" +
                         "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом при таранному ударі!\n" +
-                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (1400 HP)!\n" +
-                        "• За перемогу над босом: **Зірка Незеру, Незеритовий зливок, Тотем, Яблуко Нотча, 3-5 Алмазів та 3500 EXP**!\n\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (2500 HP)! Повний незерит із Шипами III, Сила IV, Регенерація III та свита вартових!\n" +
+                        "• За перемогу над босом: **Зірка Незеру, 2 Незеритові зливки, 2 Тотеми, 2 Яблука Нотча, 8-16 Алмазів та 5000 EXP**!\n\n" +
                         "⚰️ *Шанси пережити цю ніч мізерні. Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
                 desc = "**Фаза події:** `[ФАЗА 3]` | **Рівень загрози:** `🔥 " + tier.getName() + " 🔥`\n\n" +
@@ -1814,7 +1832,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• 95% монстрів у зачарованому незериті з гострими мечами!\n" +
                         "• Заряджені кріпери та невпинні орди до 26 монстрів!\n" +
                         "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із зарядженими кріперами-камікадзе!\n" +
-                        "• Повстає **☠ Архідемон Смерті ☠** (850 HP)!\n" +
+                        "• Повстає **☠ Архідемон Смерті ☠** (800 HP)!\n" +
                         "• За перемогу над босом: **1-2 Незеритові скрапи, 2-3 Алмази, Тотем, Зливки та 2200 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
@@ -1824,17 +1842,17 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Монстри посилені у **4.5 рази** (4.5x HP, Сила II, Опір I)!\n" +
                         "• Незеритова й діамантова броня, заряджені кріпери та орди до 18 монстрів!\n" +
                         "• ✈️ **Повітряні бомбардувальники:** фантоми з авіабомбами-кріперами на голові!\n" +
-                        "• Повстає **Володар Безодні** (550 HP)!\n" +
+                        "• Повстає **Володар Безодні** (400 HP)!\n" +
                         "• За перемогу над босом: **1 Незеритовий скрап, 1-2 Алмази, Золоте яблуко, Зливки та 1500 EXP**!\n\n" +
                         "⚔️ *Приготуйтеся до важкої битви!*";
             } else {
                 desc = "**Фаза події:** `[ФАЗА 1]` | **Рівень загрози:** `" + tier.getName() + "`\n\n" +
                         "⚠️ **Увага всім гравцям на сервері:**\n" +
                         "• Сон у ліжках заблоковано до світанку!\n" +
-                        "• Монстри отримали **2.5x здоров'я**, бафи Швидкості та Сили!\n" +
-                        "• Орди монстрів до 12 створінь у діамантовому спорядженні!\n" +
+                        "• Монстри отримали **2.0x здоров'я**, бафи Швидкості та Сили!\n" +
+                        "• Орди монстрів до 12 створінь у залізному та діамантовому спорядженні!\n" +
                         "• ✈️ Рідкісні фантоми-бомбардувальники з кріперами, що пікірують на гравців!\n" +
-                        "• Повстає бос **«Кривавий Жнець»** (300 HP)!\n" +
+                        "• Повстає бос **«Кривавий Жнець»** (120 HP, залізна броня)!\n" +
                         "• За перемогу над босом: **1-2 Алмази, Золоте яблуко, Зливки заліза/золота та 800 EXP**!\n\n" +
                         "🛡️ *Тримайте оборону баз та готуйте зброю!*";
             }
@@ -2090,18 +2108,16 @@ public class BloodmoonMode implements FunMode, Listener {
 
             if (currentTier.getLevel() >= 4) {
                 // Рівень 4: Судний День (Раґнарок)
-                w.spawn(loc, ExperienceOrb.class).setExperience(3500);
+                w.spawn(loc, ExperienceOrb.class).setExperience(5000);
                 drops.add(new ItemStack(Material.NETHER_STAR, 1)); // 1 Зірка Незеру
-                drops.add(new ItemStack(Material.NETHERITE_INGOT, 1)); // 1 незеритовий злиток
-                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 1 Тотем
-                if (ThreadLocalRandom.current().nextBoolean()) {
-                    drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 1)); // 50% шанс на 2-й тотем
-                }
-                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 1)); // 1 зачароване яблуко
-                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(4, 8))); // 4–7 алмазів
-                drops.add(new ItemStack(Material.GOLD_BLOCK, 1));
-                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(2, 4)));
-                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 32));
+                drops.add(new ItemStack(Material.NETHERITE_INGOT, 2)); // 2 незеритові злитки
+                drops.add(new ItemStack(Material.TOTEM_OF_UNDYING, 2)); // 2 Тотеми
+                drops.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 2)); // 2 зачарованих яблука Нотча
+                drops.add(new ItemStack(Material.DIAMOND, ThreadLocalRandom.current().nextInt(8, 17))); // 8–16 алмазів
+                drops.add(new ItemStack(Material.NETHERITE_SCRAP, ThreadLocalRandom.current().nextInt(2, 5))); // 2-4 незеритові скрапи
+                drops.add(new ItemStack(Material.GOLD_BLOCK, 2));
+                drops.add(new ItemStack(Material.IRON_BLOCK, ThreadLocalRandom.current().nextInt(4, 9)));
+                drops.add(new ItemStack(Material.EXPERIENCE_BOTTLE, 64));
             } else if (currentTier.getLevel() == 3) {
                 // Рівень 3: Пекельний Катаклізм
                 w.spawn(loc, ExperienceOrb.class).setExperience(2200);
