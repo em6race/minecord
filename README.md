@@ -19,7 +19,41 @@
 
 ## 🚀 Основний функціонал
 
-### 1. 💬 Двосторонній чат нового покоління (Minecraft ⇄ Discord)
+Для максимальної гнучкості MineCord розроблено за модульною архітектурою. Усі базові інтеграційні функції готові до роботи одразу після встановлення, а додаткові геймплейні та захисні модулі за замовчуванням вимкнені й легко активуються в `config.yml`.
+
+### 📌 Загальний статус модулів
+
+| Модуль / Функціонал | Статус за замовчуванням | Перемикач у `config.yml` | Призначення |
+| :--- | :---: | :--- | :--- |
+| **Двосторонній чат (Cross-Chat)** | ✅ **Увімкнено** | `discord.chat-channel-id` | Minecraft ⇄ Discord через Webhooks з 3D скінами та Smart Mentions |
+| **Локалізація подій та смертей** | ✅ **Увімкнено** | `events.death`, `events.join-leave` | Офіційний переклад 100+ смертей укр., BlueMap лінки, здобутки |
+| **Офлайн-пошта (Mail System)** | ✅ **Увімкнено** | — (`/mail`) | Особисті повідомлення офлайн гравцям |
+| **Прив'язка акаунтів (Account Link)** | ✅ **Увімкнено** | — (`/discord link`) | Генерація кодів верифікації Minecraft ⇄ Discord |
+| **Тікети та скарги (/ticket, /report)** | ✅ **Увімкнено** | `discord.moderator-channel-id` | Звернення гравців та скарги з інтерактивними кнопками в Discord |
+| **Віддалена консоль (Remote Console)** | ✅ **Увімкнено** | `discord.console-channel-id` | Живий потік консолі та виконання команд прямо з Discord |
+| **Статистика, топи та TabList** | ✅ **Увімкнено** | — (`/stats`, `/top`) | Інформативний таб (TPS, пінг), топи, `/sharecoords` з мапою |
+| **Діагностика бота** | ✅ **Увімкнено** | — (`/minecord bot`) | Швидка перевірка зв'язку та гаряче перепідключення бота |
+| **Кривавий Місяць (Bloodmoon Event)** | ⚙️ *Вимкнено* | `fun.modes.bloodmoon.enabled: false` | 4 хардкорні рівні, орди, камікадзе-фантоми, 4 боси, рідкісний незерит |
+| **Тягун без дощу (Riptide without Rain)**| ⚙️ *Вимкнено* | `fun.modes.riptide_no_rain.enabled: false` | Ривки тризубцем на суші без дощу та води із захистом від падіння |
+| **Списи без голоду (Spear No Hunger)** | ⚙️ *Вимкнено* | `fun.modes.spear_no_hunger.enabled: false` | Усі види списів не витрачають очки голоду та виснаження |
+| **Розумне ковадло (Smart Anvil)** | ⚙️ *Вимкнено* | `fun.modes.smart_anvil.enabled: false` | Зняття штучного ванільного ліміту 40 рівнів («Занадто дорого!») |
+| **Розумний пропуск ночі (Sleep Voting)**| ⚙️ *Вимкнено* | `sleep.enabled: false` | Динамічний поріг 50% гравців у ліжках, ігнорування AFK |
+| **AFK-система та захист від мобів** | ⚙️ *Вимкнено* | `afk.enabled: false` | Автоперехід через 60с, 3D-таймер, повна невразливість до мобів |
+| **Синхронізація ролей (Role Sync)** | ⚙️ *Вимкнено* | `role-sync.enabled: false` | Префікси у табі й чаті, кольори ніків та сортування за рангом |
+| **Захист від спаму (AntiSpam)** | ⚙️ *Вимкнено* | `antispam.enabled: false` | Захист від флуду, однакових повідомлень та автомут порушників |
+| **AI-модерація чату** | ⚙️ *Вимкнено* | `ai-moderator.enabled: false` | Асинхронний аналіз токсичності через AI (OpenRouter / ChatGPT) |
+| **Рольовий Whitelist** | ⚙️ *Вимкнено* | `whitelist.enabled: false` | Доступ на сервер лише верифікованим гравцям або за ролями Discord |
+| **Режим технічних робіт** | ⚙️ *Вимкнено* | `maintenance.enabled: false` | Швидке закриття сервера для гравців (`/maintenance`) |
+| **Авторестарти за розкладом** | ⚙️ *Вимкнено* | `autorestart.times: []` | Планові рестарти, титри на екрані, черга `/queuerestart` |
+| **Підказки та поради (Tips)** | ⚙️ *Вимкнено* | `tips.enabled: false` | Персональні корисні поради гравцям у випадковий час |
+| **Автооновлення BlueMap** | ⚙️ *Вимкнено* | `bluemap.auto-reload.enabled: false` | Автоматичне оновлення веб-карти за розкладом |
+| **Технічний моніторинг та Sentry** | ⚙️ *Вимкнено* | `technical.*`, `sentry.enabled: false`| Сповіщення про падіння TPS, пам'яті RAM та відлов помилок |
+
+---
+
+### ✅ 1. Базові функції (Увімкнено за замовчуванням)
+
+#### 💬 Двосторонній чат нового покоління (Minecraft ⇄ Discord)
 * **Discord Webhooks**: Повідомлення з гри відправляються в Discord від імені конкретного гравця з його реальною 3D-аватаркою.
 * **Підтримка текстур та скінів**: Аватарки формуються безпосередньо з текстури гравця, завдяки чому кастомні скіни відображаються коректно для всіх гравців.
 * **Smart Mentions (Розумні згадки)**:
@@ -27,7 +61,41 @@
   * Якщо гравець прив'язав свій Discord-акаунт, у чаті Discord повідомлення автоматично перетворюється на реальний Discord-пінг (`<@id>`).
 * **Discord ➔ Minecraft**: Повідомлення з каналу Discord миттєво транслюються в ігровий чат із підтримкою кольорів ролей та зрозумілим форматуванням.
 
-### 2. 🩸 Хардкорний «Кривавий Місяць» (Bloodmoon) — 4 Рівні Складності
+#### 🌐 Локалізація та ігрові події
+* **Повна локалізація смертей**: Вбудований перекладач адаптує понад 100 офіційних причин смерті (з урахуванням мобів, снарядів та падінь) і відправляє їх у Discord українською мовою.
+* **Локалізація здобутків**: Сповіщення про виконання досягнень транслюються в Discord з їхніми офіційними назвами.
+* **Інтерактивні координати смерті**: Гравець отримує приватне повідомлення з координатами своєї загибелі та прямим клікабельним посиланням на веб-карту (BlueMap).
+
+#### 📬 Офлайн-пошта (Mail System)
+* Можливість відправляти приватні повідомлення офлайн-гравцям (`/mail send <нік> <текст>`).
+* При наступному вході гравець отримує сповіщення про нові листи та може їх прочитати (`/mail read`).
+
+#### 🔗 Прив'язка акаунтів (Account Link)
+* **Верифікація акаунтів**: Генерація одноразових кодів для зв'язування Minecraft-акаунта з профілем Discord (`/discord link` $\rightarrow$ `/link <code>`).
+* Дозволяє синхронізувати згадки Smart Mentions та пересилати сповіщення про пошту.
+
+#### 🎫 Система тікетів та скарг
+* **Тікети прямо з гри**: Гравці можуть надіслати запит чи пропозицію адміністрації командою `/ticket create <текст>`.
+* **Скарги на порушників**: Швидке повідомлення модераторів через `/report <гравець> <причина>`.
+* **Інтерактивні картки в Discord**: Кожен тікет чи скарга з'являється в закритому каналі адміністрації з кнопками керування (закрити, взяти в роботу).
+
+#### 💻 Віддалена консоль в Discord
+* Закритий канал для адміністраторів із живою трансляцією серверних логів.
+* Можливість виконувати будь-які серверні команди прямо з текстового поля Discord.
+
+#### 📊 Статистика, рейтинги та інфо-панелі
+* **Стильний TabList**: Інформативний таб із відображенням пінгів, онлайну, стабільності TPS та привітання сервера.
+* **Команди статистики та топів**: Перегляд ігрового часу, смертей, добутих блоків та досягнень (`/stats`, `/top`).
+* **Поширення координат (`/sharecoords`)**: Можливість поділитися з друзями точкою на місцевості з описом та прямим лінком на веб-мапу BlueMap.
+* **Діагностика бота**: Команди `/minecord bot status` та `/minecord bot reconnect` для контролю підключення бота без перезапуску сервера.
+
+---
+
+### ⚙️ 2. Опціональні модулі (Вимкнено за замовчуванням — налаштовуються в config.yml)
+
+#### 🩸 Хардкорний «Кривавий Місяць» (Bloodmoon) — 4 Рівні Складності
+*Налаштування: `fun.modes.bloodmoon.enabled: false`*
+
 Повномасштабна система нічних катаклізмів з унікальними мобами, окупацією неба та грандіозними босами:
 * **Блокування сну**: Сон у ліжках повністю заборонено до настання світанку.
 * **4 Хардкорні Рівні та Збалансований Лут**:
@@ -60,15 +128,14 @@
 * **📢 Трансляція в Discord**:
   * Окремі барвисті Embed-сповіщення при сходженні Кривавого Місяця та тріумфальні анонси перемоги над босами.
 
-### 3. 🛡️ Безпека та AI-модерація чату
-* **AntiSpam система**:
-  * Захист від флуду та повторюваних однакових повідомлень.
-  * Багаторівнева система покарань: попередження, блокування спам-повідомлень, автоматичний тимчасовий мут на 5 хвилин.
-* **Розумна AI-модерація (OpenAI / ChatGPT)**:
-  * Асинхронна перевірка підозрілих повідомлень на токсичність та образливий зміст без затримок ігрового процесу (zero input-lag).
-  * Автоматичне сповіщення адміністрації в закритий Discord-канал модераторів із зазначенням порушника та цитатою.
+#### ⚡ Кастомні розширені механіки (Fun Modes)
+*Налаштування: `fun.enabled: false`*
+* **Тягун без дощу (Riptide without Rain)** (`fun.modes.riptide_no_rain.enabled: false`): Можливість запускатися тризубцем із чарами Тягун на суші без води й дощу. Включає захист від падіння на перше приземлення та повний захист пасажирів човна/коня від випадкового дружнього вогню. *(Для плавної швидкості провантаження чанків під час польотів на елітрах рекомендується вчасно рестартувати сервер за розкладом)*.
+* **Розумне ковадло (Smart Anvil)** (`fun.modes.smart_anvil.enabled: false`): Знімає штучне ванільне обмеження 40 рівнів («Занадто дорого!»), дозволяючи ремонтувати та покращувати предмети будь-яку кількість разів.
+* **Списи без голоду (Spear No Hunger)** (`fun.modes.spear_no_hunger.enabled: false`): Усі види списів не витрачають очки голоду та виснаження гравця.
 
-### 4. 🌙 Розумний пропуск ночі (Sleep Voting)
+#### 🌙 Розумний пропуск ночі (Sleep Voting)
+*Налаштування: `sleep.enabled: false`*
 * **Динамічне голосування сном**: Для звичайного пропуску ночі достатньо, щоб у ліжка лягли 50% активних гравців світу.
 * **Фільтрація неактивних**: Система автоматично ігнорує гравців у режимі AFK та глядачів (Spectator mode).
 * **Інформативні сповіщення**:
@@ -76,12 +143,37 @@
   * Стильне Embed-повідомлення в Discord ("☀️ Гравець пропустив ніч. Доброго ранку!").
   * Автоматичне скидання шторму та дощу.
 
-### 5. 🌐 Локалізація та ігрові події
-* **Повна локалізація смертей**: Вбудований перекладач адаптує понад 100 офіційних причин смерті (з урахуванням мобів, снарядів та падінь) і відправляє їх у Discord українською мовою.
-* **Локалізація здобутків**: Сповіщення про виконання досягнень транслюються в Discord з їхніми офіційними назвами.
-* **Інтерактивні координати смерті**: Гравець отримує приватне повідомлення з координатами своєї загибелі та прямим клікабельним посиланням на веб-карту (BlueMap).
+#### 💤 AFK-система та захист від мобів
+*Налаштування: `afk.enabled: false`*
+* **Автоматичний перехід**: Фіксація неактивності гравця через 60 секунд (налаштовується) або вручну командою `/afk [причина]`.
+* **Захист від мобів**: Під час AFK гравець стає повністю невразливим до шкоди мобів, монстри скидають з нього агро та не штовхають.
+* **Візуальні індикатори**: 3D-таймер неактивності над головою гравця та позначка `[АФК]` у TabList.
 
-### 6. 🔄 Розумний планувальник авторестартів
+#### 🏷️ Синхронізація ролей з Discord (Role Sync)
+*Налаштування: `role-sync.enabled: false`*
+* **Префікси ролей**: Автоматичне відображення кольорових префіксів ролей Discord у Tab-листі, внутрішньоігровому чаті та над головами персонажів.
+* **Ієрархічне сортування**: Гравці у вкладці Tab впорядковуються зверху вниз згідно з пріоритетом посад (Адміністратор ➔ Модератор ➔ VIP ➔ Гравець).
+
+#### 🛡️ Безпека чату та AI-модерація
+* **AntiSpam система** (`antispam.enabled: false`):
+  * Захист від швидкого флуду та повторюваних однакових повідомлень.
+  * Багаторівнева система покарань: попередження, блокування спам-повідомлень, автоматичний тимчасовий мут на 5 хвилин (`/unmute`).
+* **Розумна AI-модерація (OpenAI / ChatGPT / OpenRouter)** (`ai-moderator.enabled: false`):
+  * Асинхронна перевірка підозрілих повідомлень на токсичність та образливий зміст без затримок ігрового процесу (zero input-lag).
+  * Автоматичне сповіщення адміністрації в закритий Discord-канал модераторів із зазначенням порушника та цитатою.
+
+#### 🔒 Рольовий Whitelist & Доступ
+*Налаштування: `whitelist.enabled: false`*
+* **Рольовий доступ**: Вимога обов'язкової прив'язки Discord або наявності визначеної ролі (`require-discord-role`) для входу на сервер.
+* Автоматичне відхилення неавторизованих користувачів із персоналізованим екраном-поясненням.
+
+#### 🛠️ Режим технічних робіт (Maintenance Mode)
+*Налаштування: `maintenance.enabled: false`*
+* Швидке закриття сервера на обслуговування командою `/maintenance <on/off>` у грі чи Discord.
+* Вхід дозволено лише адміністраторам, а звичайні гравці отримують інформативне повідомлення з причиною робіт.
+
+#### 🔄 Розумний планувальник авторестартів
+*Налаштування: `autorestart.times: []`*
 * **Регулярні рестарти**: Автоматичний перезапуск сервера за заданим розкладом у зручний час.
 * **Візуальні та звукові попередження**:
   * Чат-сповіщення зі зворотним відліком.
@@ -89,40 +181,26 @@
   * Можливість для окремих гравців приховати набридливі повідомлення командою `/togglerestart`.
 * **Відкладений розумний рестарт (`/queuerestart`)**: Одноразовий рестарт, який ставиться в чергу через Discord і спрацьовує автоматично, щойно на сервері буде 0 онлайну. Працює як перемикач (toggle).
 
-### 7. 🎫 Система тікетів та підтримки
-* **Тікети прямо з гри**: Гравці можуть надіслати запит чи скаргу адміністрації командою `/ticket create <текст>`.
-* **Інтерактивні картки в Discord**: Кожен тікет з'являється в каналі адміністрації з кнопками керування (закрити, взяти в роботу).
+#### 💡 Періодичні підказки та корисні поради (Tips)
+*Налаштування: `tips.enabled: false`*
+* Індивідуальне надсилання практичних порад та навігаційних підказок кожному онлайн-гравцю у випадковий часовий інтервал.
 
-### 8. 📬 Офлайн-пошта (Mail System)
-* Можливість відправляти приватні повідомлення офлайн-гравцям (`/mail send <нік> <текст>`).
-* При наступному вході гравець отримує сповіщення про нові листи та може їх прочитати (`/mail read`).
+#### 🗺️ Періодичне автооновлення веб-карти (BlueMap Auto-Reload)
+*Налаштування: `bluemap.auto-reload.enabled: false`*
+* Запуск команди `bluemap reload` за встановленим часовим графіком або через 2 хвилини після старту сервера.
 
-### 9. 🔗 Прив'язка акаунтів (Account Link) & Рольовий Whitelist
-* **Верифікація акаунтів**: Генерація одноразових кодів для зв'язування Minecraft-акаунта з профілем Discord (`/discord link` $\rightarrow$ `/link <code>`).
-* **Рольовий доступ**: Можливість автоматичної видачі ролі на Discord-сервері та обмеження входу на сервер.
+#### 📈 Технічний моніторинг та збір помилок
+*Налаштування: `technical.*`, `sentry.enabled: false`*
+* **Performance Monitor**: Автоматичне сповіщення адміністрації у Discord при просіданні TPS нижче критичного порогу (15.0) або переповненні RAM (> 95%), з можливістю автоматичного запуску профилювання Spark.
+* **Error Catcher & Sentry**: Автоматичний перехват критичних помилок із вивантаженням стектрейсів на paste-сервіс або в хмару Sentry.
 
-### 10. 💻 Віддалена консоль в Discord
-* Закритий канал для адміністраторів із живою трансляцією серверних логів.
-* Можливість виконувати будь-які серверні команди прямо з текстового поля Discord.
+---
 
-### 11. 📊 Моніторинг та оптимізація
-* **AFK-система та захист від мобів**: Відстеження неактивності з відображенням таймера над головою, статусом `[АФК]` у табі та повною невразливістю до атак і снарядів мобів під час AFK.
-* **Стильний TabList**: Інформативний таб із відображенням пінгів, онлайну, TPS та привітання сервера.
-* **Команди статистики та топів**: Перегляд ігрового часу, смертей, блоків та досягнень (`/stats`, `/top`).
-* **Режим технічних робіт (`/maintenance`)**: Швидке закриття сервера на обслуговування з персоналізованим повідомленням про причину робіт.
-* **Періодичні підказки та корисні поради**: Індивідуальне надсилання практичних порад кожному онлайн-гравцю у випадковий час.
-* **Діагностика бота**: Команди `/minecord bot status` та `/minecord bot reconnect` для контролю підключення бота без перезапуску сервера.
-
-### 12. ⚙️ Підтримка ванільних механік та ферм (Vanilla Exploits)
+### 🏗️ 3. Підтримка ванільних механік та ферм (Vanilla Exploits)
 * **Ламання бедроку**: Дозволено класичні способи видалення бедроку та рамок порталу в Енд (`allow-permanent-block-break-exploits: true`).
 * **Безголові поршні**: Розблоковано створення headless pistons (`allow-headless-pistons: true`).
 * **Дюп падаючих блоків**: Портали в Енд дозволяють класичний дюп піску, гравію та бетону для масштабних будівельних ферм (`allow-unsafe-end-portal-teleportation: true`).
 * **Дюп динаміту (TNT) та рейок**: Поршневе копіювання активованого TNT для кар'єрів та тунелебудівників повністю працює (`allow-piston-duplication: true`).
-
-### 13. ⚡ Кастомні розширені механіки (Fun Modes)
-* **Тягун без дощу (Riptide without Rain)**: Можливість запускатися тризубцем із чарами Тягун на суші без води й дощу. Включає захист від падіння на перше приземлення та повний захист пасажирів човна/коня від випадкового дружнього вогню. *(Для плавної швидкості провантаження чанків під час польотів на елітрах рекомендується вчасно рестартувати сервер за розкладом)*.
-* **Розумне ковадло (Smart Anvil)**: Знімає штучне ванільне обмеження 40 рівнів («Занадто дорого!»), дозволяючи ремонтувати та покращувати предмети будь-яку кількість разів.
-* **Списи без голоду (Spear No Hunger)**: Усі види списів не витрачають очки голоду та виснаження гравця.
 
 ---
 
@@ -177,7 +255,41 @@
 
 ## 🚀 Key Features
 
-### 1. 💬 Next-Gen Two-Way Cross-Chat (Minecraft ⇄ Discord)
+MineCord features a modular architecture designed for maximum flexibility. All core integration features work out-of-the-box, while specialized gameplay modes, moderation tools, and automation systems are disabled by default and can be effortlessly activated in `config.yml`.
+
+### 📌 Feature Status Overview
+
+| Module / Feature | Default Status | Config Key (`config.yml`) | Description |
+| :--- | :---: | :--- | :--- |
+| **Two-Way Cross-Chat** | ✅ **Enabled** | `discord.chat-channel-id` | Minecraft ⇄ Discord via Webhooks with 3D skins & Smart Mentions |
+| **Event & Death Localization** | ✅ **Enabled** | `events.death`, `events.join-leave` | Official Ukrainian translation of 100+ deaths, BlueMap links, achievements |
+| **Offline Mail System** | ✅ **Enabled** | — (`/mail`) | Private messaging system for offline players |
+| **Account Linking** | ✅ **Enabled** | — (`/discord link`) | One-time verification codes linking Minecraft ⇄ Discord |
+| **Tickets & Reports (/ticket, /report)**| ✅ **Enabled** | `discord.moderator-channel-id` | In-game reports & support tickets with Discord action buttons |
+| **Remote Discord Console** | ✅ **Enabled** | `discord.console-channel-id` | Live console stream & interactive command execution |
+| **Stats, Leaderboards & TabList** | ✅ **Enabled** | — (`/stats`, `/top`) | Detailed TabList (TPS, ping), leaderboards, `/sharecoords` |
+| **Bot Diagnostics** | ✅ **Enabled** | — (`/minecord bot`) | Gateway latency check and hot session reconnection |
+| **Bloodmoon Event** | ⚙️ *Disabled* | `fun.modes.bloodmoon.enabled: false` | 4 difficulty tiers, hordes, kamikaze phantoms, 4 bosses, netherite loot |
+| **Riptide without Rain** | ⚙️ *Disabled* | `fun.modes.riptide_no_rain.enabled: false`| Trident thrust on dry land with fall-damage protection |
+| **Spear No Hunger** | ⚙️ *Disabled* | `fun.modes.spear_no_hunger.enabled: false`| All spear types consume zero hunger/exhaustion points |
+| **Smart Anvil** | ⚙️ *Disabled* | `fun.modes.smart_anvil.enabled: false` | Removes the vanilla 40-level limit ("Too Expensive!") |
+| **Smart Sleep Voting** | ⚙️ *Disabled* | `sleep.enabled: false` | 50% dynamic sleeper threshold, ignores AFK players |
+| **AFK System & Mob Invulnerability** | ⚙️ *Disabled* | `afk.enabled: false` | Auto-AFK timer (60s), 3D overhead countdown, mob damage immunity |
+| **Discord Role Synchronization** | ⚙️ *Disabled* | `role-sync.enabled: false` | Tab/chat prefixes, nametag colors, hierarchy sorting |
+| **AntiSpam Engine** | ⚙️ *Disabled* | `antispam.enabled: false` | Flood protection, repeat blocking, automated mute ladder |
+| **AI Chat Moderation** | ⚙️ *Disabled* | `ai-moderator.enabled: false` | Asynchronous toxicity analysis via AI (OpenRouter / ChatGPT) |
+| **Role-Based Whitelist** | ⚙️ *Disabled* | `whitelist.enabled: false` | Restrict server entry to linked players or specific Discord roles |
+| **Maintenance Mode** | ⚙️ *Disabled* | `maintenance.enabled: false` | Lockdown server with customizable kick screen (`/maintenance`) |
+| **Scheduled Auto-Restart** | ⚙️ *Disabled* | `autorestart.times: []` | Timed reboots, title countdowns, `/queuerestart` empty server queue |
+| **Periodic Player Tips** | ⚙️ *Disabled* | `tips.enabled: false` | Scheduled personalized tips delivered to players in chat |
+| **BlueMap Auto-Reload** | ⚙️ *Disabled* | `bluemap.auto-reload.enabled: false` | Automatic timed web-map reloads |
+| **Technical Monitoring & Sentry** | ⚙️ *Disabled* | `technical.*`, `sentry.enabled: false`| Low TPS / high RAM alerts, automatic Spark profiling, crash tracking |
+
+---
+
+### ✅ 1. Core Features (Enabled by Default)
+
+#### 💬 Next-Gen Two-Way Cross-Chat (Minecraft ⇄ Discord)
 * **Discord Webhooks**: In-game player messages are sent to Discord via webhooks displaying the sender's actual username and their real 3D head avatar.
 * **Skin Texture Resolution**: Avatars are extracted directly from player texture hashes, ensuring custom skins render accurately for both online and offline mode players.
 * **Smart Mentions**:
@@ -185,7 +297,41 @@
   * If the player linked their Discord account, the mention automatically transforms into an authentic Discord ping (`<@id>`).
 * **Discord ➔ Minecraft**: Messages from Discord channels stream into Minecraft chat with role colors and clean formatting.
 
-### 2. 🩸 Hardcore Bloodmoon Event — 4 Difficulty Tiers
+#### 🌐 Event Localization & Navigation
+* **Death Messages**: Translates over 100 official death causes (mobs, projectiles, falls, voids) and relays them to Discord in clean Ukrainian format.
+* **Advancement Announcements**: Relays earned achievements to Discord with native names.
+* **Interactive Death Coordinates**: Players receive a private message with their death coordinates and an interactive clickable BlueMap link that opens the exact death spot in their browser.
+
+#### 📬 Offline Mail System
+* Send messages to offline players via `/mail send <player> <message>`.
+* Recipients are greeted with unread notifications upon their next login and can review them via `/mail read`.
+
+#### 🔗 Account Linking
+* **Account Verification**: Generates one-time codes in Minecraft for linking accounts via Discord slash command `/discord link` $\rightarrow$ `/link <code>`.
+* Enables synchronized Smart Mentions and allows offline mail notifications to be forwarded to Discord.
+
+#### 🎫 In-Game Ticket & Report System
+* **Tickets from Minecraft**: Players can submit reports or help requests using `/ticket create <message>`.
+* **Player Reports**: Rapidly report griefers or rule-breakers via `/report <player> <reason>` with anti-spam cooldown protection.
+* **Interactive Discord Embeds**: Staff receives tickets and reports in a private channel with action buttons (claim, close) right inside Discord.
+
+#### 💻 Remote Discord Console
+* Dedicated private Discord channel mirroring server console logs in real time.
+* Execute any server console command directly by typing it in the Discord channel.
+
+#### 📊 Statistics, Leaderboards & Monitoring
+* **Custom TabList**: Clean header and footer showing online count, TPS, ping, and server branding.
+* **Stats & Leaderboards**: Inspect player playtime, death count, broken blocks, and achievements (`/stats`, `/top`).
+* **Share Coordinates (`/sharecoords`)**: Broadcast Points of Interest with descriptions and a direct interactive BlueMap link.
+* **Bot Diagnostics**: `/minecord bot status` and `/minecord bot reconnect` commands for managing Discord bot connectivity on the fly.
+
+---
+
+### ⚙️ 2. Optional Modules (Disabled by Default — Configured in config.yml)
+
+#### 🩸 Hardcore Bloodmoon Event — 4 Difficulty Tiers
+*Configuration: `fun.modes.bloodmoon.enabled: false`*
+
 A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers, and epic boss battles:
 * **Bed Sleep Blocked**: Sleeping in beds is completely locked out until sunrise.
 * **4 Scaled Tiers & Rebalanced Loot Progression**:
@@ -218,15 +364,14 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 * **📢 Discord Broadcasts**:
   * Rich start embeds announcing threats and rewards, with triumphant global defeat announcements when bosses fall.
 
-### 3. 🛡️ Chat Security & AI Moderation
-* **AntiSpam Engine**:
-  * Protects against rapid flood and duplicate identical messages.
-  * Multi-tiered penalty ladder: gentle warnings, message drops, and automated 5-minute mutes for persistent spamming.
-* **OpenAI (ChatGPT) Moderation**:
-  * Asynchronously evaluates suspicious chat messages for toxicity and harassment with zero server tick lag.
-  * Instantly notifies server staff in a designated Discord moderation channel with context and author info.
+#### ⚡ Extended Custom Mechanics (Fun Modes)
+*Configuration: `fun.enabled: false`*
+* **Riptide without Rain** (`fun.modes.riptide_no_rain.enabled: false`): Launch yourself with Riptide-enchanted tridents on dry land without rain or water. Features fall-damage protection on initial landing and friendly-fire protection for boat/horse passengers. *(Regular server restarts are recommended to ensure seamless chunk loading during high-speed elytra flights)*.
+* **Smart Anvil** (`fun.modes.smart_anvil.enabled: false`): Removes the vanilla 40-level limit ("Too Expensive!"), allowing items to be repaired and combined infinitely.
+* **Spear No Hunger** (`fun.modes.spear_no_hunger.enabled: false`): All spear types do not consume player hunger or exhaustion points.
 
-### 4. 🌙 Smart Sleep Voting
+#### 🌙 Smart Sleep Voting
+*Configuration: `sleep.enabled: false`*
 * **Dynamic Percentage Threshold**: Regular night skips automatically when 50% of active players sleep in beds.
 * **AFK & Spectator Exclusion**: Players in AFK status or Spectator mode are ignored, preventing idle players from blocking morning.
 * **Rich Broadcasts**:
@@ -234,12 +379,37 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
   * Discord embed notification ("☀️ Player skipped the night. Good morning!").
   * Automatically resets bad weather (rain & thunder).
 
-### 5. 🌐 Event Localization & Navigation
-* **Death Messages**: Translates over 100 official death causes (mobs, projectiles, falls, voids) and relays them to Discord in clean Ukrainian format.
-* **Advancement Announcements**: Relays earned achievements to Discord with native names.
-* **Interactive Death Coordinates**: Players receive a private message with their death coordinates and an interactive clickable BlueMap link that opens the exact death spot in their browser.
+#### 💤 AFK System & Mob Invulnerability
+*Configuration: `afk.enabled: false`*
+* **Inactivity Detection**: Automatic transition after 60 seconds (configurable) or manually via `/afk [reason]`.
+* **Mob Invulnerability**: Full immunity to mob damage, projectile targeting, and knockback while in AFK state.
+* **Visual Status**: 3D overhead timer above the player's head and `[AFK]` tag in TabList.
 
-### 6. 🔄 Intelligent Auto-Restart Scheduler
+#### 🏷️ Discord Role Synchronization (Role Sync)
+*Configuration: `role-sync.enabled: false`*
+* **Role Prefixes**: Automatic color-coded Discord role prefixes in TabList, in-game chat, and 3D nametags above player heads.
+* **Hierarchy Sorting**: Players in the TabList are automatically sorted top-down based on role priority (Admin ➔ Moderator ➔ VIP ➔ Player).
+
+#### 🛡️ Chat Security & AI Moderation
+* **AntiSpam Engine** (`antispam.enabled: false`):
+  * Protects against rapid flood and duplicate identical messages.
+  * Multi-tiered penalty ladder: gentle warnings, message drops, and automated 5-minute mutes (`/unmute`).
+* **OpenAI (ChatGPT / OpenRouter) Moderation** (`ai-moderator.enabled: false`):
+  * Asynchronously evaluates suspicious chat messages for toxicity and harassment with zero server tick lag.
+  * Instantly notifies server staff in a designated Discord moderation channel with context and author info.
+
+#### 🔒 Role-Based Whitelist
+*Configuration: `whitelist.enabled: false`*
+* **Role-Gated Access**: Require players to link their Discord account or possess a specific Discord role (`require-discord-role`) to enter the server.
+* Rejects unverified logins with an explanatory kick screen.
+
+#### 🛠️ Maintenance Mode
+*Configuration: `maintenance.enabled: false`*
+* Temporarily locks the server to regular players via `/maintenance <on/off>` in-game or from Discord.
+* Shows a customized maintenance message explaining downtime reasons.
+
+#### 🔄 Intelligent Auto-Restart Scheduler
+*Configuration: `autorestart.times: []`*
 * **Scheduled Restarts**: Automatically reboots the server at configured times.
 * **Audio-Visual Warnings**:
   * Countdown notices in chat.
@@ -247,40 +417,26 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
   * Players can toggle countdown visibility for themselves via `/togglerestart`.
 * **Queued Restarts (`/queuerestart`)**: Queue a one-time restart via Discord that triggers automatically once the server is empty (0 online players). Operates as a toggle.
 
-### 7. 🎫 In-Game Ticket Support System
-* **Tickets from Minecraft**: Players can submit reports or help requests using `/ticket create <message>`.
-* **Interactive Discord Embeds**: Staff receives the ticket with action buttons (claim, close) right inside Discord.
+#### 💡 Periodic Player Tips
+*Configuration: `tips.enabled: false`*
+* Personalized, scheduled in-game tips and advice sent individually to active online players.
 
-### 8. 📬 Offline Mail System
-* Send messages to offline players via `/mail send <player> <message>`.
-* Recipients are greeted with unread notifications upon their next login and can review them via `/mail read`.
+#### 🗺️ BlueMap Auto-Reload
+*Configuration: `bluemap.auto-reload.enabled: false`*
+* Automatically executes `bluemap reload` at configured times or 2 minutes after startup.
 
-### 9. 🔗 Account Linking & Role-Based Whitelist
-* **Account Verification**: Generates one-time codes in Minecraft for linking accounts via Discord slash command `/discord link` $\rightarrow$ `/link <code>`.
-* **Role-Gated Whitelist**: Automatically assigns verified roles on Discord and can require specific roles to enter the Minecraft server.
+#### 📈 Technical Monitoring & Crash Reporting (Sentry)
+*Configuration: `technical.*`, `sentry.enabled: false`*
+* **Performance Monitor**: Sends Discord alert embeds when TPS drops below threshold (15.0) or memory spikes (> 95%), with optional automated Spark profiler triggers.
+* **Error Catcher & Sentry**: Captures uncaught exceptions and uploads stack traces to a paste service or cloud Sentry dashboard.
 
-### 10. 💻 Remote Discord Console
-* Dedicated private Discord channel mirroring server console logs in real time.
-* Execute any server console command directly by typing it in the Discord channel.
+---
 
-### 11. 📊 Monitoring & Polish
-* **AFK Detection & Mob Invulnerability**: Inactivity tracking with 3D overhead timer, `[AFK]` status, and complete invulnerability against hostile mob attacks and projectiles while AFK.
-* **Custom TabList**: Clean header and footer showing online count, TPS, ping, and server branding.
-* **Stats Command**: Inspect player playtime, death count, broken blocks, and achievements (`/stats`, `/top`).
-* **Maintenance Mode (`/maintenance`)**: Close the server to non-staff players with a custom kick screen.
-* **Periodic Player Tips**: Personalized, scheduled in-game tips and advice sent individually to active online players.
-* **Bot Diagnostics**: `/minecord bot status` and `/minecord bot reconnect` commands for managing Discord bot connectivity on the fly.
-
-### 12. ⚙️ Vanilla Tech & Farm Exploits Support
+### 🏗️ 3. Vanilla Tech & Farm Exploits Support
 * **Bedrock Breaking**: Vanilla methods to break bedrock and End portal frames are enabled (`allow-permanent-block-break-exploits: true`).
 * **Headless Pistons**: Retaining headless pistons enabled for tech machinery (`allow-headless-pistons: true`).
 * **Falling Block Duplication**: End portals allow vanilla sand, gravel, and concrete powder duping for large-scale farms (`allow-unsafe-end-portal-teleportation: true`).
 * **TNT & Rail Duplication**: Piston duplication for primed TNT and rails is fully supported for tunnel bores and world eaters (`allow-piston-duplication: true`).
-
-### 13. ⚡ Extended Custom Mechanics (Fun Modes)
-* **Riptide without Rain**: Launch yourself with Riptide-enchanted tridents on dry land without rain or water. Features fall-damage protection on initial landing and friendly-fire protection for boat/horse passengers. *(Regular server restarts are recommended to ensure seamless chunk loading during high-speed elytra flights)*.
-* **Smart Anvil**: Removes the vanilla 40-level limit ("Too Expensive!"), allowing items to be repaired and combined infinitely.
-* **Spear No Hunger**: All spear types do not consume player hunger or exhaustion points.
 
 ---
 
