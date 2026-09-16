@@ -1840,7 +1840,6 @@ public class BloodmoonMode implements FunMode, Listener {
             }
             eb.setDescription(desc);
             eb.setTimestamp(Instant.now());
-            eb.setFooter("MineCord Bloodmoon Event");
 
             channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
                 plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду початку в Discord API", err);
@@ -1869,7 +1868,6 @@ public class BloodmoonMode implements FunMode, Listener {
                     "• Знищено кривавих монстрів: `" + mobsKilled + "`"
             );
             eb.setTimestamp(Instant.now());
-            eb.setFooter("MineCord Bloodmoon Event");
 
             channel.sendMessageEmbeds(eb.build()).queue(null, (err) -> {
                 plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Помилка надсилання ембеду світанку в Discord API", err);
