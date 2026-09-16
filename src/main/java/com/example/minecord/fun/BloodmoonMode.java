@@ -60,6 +60,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private boolean enabled = true;
     private double chancePercent = 10.0;
+    private boolean requirePlayersOnline = true;
     private final List<String> targetWorldNames = new ArrayList<>();
     private boolean blockBeds = true;
     private boolean redSkyEffects = true;
@@ -201,6 +202,7 @@ public class BloodmoonMode implements FunMode, Listener {
     private void reloadConfig() {
         enabled = plugin.getConfig().getBoolean("fun.modes.bloodmoon.enabled", true);
         chancePercent = plugin.getConfig().getDouble("fun.modes.bloodmoon.chance_percent", 10.0);
+        requirePlayersOnline = plugin.getConfig().getBoolean("fun.modes.bloodmoon.require_players_online", true);
         durationMinutes = plugin.getConfig().getInt("fun.modes.bloodmoon.duration_minutes", 10);
         durationSeconds = Math.max(60, durationMinutes * 60);
         blockBeds = plugin.getConfig().getBoolean("fun.modes.bloodmoon.block_beds", true);
@@ -286,6 +288,20 @@ public class BloodmoonMode implements FunMode, Listener {
         if (!active) {
             checkDuskRoll(world);
         } else {
+            if (requirePlayersOnline && Bukkit.getOnlinePlayers().isEmpty()) {
+                plugin.getLogger().info("[BloodmoonMode] На сервері 0 гравців — активний Кривавий Місяць скасовано.");
+                World w = activeWorld;
+                stopBloodmoon(false);
+                if (w != null) {
+                    w.setTime(0L);
+                    if (w.hasStorm()) {
+                        w.setStorm(false);
+                        w.setThundering(false);
+                    }
+                }
+                return;
+            }
+
             elapsedSeconds++;
             if (elapsedSeconds >= durationSeconds) {
                 stopBloodmoon(true);
@@ -315,6 +331,9 @@ public class BloodmoonMode implements FunMode, Listener {
 
     public void checkDuskRoll(World world) {
         if (!enabled || active || world == null) return;
+        if (requirePlayersOnline && Bukkit.getOnlinePlayers().isEmpty()) {
+            return;
+        }
         long time = world.getTime();
         // Перевірка заходу сонця (між 12541 та 13150 тіків)
         if (time >= 12541 && time <= 13150) {
@@ -357,6 +376,9 @@ public class BloodmoonMode implements FunMode, Listener {
     }
 
     public boolean startBloodmoon(World world, int tierLevel, boolean manual) {
+        if (!manual && requirePlayersOnline && Bukkit.getOnlinePlayers().isEmpty()) {
+            return false;
+        }
         BloodmoonTier tier = tiers.get(tierLevel);
         if (tier == null) {
             tier = tiers.getOrDefault(2, tiers.get(1));
@@ -368,6 +390,10 @@ public class BloodmoonMode implements FunMode, Listener {
 
     public void startBloodmoon(World world, BloodmoonTier tier, boolean manual) {
         if (world == null || tier == null) return;
+        if (!manual && requirePlayersOnline && Bukkit.getOnlinePlayers().isEmpty()) {
+            plugin.getLogger().info("[BloodmoonMode] Спроба автоматичного запуску Кривавого Місяця при 0 гравців скасована.");
+            return;
+        }
 
         if (world.getTime() < 13000 || world.getTime() >= 23000) {
             world.setTime(13000L);
@@ -561,6 +587,11 @@ public class BloodmoonMode implements FunMode, Listener {
             broadcastBloodmoonMessage(endMsg);
 
             sendDiscordEndEmbed();
+        } else if (activeWorld != null) {
+            if (activeWorld.hasStorm()) {
+                activeWorld.setStorm(false);
+                activeWorld.setThundering(false);
+            }
         }
 
         plugin.getLogger().info("[BloodmoonMode] Кривавий Місяць завершено." + (weakenedCount > 0 ? " Ослаблено монстрів: " + weakenedCount : ""));
@@ -1190,8 +1221,11 @@ public class BloodmoonMode implements FunMode, Listener {
             boss.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, bDuration, strAmp, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, bDuration, 0, false, false));
             if (currentTier.getLevel() >= 4) {
-                // Помірна регенерація I (~0.4 HP/сек, як у Візера) — бос повільно загоює рани, якщо гравець відійшов, але вона не нескінченна в активному бою
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 0, false, false));
+                // Титан Хаосу (Рівень 4): посилена регенерація краща за 3-го боса та Візера (Регенерація III, ~1.66 HP/сек)
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 2, false, false));
+            } else if (currentTier.getLevel() == 3) {
+                // Архідемон Смерті (Рівень 3): регенерація як у ванільного Візера (Регенерація II, ~0.8-1.0 HP/сек)
+                boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, bDuration, 1, false, false));
             }
 
             EntityEquipment eq = boss.getEquipment();
@@ -1730,6 +1764,12 @@ public class BloodmoonMode implements FunMode, Listener {
             return;
         }
 
+        if (requirePlayersOnline && Bukkit.getOnlinePlayers().isEmpty()) {
+            clearStateFile();
+            plugin.getLogger().info("[BloodmoonMode] Збережений стан Кривавого Місяця скинуто, оскільки на сервері 0 гравців.");
+            return;
+        }
+
         String wName = yaml.getString("world");
         World world = (wName != null) ? Bukkit.getWorld(wName) : null;
         if (world == null) {
@@ -1798,7 +1838,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Посилене спорядження: незеритовий та діамантовий захист!\n" +
                         "• Великі орди до 24 монстрів та швидкісні заряджені кріпери!\n" +
                         "• ✈️ **СУДНІ ФАНТОМИ-КАМІКАДЗЕ:** гігантські крилаті монстри несуть термоядерних заряджених кріперів з миттєвим вибухом!\n" +
-                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (550 HP)! Незеритовий захист, Сила II, регенерація I та свита вартових!\n" +
+                        "• Повстає **☠ ТИТАН ХАОСУ ☠** (550 HP)! Незеритовий захист, Сила II, посилена регенерація III та свита вартових!\n" +
                         "• За перемогу над босом: **Зірка Незеру, 2 Незеритові зливки, 2 Тотеми, 2 Яблука Нотча, 8-16 Алмазів та 5000 EXP**!\n\n" +
                         "⚰️ *Бийтеся до останнього подиху!*";
             } else if (tier.getLevel() == 3) {
@@ -1809,7 +1849,7 @@ public class BloodmoonMode implements FunMode, Listener {
                         "• Діамантова броня та зброя!\n" +
                         "• Заряджені кріпери та невпинні орди до 18 монстрів!\n" +
                         "• ✈️ **Пекельні Фантоми-Бомбардувальники:** нальоти фантомів із кріперами-камікадзе!\n" +
-                        "• Повстає **☠ Архідемон Смерті ☠** (380 HP, діамантова броня)!\n" +
+                        "• Повстає **☠ Архідемон Смерті ☠** (380 HP, діамантова броня, регенерація II як у Візера)!\n" +
                         "• За перемогу над босом: **1-2 Незеритові скрапи, 3-5 Алмазів, Тотем, 30% Зірка Незеру та 2200 EXP**!\n\n" +
                         "🛡️ *Збирайтеся у фортецях та тримайте оборону!*";
             } else if (tier.getLevel() == 2) {
@@ -2279,11 +2319,36 @@ public class BloodmoonMode implements FunMode, Listener {
             bossBar.removePlayer(p);
         }
         removeVisualsFromPlayer(p);
+
+        if (active && requirePlayersOnline) {
+            int remaining = 0;
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (!online.getUniqueId().equals(p.getUniqueId())) {
+                    remaining++;
+                }
+            }
+            if (remaining == 0) {
+                plugin.getLogger().info("[BloodmoonMode] Останній гравець покинув сервер — зупиняємо Кривавий Місяць.");
+                World w = activeWorld;
+                stopBloodmoon(false);
+                if (w != null) {
+                    w.setTime(0L);
+                    if (w.hasStorm()) {
+                        w.setStorm(false);
+                        w.setThundering(false);
+                    }
+                }
+            }
+        }
     }
 
     // ==========================================
     // Геттери для зовнішнього керування (команди)
     // ==========================================
+
+    public boolean isRequirePlayersOnline() {
+        return requirePlayersOnline;
+    }
 
     public boolean isBloodmoonActive() {
         return active;
