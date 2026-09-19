@@ -31,6 +31,7 @@ public final class MineCord extends JavaPlugin {
     private com.example.minecord.utils.PlayerTipManager playerTipManager;
     private com.example.minecord.utils.RoleSyncManager roleSyncManager;
     private com.example.minecord.fun.FunManager funManager;
+    private volatile boolean restarting = false;
 
     @Override
     public void onEnable() {
@@ -272,9 +273,9 @@ public final class MineCord extends JavaPlugin {
         }
         
         if (botManager != null) {
-            botManager.stop();
+            botManager.stop(true);
             this.botManager = new BotManager(this);
-            this.botManager.start();
+            this.botManager.start(true);
         }
         
         // Reload AI moderator
@@ -343,5 +344,13 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.fun.FunManager getFunManager() {
         return funManager;
+    }
+
+    public boolean isRestarting() {
+        return restarting;
+    }
+
+    public void setRestarting(boolean restarting) {
+        this.restarting = restarting;
     }
 }

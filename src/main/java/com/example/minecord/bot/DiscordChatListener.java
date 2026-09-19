@@ -51,6 +51,15 @@ public class DiscordChatListener extends ListenerAdapter {
 
             plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
             
+            String cleanCmd = command.toLowerCase().trim();
+            if (cleanCmd.startsWith("/")) cleanCmd = cleanCmd.substring(1).trim();
+            if (cleanCmd.equals("restart") || cleanCmd.startsWith("restart ")
+                    || cleanCmd.equals("spigot:restart") || cleanCmd.startsWith("spigot:restart ")
+                    || cleanCmd.equals("minecraft:restart") || cleanCmd.startsWith("minecraft:restart ")
+                    || cleanCmd.equals("queuerestart") || cleanCmd.startsWith("queuerestart ")) {
+                plugin.setRestarting(true);
+            }
+
             // Execute on the main server thread
             final String finalCommand = command;
             plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -149,6 +158,24 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
+        // Asynchronously resolve referenced message if this is a reply
+        net.dv8tion.jda.api.entities.MessageReference messageRef = event.getMessage().getMessageReference();
+        if (messageRef != null) {
+            net.dv8tion.jda.api.entities.Message cachedMsg = messageRef.getMessage();
+            if (cachedMsg != null) {
+                processBridgeMessage(event, cachedMsg);
+            } else {
+                messageRef.resolve().timeout(2, java.util.concurrent.TimeUnit.SECONDS).queue(
+                        resolved -> processBridgeMessage(event, resolved),
+                        failure -> processBridgeMessage(event, null)
+                );
+            }
+        } else {
+            processBridgeMessage(event, null);
+        }
+    }
+
+    private void processBridgeMessage(@NotNull MessageReceivedEvent event, net.dv8tion.jda.api.entities.Message refMsg) {
         try {
             // Use effective guild nickname if available, else global username
             String author = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
@@ -178,7 +205,6 @@ public class DiscordChatListener extends ListenerAdapter {
             }
 
             // 3. Check if message is a reply to another message
-            net.dv8tion.jda.api.entities.Message refMsg = event.getMessage().getReferencedMessage();
             TextComponent replyComponent = null;
 
             if (refMsg != null) {
@@ -221,9 +247,16 @@ public class DiscordChatListener extends ListenerAdapter {
                 try {
                     replyComponent.setHoverEvent(new HoverEvent(
                             HoverEvent.Action.SHOW_TEXT,
-                            TextComponent.fromLegacyText(hoverText)
+                            new Text(hoverText)
                     ));
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                    try {
+                        replyComponent.setHoverEvent(new HoverEvent(
+                                HoverEvent.Action.SHOW_TEXT,
+                                TextComponent.fromLegacyText(hoverText)
+                        ));
+                    } catch (Throwable ignored2) {}
+                }
             }
 
             // Role prefix for the Discord author

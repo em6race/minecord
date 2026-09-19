@@ -11,10 +11,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 
 import java.util.List;
 import java.util.UUID;
@@ -296,5 +298,32 @@ public class PlayerEventListener implements Listener {
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerAdvancement", e);
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        String msg = event.getMessage().trim().toLowerCase();
+        if (msg.startsWith("/")) msg = msg.substring(1).trim();
+        if (isRestartCmd(msg)) {
+            if (event.getPlayer().isOp() || event.getPlayer().hasPermission("bukkit.command.restart")) {
+                plugin.setRestarting(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onServerCommand(ServerCommandEvent event) {
+        String cmd = event.getCommand().trim().toLowerCase();
+        if (cmd.startsWith("/")) cmd = cmd.substring(1).trim();
+        if (isRestartCmd(cmd)) {
+            plugin.setRestarting(true);
+        }
+    }
+
+    private boolean isRestartCmd(String cmd) {
+        return cmd.equals("restart") || cmd.startsWith("restart ")
+                || cmd.equals("spigot:restart") || cmd.startsWith("spigot:restart ")
+                || cmd.equals("minecraft:restart") || cmd.startsWith("minecraft:restart ")
+                || cmd.equals("queuerestart") || cmd.startsWith("queuerestart ");
     }
 }

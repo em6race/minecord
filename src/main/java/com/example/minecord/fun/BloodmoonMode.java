@@ -119,25 +119,25 @@ public class BloodmoonMode implements FunMode, Listener {
 
     private void registerDefaultTiers() {
         tiers.put(1, new BloodmoonTier(
-                1, "tier_1", "Кривавий Місяць", 60,
+                1, "tier_1", "Кривавий Місяць", 40,
                 1.6, 0, 0, 0, 40,
                 2.0, 20.0, 4, 8,
                 "§5§lКривавий Жнець", BarColor.RED, 0xDD0000
         ));
         tiers.put(2, new BloodmoonTier(
-                2, "tier_2", "Кривавий Армагеддон", 25,
+                2, "tier_2", "Кривавий Армагеддон", 30,
                 2.5, 1, 1, 0, 60,
                 3.0, 35.0, 6, 12,
                 "§4§l☠ Володар Безодні ☠", BarColor.RED, 0xAA0000
         ));
         tiers.put(3, new BloodmoonTier(
-                3, "tier_3", "Пекельний Катаклізм", 12,
+                3, "tier_3", "Пекельний Катаклізм", 20,
                 3.5, 1, 2, 1, 80,
                 5.0, 50.0, 10, 18,
                 "§4§l☠ Архідемон Смерті ☠", BarColor.PURPLE, 0x660033
         ));
         tiers.put(4, new BloodmoonTier(
-                4, "tier_4", "☠ Судний День (Раґнарок) ☠", 3,
+                4, "tier_4", "☠ Судний День (Раґнарок) ☠", 10,
                 5.0, 2, 2, 1, 90,
                 8.0, 70.0, 14, 24,
                 "§0§l☠ §4§lТИТАН ХАОСУ §0§l☠", BarColor.PURPLE, 0x2A0000
