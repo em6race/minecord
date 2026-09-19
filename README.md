@@ -97,6 +97,7 @@
 *Налаштування: `fun.modes.bloodmoon.enabled: false`*
 
 Повномасштабна система нічних катаклізмів з унікальними мобами, окупацією неба та грандіозними босами:
+* **Захист від порожнього сервера**: Кривавий Місяць не запускається і автоматично зупиняється, коли на сервері 0 гравців (`require_players_online: true`), запобігаючи спаму в Discord.
 * **Блокування сну**: Сон у ліжках повністю заборонено до настання світанку.
 * **4 Хардкорні Рівні та Збалансований Лут**:
   * **Рівень 1 («Кривавий Місяць»)**: Множник HP 2.5x, бафи Швидкості та Сили, 70% діамантової броні, бос **«Кривавий Жнець»** (300 HP). Дроп: залізо, золото, поодинокі діаманти (незерит відсутній).
@@ -193,14 +194,6 @@
 *Налаштування: `technical.*`, `sentry.enabled: false`*
 * **Performance Monitor**: Автоматичне сповіщення адміністрації у Discord при просіданні TPS нижче критичного порогу (15.0) або переповненні RAM (> 95%), з можливістю автоматичного запуску профилювання Spark.
 * **Error Catcher & Sentry**: Автоматичний перехват критичних помилок із вивантаженням стектрейсів на paste-сервіс або в хмару Sentry.
-
----
-
-### 🏗️ 3. Підтримка ванільних механік та ферм (Vanilla Exploits)
-* **Ламання бедроку**: Дозволено класичні способи видалення бедроку та рамок порталу в Енд (`allow-permanent-block-break-exploits: true`).
-* **Безголові поршні**: Розблоковано створення headless pistons (`allow-headless-pistons: true`).
-* **Дюп падаючих блоків**: Портали в Енд дозволяють класичний дюп піску, гравію та бетону для масштабних будівельних ферм (`allow-unsafe-end-portal-teleportation: true`).
-* **Дюп динаміту (TNT) та рейок**: Поршневе копіювання активованого TNT для кар'єрів та тунелебудівників повністю працює (`allow-piston-duplication: true`).
 
 ---
 
@@ -429,14 +422,6 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 *Configuration: `technical.*`, `sentry.enabled: false`*
 * **Performance Monitor**: Sends Discord alert embeds when TPS drops below threshold (15.0) or memory spikes (> 95%), with optional automated Spark profiler triggers.
 * **Error Catcher & Sentry**: Captures uncaught exceptions and uploads stack traces to a paste service or cloud Sentry dashboard.
-
----
-
-### 🏗️ 3. Vanilla Tech & Farm Exploits Support
-* **Bedrock Breaking**: Vanilla methods to break bedrock and End portal frames are enabled (`allow-permanent-block-break-exploits: true`).
-* **Headless Pistons**: Retaining headless pistons enabled for tech machinery (`allow-headless-pistons: true`).
-* **Falling Block Duplication**: End portals allow vanilla sand, gravel, and concrete powder duping for large-scale farms (`allow-unsafe-end-portal-teleportation: true`).
-* **TNT & Rail Duplication**: Piston duplication for primed TNT and rails is fully supported for tunnel bores and world eaters (`allow-piston-duplication: true`).
 
 ---
 

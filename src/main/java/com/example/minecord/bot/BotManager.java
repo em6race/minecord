@@ -29,6 +29,10 @@ public class BotManager {
     }
 
     public void start() {
+        start(false);
+    }
+
+    public void start(boolean isReload) {
         String token = plugin.getConfig().getString("discord.token");
         if (token == null || token.equals("YOUR_DISCORD_BOT_TOKEN_HERE") || token.isEmpty()) {
             plugin.getLogger().warning("Будь ласка, вкажіть токен бота в config.yml!");
@@ -148,9 +152,11 @@ public class BotManager {
                 }
 
                 // Send startup notification
-                String startMsg = plugin.getConfig().getString("events.server-start", "✅ **Сервер успішно запущено! Можна заходити!**");
-                if (startMsg != null && !startMsg.isEmpty()) {
-                    sendSystemEmbed(startMsg, 0x00FF00, null);
+                if (!isReload) {
+                    String startMsg = plugin.getConfig().getString("events.server-start", "✅ **Сервер успішно запущено!**");
+                    if (startMsg != null && !startMsg.isEmpty()) {
+                        sendSystemEmbed(startMsg, 0x00FF00, null);
+                    }
                 }
             } catch (Throwable e) {
                 plugin.getLogger().log(java.util.logging.Level.SEVERE, "Помилка бота: " + e.getMessage(), e);
@@ -159,20 +165,31 @@ public class BotManager {
     }
 
     public void stop() {
+        stop(false);
+    }
+
+    public void stop(boolean isReload) {
         if (statusTaskId != -1) {
             Bukkit.getScheduler().cancelTask(statusTaskId);
             statusTaskId = -1;
         }
         
-        // Send shutdown notification (synchronously so it completes before process exits)
-        if (jda != null) {
+        // Send shutdown / restart notification (synchronously so it completes before process exits)
+        if (jda != null && !isReload) {
             try {
-                String stopMsg = plugin.getConfig().getString("events.server-stop", "🛑 **Сервер вимкнено!**");
-                if (stopMsg != null && !stopMsg.isEmpty()) {
-                    sendSystemEmbedSync(stopMsg, 0xFF0000, null);
+                if (plugin.isRestarting()) {
+                    String restartMsg = plugin.getConfig().getString("events.server-restart", "🔄 **Сервер перезавантажується...**");
+                    if (restartMsg != null && !restartMsg.isEmpty()) {
+                        sendSystemEmbedSync(restartMsg, 0xFFA500, null);
+                    }
+                } else {
+                    String stopMsg = plugin.getConfig().getString("events.server-stop", "🛑 **Сервер вимкнено!**");
+                    if (stopMsg != null && !stopMsg.isEmpty()) {
+                        sendSystemEmbedSync(stopMsg, 0xFF0000, null);
+                    }
                 }
             } catch (Throwable e) {
-                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to send stop embed", e);
+                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to send stop/restart embed", e);
             }
         }
 

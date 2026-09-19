@@ -53,6 +53,7 @@ public class AutoRestartManager implements CommandExecutor {
                     plugin.getBotManager().sendSystemEmbed("⏱ Онлайн 0 гравців: одноразовий рестарт сервера розпочнеться через 5 секунд...", 0xFFA500, null);
                 }
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    plugin.setRestarting(true);
                     List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                     if (commands.isEmpty()) commands.add("restart");
                     for (String cmd : commands) {
@@ -121,6 +122,7 @@ public class AutoRestartManager implements CommandExecutor {
                     // Execute commands when timer reaches 0
                     if (diff == 0) {
                         smartRestartPending = false;
+                        plugin.setRestarting(true);
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                             if (commands.isEmpty()) commands.add("restart");
@@ -159,8 +161,6 @@ public class AutoRestartManager implements CommandExecutor {
                 plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 5 хвилин!", 0xFFA500, null);
             } else if (secondsLeft == 60) {
                 plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 1 хвилину!", 0xFFA500, null);
-            } else if (secondsLeft == 0) {
-                plugin.getBotManager().sendSystemEmbedSync("⏱ Планове перезавантаження сервера почалося!", 0xFFA500, null);
             }
         }
     }
