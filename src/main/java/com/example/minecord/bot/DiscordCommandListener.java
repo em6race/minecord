@@ -78,7 +78,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             else if (event.getName().equals("map")) {
                 event.deferReply(true).queue();
                 String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
-                if (mapUrl == null || mapUrl.trim().isEmpty() || mapUrl.contains("localhost")) {
+                if (mapUrl == null || mapUrl.trim().isEmpty()) {
                     mapUrl = "http://localhost:8100/";
                 }
                 if (!mapUrl.endsWith("/")) mapUrl += "/";

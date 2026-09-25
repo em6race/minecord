@@ -20,10 +20,10 @@ public class TabManager {
             String tpsStr = getTPSString();
             String uptimeStr = getUptimeString();
             
-            String header = plugin.getConfig().getString("tablist.header", "§d§lMineCord\n§7Ласкаво просимо!\n");
+            String header = plugin.getConfig().getString("tablist.header", "&b&lMineCord Server\n&7Welcome to the server!\n");
             header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
             
-            String footerTemplate = plugin.getConfig().getString("tablist.footer", "\n§7ТПС: %tps% §8| §7Аптайм: §e%uptime% §8| §7Пінг: %ping%мс");
+            String footerTemplate = plugin.getConfig().getString("tablist.footer", "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms");
             String baseFooter = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate)
                     .replace("%tps%", tpsStr)
                     .replace("%uptime%", uptimeStr);
@@ -67,11 +67,19 @@ public class TabManager {
         long hours = diff / (60 * 60 * 1000) % 24;
         long days = diff / (24 * 60 * 60 * 1000);
         
+        String lang = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getLanguage() : "en";
+        boolean isUk = "uk".equalsIgnoreCase(lang);
+
+        String dayUnit = isUk ? "д " : "d ";
+        String hourUnit = isUk ? "г " : "h ";
+        String minUnit = isUk ? "хв " : "m ";
+        String secUnit = isUk ? "с" : "s";
+
         StringBuilder sb = new StringBuilder();
-        if (days > 0) sb.append(days).append("д ");
-        if (hours > 0) sb.append(hours).append("г ");
-        if (minutes > 0) sb.append(minutes).append("хв ");
-        sb.append(seconds).append("с");
+        if (days > 0) sb.append(days).append(dayUnit);
+        if (hours > 0) sb.append(hours).append(hourUnit);
+        if (minutes > 0) sb.append(minutes).append(minUnit);
+        sb.append(seconds).append(secUnit);
         return sb.toString();
     }
 }
