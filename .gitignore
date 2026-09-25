@@ -16,7 +16,6 @@ __pycache__/
 scripts/
 graphify-out/
 GEMINI.md
-future-changes/
 *.py
 runs.json
 uk_ua.json
