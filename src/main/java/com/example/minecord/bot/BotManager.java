@@ -153,9 +153,23 @@ public class BotManager {
 
                 // Send startup notification
                 if (!isReload) {
-                    String startMsg = plugin.getConfig().getString("events.server-start", "✅ **Сервер успішно запущено!**");
-                    if (startMsg != null && !startMsg.isEmpty()) {
-                        sendSystemEmbed(startMsg, 0x00FF00, null);
+                    java.io.File emptyRestartMarker = new java.io.File(plugin.getDataFolder(), ".empty_restart");
+                    boolean wasEmptyRestart = emptyRestartMarker.exists();
+                    if (wasEmptyRestart) {
+                        try {
+                            emptyRestartMarker.delete();
+                        } catch (Throwable ignored) {}
+                    }
+
+                    boolean notifyEmpty = plugin.shouldNotifyEmptyServer();
+                    if (wasEmptyRestart && !notifyEmpty) {
+                        plugin.getLogger().info("[MineCord] Сповіщення про запуск у Discord пропущено (0 онлайну під час попереднього рестарту/вимкнення).");
+                    } else {
+                        String defaultStart = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getRaw("events.server-start") : "✅ **Server started successfully!**";
+                        String startMsg = plugin.getConfig().getString("events.server-start", defaultStart);
+                        if (startMsg != null && !startMsg.isEmpty()) {
+                            sendSystemEmbed(startMsg, 0x00FF00, null);
+                        }
                     }
                 }
             } catch (Throwable e) {
@@ -176,20 +190,47 @@ public class BotManager {
         
         // Send shutdown / restart notification (synchronously so it completes before process exits)
         if (jda != null && !isReload) {
-            try {
-                if (plugin.isRestarting()) {
-                    String restartMsg = plugin.getConfig().getString("events.server-restart", "🔄 **Сервер перезавантажується...**");
-                    if (restartMsg != null && !restartMsg.isEmpty()) {
-                        sendSystemEmbedSync(restartMsg, 0xFFA500, null);
+            boolean hadPlayers = plugin.hadPlayersBeforeShutdown();
+            boolean notifyEmpty = plugin.shouldNotifyEmptyServer();
+            
+            java.io.File emptyRestartMarker = new java.io.File(plugin.getDataFolder(), ".empty_restart");
+            if (!hadPlayers && !notifyEmpty) {
+                try {
+                    if (!plugin.getDataFolder().exists()) {
+                        plugin.getDataFolder().mkdirs();
                     }
-                } else {
-                    String stopMsg = plugin.getConfig().getString("events.server-stop", "🛑 **Сервер вимкнено!**");
-                    if (stopMsg != null && !stopMsg.isEmpty()) {
-                        sendSystemEmbedSync(stopMsg, 0xFF0000, null);
-                    }
+                    emptyRestartMarker.createNewFile();
+                } catch (Throwable e) {
+                    plugin.getLogger().warning("Не вдалося створити маркер .empty_restart: " + e.getMessage());
                 }
-            } catch (Throwable e) {
-                plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to send stop/restart embed", e);
+            } else {
+                if (emptyRestartMarker.exists()) {
+                    try {
+                        emptyRestartMarker.delete();
+                    } catch (Throwable ignored) {}
+                }
+            }
+
+            if (hadPlayers || notifyEmpty) {
+                try {
+                    if (plugin.isRestarting()) {
+                        String defaultRestart = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getRaw("events.server-restart") : "🔄 **Server is restarting...**";
+                        String restartMsg = plugin.getConfig().getString("events.server-restart", defaultRestart);
+                        if (restartMsg != null && !restartMsg.isEmpty()) {
+                            sendSystemEmbedSync(restartMsg, 0xFFA500, null);
+                        }
+                    } else {
+                        String defaultStop = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getRaw("events.server-stop") : "🛑 **Server closed!**";
+                        String stopMsg = plugin.getConfig().getString("events.server-stop", defaultStop);
+                        if (stopMsg != null && !stopMsg.isEmpty()) {
+                            sendSystemEmbedSync(stopMsg, 0xFF0000, null);
+                        }
+                    }
+                } catch (Throwable e) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to send stop/restart embed", e);
+                }
+            } else {
+                plugin.getLogger().info("[MineCord] Сповіщення про " + (plugin.isRestarting() ? "рестарт" : "вимкнення") + " у Discord пропущено (0 онлайну).");
             }
         }
 

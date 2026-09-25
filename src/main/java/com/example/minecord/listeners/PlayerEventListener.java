@@ -118,27 +118,27 @@ public class PlayerEventListener implements Listener {
             }
 
             if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
-                String welcomeMessage = ChatColor.GOLD + "🎉 Вітаємо нового гравця " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " на сервері!";
+                String welcomeMessage = plugin.getLanguageManager().get("events.first-join", player.getName());
                 plugin.getServer().broadcastMessage(welcomeMessage);
                 
                 if (plugin.getBotManager() != null) {
-                    plugin.getBotManager().sendSystemEmbed(player.getName() + " вперше приєднався до сервера! Бажаємо гарної гри!", 0xFFA500, player.getName());
+                    String embedText = plugin.getLanguageManager().getRaw("events.first-join-embed", player.getName());
+                    plugin.getBotManager().sendSystemEmbed(embedText, 0xFFA500, player.getName());
                 }
             } else if (plugin.getConfig().getBoolean("events.join-leave", true)) {
                 if (plugin.getBotManager() != null) {
-                    plugin.getBotManager().sendSystemEmbed(player.getName() + " зайшов на сервер.", 0x00FF00, player.getName());
+                    String embedText = plugin.getLanguageManager().getRaw("events.join", player.getName());
+                    plugin.getBotManager().sendSystemEmbed(embedText, 0x00FF00, player.getName());
                 }
-            }
-
-            // Start periodic personal tips for this player (1-2 hours)
-            if (plugin.getPlayerTipManager() != null) {
-                plugin.getPlayerTipManager().startForPlayer(player);
             }
 
             // Synchronize Discord role, TAB prefix, and nametag
             if (plugin.getRoleSyncManager() != null) {
                 plugin.getRoleSyncManager().syncPlayer(player);
             }
+
+            plugin.setLastPlayerSeenOnlineMillis(System.currentTimeMillis());
+            plugin.setHadPlayersBeforeShutdown(null);
 
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerJoin", e);
@@ -148,8 +148,8 @@ public class PlayerEventListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         try {
-            if (plugin.getPlayerTipManager() != null) {
-                plugin.getPlayerTipManager().stopForPlayer(event.getPlayer().getUniqueId());
+            if (plugin.getServer().getOnlinePlayers().size() > 1) {
+                plugin.setLastPlayerSeenOnlineMillis(System.currentTimeMillis());
             }
 
             if (plugin.getRoleSyncManager() != null) {
@@ -163,7 +163,8 @@ public class PlayerEventListener implements Listener {
 
             if (plugin.getConfig().getBoolean("events.join-leave", true)) {
                 if (plugin.getBotManager() != null) {
-                    plugin.getBotManager().sendSystemEmbed(event.getPlayer().getName() + " вийшов із сервера.", 0xFF0000, event.getPlayer().getName());
+                    String embedText = plugin.getLanguageManager().getRaw("events.quit", event.getPlayer().getName());
+                    plugin.getBotManager().sendSystemEmbed(embedText, 0xFF0000, event.getPlayer().getName());
                 }
             }
         } catch (Throwable e) {
@@ -191,12 +192,13 @@ public class PlayerEventListener implements Listener {
             org.bukkit.Location loc = player.getLocation();
             String worldName = loc.getWorld().getName();
             
-            String dimension = "Верхній світ";
-            if (worldName.endsWith("_nether")) dimension = "Незер";
-            else if (worldName.endsWith("_the_end")) dimension = "Енд";
+            String dimensionKey = "events.dimensions.overworld";
+            if (worldName.endsWith("_nether")) dimensionKey = "events.dimensions.nether";
+            else if (worldName.endsWith("_the_end")) dimensionKey = "events.dimensions.end";
+            String dimension = plugin.getLanguageManager().getRaw(dimensionKey);
             
             // Send coordinates to player with clickable map link
-            String coordsMsg = String.format("§c📍 Ви померли на координатах: §eX: %d, Y: %d, Z: %d §7(%s)", 
+            String coordsMsg = plugin.getLanguageManager().get("events.death-coords", 
                     loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
             
             String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
@@ -208,16 +210,18 @@ public class PlayerEventListener implements Listener {
             // Link format for BlueMap (version 4/5+ requires 10 parameters)
             String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             
+            String buttonText = plugin.getLanguageManager().getRaw("events.death-coords-map-button");
+            String hoverText = plugin.getLanguageManager().getRaw("events.death-coords-map-hover");
             net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
-            net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent("§b§n[🗺️ Відкрити на мапі]");
+            net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent(buttonText);
             linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
-            linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text("Натисніть, щоб відкрити місце смерті в браузері")));
+            linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text(hoverText)));
             
             msgComponent.addExtra(linkComponent);
             player.spigot().sendMessage(msgComponent);
             
             // Log to server console
-            plugin.getLogger().info(String.format("Гравець %s помер на координатах: X: %d, Y: %d, Z: %d (%s)", 
+            plugin.getLogger().info(plugin.getLanguageManager().getRaw("events.death-coords-log", 
                     player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension));
 
             if (plugin.getConfig().getBoolean("events.death", true)) {
@@ -231,12 +235,12 @@ public class PlayerEventListener implements Listener {
                         cleanMessage = com.example.minecord.utils.RoleSyncManager.stripRoleTags(cleanMessage);
                     }
                     
-                    // Translate message to Ukrainian with fallback
+                    String lang = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getLanguage() : "en";
                     String translatedMessage = cleanMessage;
                     try {
-                        translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage);
+                        translatedMessage = com.example.minecord.utils.DeathTranslator.translate(cleanMessage, lang);
                     } catch (Throwable t) {
-                        plugin.getLogger().warning("Не вдалося перекласти повідомлення про смерть: " + t.getMessage());
+                        plugin.getLogger().warning("Could not translate death message: " + t.getMessage());
                     }
 
                     if (plugin.getRoleSyncManager() != null) {
@@ -283,17 +287,19 @@ public class PlayerEventListener implements Listener {
                 // Paper API getDisplay() can throw UnsupportedOperationException
             }
 
+            String lang = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getLanguage() : "en";
             String translatedTitle = fallbackTitle;
             try {
-                translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle);
+                translatedTitle = com.example.minecord.utils.AdvancementTranslator.translate(advKey, fallbackTitle, lang);
             } catch (Throwable t) {
-                plugin.getLogger().warning("Не вдалося перекласти назву досягнення: " + t.getMessage());
+                plugin.getLogger().warning("Could not translate advancement: " + t.getMessage());
             }
             
             // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
             // But we have translations for all standard ones.
             if (plugin.getBotManager() != null) {
-                plugin.getBotManager().sendSystemEmbed("🏆 " + event.getPlayer().getName() + " виконав здобуток: " + translatedTitle, 0xFFD700, event.getPlayer().getName());
+                String embedMsg = plugin.getLanguageManager().getRaw("advancement.embed", event.getPlayer().getName(), translatedTitle);
+                plugin.getBotManager().sendSystemEmbed(embedMsg, 0xFFD700, event.getPlayer().getName());
             }
         } catch (Throwable e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error in onPlayerAdvancement", e);
@@ -307,6 +313,11 @@ public class PlayerEventListener implements Listener {
         if (isRestartCmd(msg)) {
             if (event.getPlayer().isOp() || event.getPlayer().hasPermission("bukkit.command.restart")) {
                 plugin.setRestarting(true);
+                plugin.recordPlayerPresenceBeforeShutdown();
+            }
+        } else if (isStopCmd(msg)) {
+            if (event.getPlayer().isOp() || event.getPlayer().hasPermission("bukkit.command.stop")) {
+                plugin.recordPlayerPresenceBeforeShutdown();
             }
         }
     }
@@ -317,6 +328,9 @@ public class PlayerEventListener implements Listener {
         if (cmd.startsWith("/")) cmd = cmd.substring(1).trim();
         if (isRestartCmd(cmd)) {
             plugin.setRestarting(true);
+            plugin.recordPlayerPresenceBeforeShutdown();
+        } else if (isStopCmd(cmd)) {
+            plugin.recordPlayerPresenceBeforeShutdown();
         }
     }
 
@@ -325,5 +339,12 @@ public class PlayerEventListener implements Listener {
                 || cmd.equals("spigot:restart") || cmd.startsWith("spigot:restart ")
                 || cmd.equals("minecraft:restart") || cmd.startsWith("minecraft:restart ")
                 || cmd.equals("queuerestart") || cmd.startsWith("queuerestart ");
+    }
+
+    private boolean isStopCmd(String cmd) {
+        return cmd.equals("stop") || cmd.startsWith("stop ")
+                || cmd.equals("minecraft:stop") || cmd.startsWith("minecraft:stop ")
+                || cmd.equals("spigot:stop") || cmd.startsWith("spigot:stop ")
+                || cmd.equals("end") || cmd.startsWith("end ");
     }
 }

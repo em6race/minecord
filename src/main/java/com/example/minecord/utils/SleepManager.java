@@ -187,33 +187,16 @@ public class SleepManager implements Listener {
                 world.setStorm(false);
                 world.setThundering(false);
             }
-            Bukkit.broadcastMessage(ChatColor.GOLD + "🌙 Світло перемогло темряву! Ніч пропущено.");
+            Bukkit.broadcastMessage(plugin.getLanguageManager().get("sleep.skipped"));
 
             if (plugin.getConfig().getBoolean("events.night-skip", true) && plugin.getBotManager() != null) {
-                List<String> sleepingNames = sleepingPlayers.stream()
-                        .map(Player::getName)
-                        .collect(Collectors.toList());
-
-                String headPlayer = null;
-                String text;
-                if (!sleepingNames.isEmpty()) {
-                    if (sleepingNames.size() == 1) {
-                        headPlayer = sleepingNames.get(0);
-                        text = "☀️ " + headPlayer + " пропустив(ла) ніч. Доброго ранку!";
-                    } else {
-                        text = "☀️ " + String.join(", ", sleepingNames) + " пропустили ніч. Доброго ранку!";
-                    }
-                } else {
-                    text = "☀️ Ніч було пропущено. Доброго ранку!";
-                }
-
+                String headPlayer = !sleepingPlayers.isEmpty() ? sleepingPlayers.get(0).getName() : null;
+                String text = plugin.getLanguageManager().getRaw("sleep.discord-embed");
                 plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
             }
         } else if (bedEnterer != null) {
-            int remaining = required - (int) sleepingCount;
-            String poolLabel = totalActive == 1 ? "активного гравця" : "активних гравців";
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "🛏 " + ChatColor.WHITE + 
-                bedEnterer.getName() + " ліг спати. Потрібно ще " + remaining + " (всього " + required + " з " + totalActive + " " + poolLabel + ").");
+            Bukkit.broadcastMessage(plugin.getLanguageManager().get("sleep.status", 
+                bedEnterer.getName(), sleepingCount, totalActive, percent));
         }
     }
 }

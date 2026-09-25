@@ -60,10 +60,10 @@ public class DiscordCommandListener extends ListenerAdapter {
                 net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
 
                 if (onlineCount == 0) {
-                    embed.setTitle("🔴 Наразі на сервері немає гравців (0/" + maxPlayers + ")");
+                    embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-empty", onlineCount, maxPlayers));
                     embed.setColor(0xFF0000);
                 } else {
-                    embed.setTitle("🟢 Онлайн (" + onlineCount + "/" + maxPlayers + "):");
+                    embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-header", onlineCount, maxPlayers));
                     embed.setColor(0x00FF00);
 
                     StringBuilder playersList = new StringBuilder();

@@ -28,14 +28,19 @@ public final class MineCord extends JavaPlugin {
     private BlueMapManager blueMapManager;
     private com.example.minecord.utils.LeaderboardManager leaderboardManager;
     private com.example.minecord.utils.PlayerCacheManager playerCacheManager;
-    private com.example.minecord.utils.PlayerTipManager playerTipManager;
     private com.example.minecord.utils.RoleSyncManager roleSyncManager;
     private com.example.minecord.fun.FunManager funManager;
+    private com.example.minecord.utils.LanguageManager languageManager;
     private volatile boolean restarting = false;
+    private volatile long lastPlayerSeenOnlineMillis = 0;
+    private volatile Boolean hadPlayersBeforeShutdown = null;
+    private int playerPresenceTaskId = -1;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        this.languageManager = new com.example.minecord.utils.LanguageManager(this);
+        this.languageManager.load();
         
         String sentryDsn = getConfig().getString("sentry.dsn");
         if (getConfig().getBoolean("sentry.enabled", false) && sentryDsn != null && !sentryDsn.isEmpty()) {
@@ -57,8 +62,14 @@ public final class MineCord extends JavaPlugin {
         linkManager = new AccountLinkManager(this);
         this.playerCacheManager = new com.example.minecord.utils.PlayerCacheManager(this);
         this.playerCacheManager.init();
-        this.playerTipManager = new com.example.minecord.utils.PlayerTipManager(this);
-        this.playerTipManager.start();
+
+        // Track player presence periodically so shutdown knows if players were online right before kick
+        this.playerPresenceTaskId = getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            if (!getServer().getOnlinePlayers().isEmpty()) {
+                lastPlayerSeenOnlineMillis = System.currentTimeMillis();
+            }
+        }, 20L, 20L);
+
         botManager = new BotManager(this);
         botManager.start();
         
@@ -211,19 +222,23 @@ public final class MineCord extends JavaPlugin {
         if (blueMapManager != null) {
             blueMapManager.stop();
         }
-        if (playerTipManager != null) {
-            playerTipManager.stop();
-        }
         if (roleSyncManager != null) {
             roleSyncManager.stop();
         }
         if (funManager != null) {
             funManager.shutdown();
         }
+        if (playerPresenceTaskId != -1) {
+            getServer().getScheduler().cancelTask(playerPresenceTaskId);
+            playerPresenceTaskId = -1;
+        }
     }
     
     public void reloadPlugin() {
         reloadConfig();
+        if (languageManager != null) {
+            languageManager.load();
+        }
         
         if (autoRestartManager != null) {
             autoRestartManager.stop();
@@ -264,12 +279,6 @@ public final class MineCord extends JavaPlugin {
             blueMapManager.stop();
             this.blueMapManager = new BlueMapManager(this);
             this.blueMapManager.start();
-        }
-        
-        if (playerTipManager != null) {
-            playerTipManager.stop();
-            this.playerTipManager = new com.example.minecord.utils.PlayerTipManager(this);
-            this.playerTipManager.start();
         }
         
         if (botManager != null) {
@@ -330,10 +339,6 @@ public final class MineCord extends JavaPlugin {
         return playerCacheManager;
     }
 
-    public com.example.minecord.utils.PlayerTipManager getPlayerTipManager() {
-        return playerTipManager;
-    }
-
     public com.example.minecord.utils.RoleSyncManager getRoleSyncManager() {
         return roleSyncManager;
     }
@@ -352,5 +357,46 @@ public final class MineCord extends JavaPlugin {
 
     public void setRestarting(boolean restarting) {
         this.restarting = restarting;
+    }
+
+    public boolean shouldNotifyEmptyServer() {
+        return getConfig().getBoolean("events.notify-empty-server", false);
+    }
+
+    public void recordPlayerPresenceBeforeShutdown() {
+        boolean hasPlayers = !getServer().getOnlinePlayers().isEmpty();
+        this.hadPlayersBeforeShutdown = hasPlayers;
+        if (hasPlayers) {
+            this.lastPlayerSeenOnlineMillis = System.currentTimeMillis();
+        }
+    }
+
+    public void setHadPlayersBeforeShutdown(Boolean had) {
+        this.hadPlayersBeforeShutdown = had;
+        if (Boolean.TRUE.equals(had)) {
+            this.lastPlayerSeenOnlineMillis = System.currentTimeMillis();
+        }
+    }
+
+    public boolean hadPlayersBeforeShutdown() {
+        if (hadPlayersBeforeShutdown != null) {
+            return hadPlayersBeforeShutdown;
+        }
+        if (!getServer().getOnlinePlayers().isEmpty()) {
+            return true;
+        }
+        return lastPlayerSeenOnlineMillis > 0 && (System.currentTimeMillis() - lastPlayerSeenOnlineMillis) < 7000L;
+    }
+
+    public void setLastPlayerSeenOnlineMillis(long millis) {
+        this.lastPlayerSeenOnlineMillis = millis;
+    }
+
+    public long getLastPlayerSeenOnlineMillis() {
+        return lastPlayerSeenOnlineMillis;
+    }
+
+    public com.example.minecord.utils.LanguageManager getLanguageManager() {
+        return languageManager;
     }
 }

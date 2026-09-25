@@ -49,9 +49,10 @@ public class AutoRestartManager implements CommandExecutor {
             if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
                 smartRestartPending = false;
                 plugin.getLogger().info("Онлайн дорівнює 0: одноразовий рестарт сервера розпочнеться через 5 секунд.");
-                if (plugin.getBotManager() != null) {
+                if (plugin.shouldNotifyEmptyServer() && plugin.getBotManager() != null) {
                     plugin.getBotManager().sendSystemEmbed("⏱ Онлайн 0 гравців: одноразовий рестарт сервера розпочнеться через 5 секунд...", 0xFFA500, null);
                 }
+                plugin.setHadPlayersBeforeShutdown(false);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     plugin.setRestarting(true);
                     List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
@@ -123,6 +124,7 @@ public class AutoRestartManager implements CommandExecutor {
                     if (diff == 0) {
                         smartRestartPending = false;
                         plugin.setRestarting(true);
+                        plugin.recordPlayerPresenceBeforeShutdown();
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                             if (commands.isEmpty()) commands.add("restart");
@@ -157,10 +159,14 @@ public class AutoRestartManager implements CommandExecutor {
         
         // Send scheduled restart notification to Discord
         if (plugin.getBotManager() != null) {
-            if (secondsLeft == 300) {
-                plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 5 хвилин!", 0xFFA500, null);
-            } else if (secondsLeft == 60) {
-                plugin.getBotManager().sendSystemEmbed("⚠️ Планове перезавантаження сервера через 1 хвилину!", 0xFFA500, null);
+            boolean notifyEmpty = plugin.shouldNotifyEmptyServer();
+            boolean hasOnline = !plugin.getServer().getOnlinePlayers().isEmpty();
+            if (notifyEmpty || hasOnline) {
+                if (secondsLeft == 300) {
+                    plugin.getBotManager().sendSystemEmbed(plugin.getLanguageManager().getRaw("restart.warning-5m"), 0xFFA500, null);
+                } else if (secondsLeft == 60) {
+                    plugin.getBotManager().sendSystemEmbed(plugin.getLanguageManager().getRaw("restart.warning-1m"), 0xFFA500, null);
+                }
             }
         }
     }
@@ -176,16 +182,16 @@ public class AutoRestartManager implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Цю команду можуть використовувати лише гравці!");
+            sender.sendMessage(plugin.getLanguageManager().get("restart.players-only"));
             return true;
         }
         Player p = (Player) sender;
         if (ignoredPlayers.contains(p.getUniqueId())) {
             ignoredPlayers.remove(p.getUniqueId());
-            p.sendMessage(ChatColor.GREEN + "✅ Ви увімкнули попередження про авторестарт сервера.");
+            p.sendMessage(plugin.getLanguageManager().get("restart.toggle-on"));
         } else {
             ignoredPlayers.add(p.getUniqueId());
-            p.sendMessage(ChatColor.RED + "❌ Ви вимкнули попередження про авторестарт сервера.");
+            p.sendMessage(plugin.getLanguageManager().get("restart.toggle-off"));
         }
         return true;
     }

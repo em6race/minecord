@@ -14,6 +14,8 @@ public class DeathTranslator {
     }
     private static final List<TranslationRule> rules = new ArrayList<>();
     private static final List<TranslationRule> mobRules = new ArrayList<>();
+    private static final List<TranslationRule> skRules = new ArrayList<>();
+    private static final List<TranslationRule> skMobRules = new ArrayList<>();
     static {
         // --- mob/entity name translations (entity.minecraft.*) from uk_ua.json ---
         // Multi-word names first to avoid partial matches
@@ -440,15 +442,89 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was doomed to fall$", "$1 приречено на падіння"));
         // death.fell.accident.from_high_place_and_out_of_world (not in lang but kept as fallback)
         rules.add(new TranslationRule("^(.*?) fell from a high place and fell out of the world$", "$1 упав із висоти і випав зі світу"));
+
+        initSlovakRules();
     }
+
+    private static void initSlovakRules() {
+        // --- Slovak mob names ---
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie") + "\\b", "Zombie"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton") + "\\b", "Kostlivec"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Creeper") + "\\b", "Creeper"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Spider") + "\\b", "Pavúk"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Cave Spider") + "\\b", "Jaskynný pavúk"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Enderman") + "\\b", "Enderman"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Ender Dragon") + "\\b", "Ender Drak"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Wither") + "\\b", "Wither"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Witch") + "\\b", "Ježibaba"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Blaze") + "\\b", "Plamenník"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Ghast") + "\\b", "Ghast"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Drowned") + "\\b", "Utopenec"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Pillager") + "\\b", "Plieniteľ"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Vindicator") + "\\b", "Pomstiteľ"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Evoker") + "\\b", "Vyvolávač"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Ravager") + "\\b", "Ničiteľ"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Phantom") + "\\b", "Prízrak"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Iron Golem") + "\\b", "Železný golem"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Warden") + "\\b", "Strážca"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin") + "\\b", "Piglin"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Hoglin") + "\\b", "Hoglin"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Slime") + "\\b", "Slizúň"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Magma Cube") + "\\b", "Lávový slizúň"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker") + "\\b", "Shulker"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Guardian") + "\\b", "Strážca"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Elder Guardian") + "\\b", "Prastarý strážca"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Breeze") + "\\b", "Vánok"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Bogged") + "\\b", "Zablatok"));
+
+        // --- Slovak death templates ---
+        skRules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$1 bol zabitý hráčom/tvorom $2 pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$1 bol zabitý hráčom/tvorom $2"));
+        skRules.add(new TranslationRule("^(.*?) was shot by (.*?) using (.*?)$", "$1 bol zastrelený $2 pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$1 bol zastrelený $2"));
+        skRules.add(new TranslationRule("^(.*?) drowned whilst trying to escape (.*?)$", "$1 sa utopil pri pokuse o útek pred $2"));
+        skRules.add(new TranslationRule("^(.*?) drowned$", "$1 sa utopil"));
+        skRules.add(new TranslationRule("^(.*?) hit the ground too hard whilst trying to escape (.*?)$", "$1 dopadol na zem príliš tvrdo pri úteku pred $2"));
+        skRules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 dopadol na zem príliš tvrdo"));
+        skRules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 spadol z veľkej výšky"));
+        skRules.add(new TranslationRule("^(.*?) fell off a scaffolding$", "$1 spadol z lešenia"));
+        skRules.add(new TranslationRule("^(.*?) was blown up by (.*?) using (.*?)$", "$1 bol vyhodený do vzduchu $2 pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$1 bol vyhodený do vzduchu $2"));
+        skRules.add(new TranslationRule("^(.*?) blew up$", "$1 vybuchol"));
+        skRules.add(new TranslationRule("^(.*?) walked into fire whilst fighting (.*?)$", "$1 vošiel do ohňa pri boji s $2"));
+        skRules.add(new TranslationRule("^(.*?) went up in flames$", "$1 zhorel v plameňoch"));
+        skRules.add(new TranslationRule("^(.*?) burned to death$", "$1 zhorel na smrť"));
+        skRules.add(new TranslationRule("^(.*?) tried to swim in lava whilst trying to escape (.*?)$", "$1 sa pokúsil plávať v láve pri úteku pred $2"));
+        skRules.add(new TranslationRule("^(.*?) tried to swim in lava$", "$1 sa pokúsil plávať v láve"));
+        skRules.add(new TranslationRule("^(.*?) starved to death$", "$1 zomrel od hladu"));
+        skRules.add(new TranslationRule("^(.*?) suffocated in a wall$", "$1 sa udusil v stene"));
+        skRules.add(new TranslationRule("^(.*?) fell out of the world$", "$1 vypadol zo sveta"));
+        skRules.add(new TranslationRule("^(.*?) withered away$", "$1 uvädol"));
+        skRules.add(new TranslationRule("^(.*?) froze to death$", "$1 zamrzol na smrť"));
+        skRules.add(new TranslationRule("^(.*?) was killed by magic$", "$1 bol zabitý mágiou"));
+        skRules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 bol zasiahnutý bleskom"));
+        skRules.add(new TranslationRule("^(.*?) died$", "$1 zomrel"));
+    }
+
     public static String translate(String message) {
+        return translate(message, "uk");
+    }
+
+    public static String translate(String message, String lang) {
         if (message == null) return null;
         message = RoleSyncManager.stripRoleTags(message);
-        for (TranslationRule rule : rules) {
+        if (lang == null || lang.equalsIgnoreCase("en")) {
+            return message; // Native English: zero regex overhead!
+        }
+
+        List<TranslationRule> activeRules = lang.equalsIgnoreCase("sk") ? skRules : rules;
+        List<TranslationRule> activeMobRules = lang.equalsIgnoreCase("sk") ? skMobRules : mobRules;
+
+        for (TranslationRule rule : activeRules) {
             Matcher m = rule.pattern.matcher(message);
             if (m.find()) {
                 String translated = m.replaceAll(rule.replacement);
-                for (TranslationRule mobRule : mobRules) {
+                for (TranslationRule mobRule : activeMobRules) {
                     Matcher mobM = mobRule.pattern.matcher(translated);
                     if (mobM.find()) {
                         translated = mobM.replaceAll(mobRule.replacement);

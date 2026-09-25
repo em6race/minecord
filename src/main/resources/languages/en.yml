@@ -1,0 +1,103 @@
+# =======================================================
+# MineCord Localization - English (en)
+# =======================================================
+
+events:
+  first-join: "&6🎉 Welcome new player &e{0}&6 to the server!"
+  first-join-embed: "{0} joined the server for the first time! Welcome!"
+  join: "{0} joined the server."
+  quit: "{0} left the server."
+  death-coords: "&c[Death] &7You died at coordinates: &eX: {0}, Y: {1}, Z: {2} &7(&b{3}&7)"
+  death-coords-map-button: "§b§n[🗺️ Open on Map]"
+  death-coords-map-hover: "Click to open death coordinates on 3D map"
+  death-coords-log: "Player {0} died at coordinates: X: {1}, Y: {2}, Z: {3} ({4})"
+  dimensions:
+    overworld: "Overworld"
+    nether: "The Nether"
+    end: "The End"
+  server-start: "✅ **Server started successfully!**"
+  server-stop: "🛑 **Server closed!**"
+  server-restart: "🔄 **Server is restarting...**"
+
+advancement:
+  embed: "🏆 {0} made the advancement: {1}"
+
+sleep:
+  status: "&6[Sleep] &e{0} is sleeping (&b{1}/{2}&e, &a{3}%&e needed)"
+  skipped: "&6[Sleep] &ePlayers skipped the night! Morning has arrived."
+  discord-embed: "🌙 **Night skipped!** Players went to sleep."
+
+restart:
+  warning-5m: "⚠️ Scheduled server restart in 5 minutes!"
+  warning-1m: "⚠️ Scheduled server restart in 1 minute!"
+  toggle-on: "&a✅ You enabled auto-restart notifications."
+  toggle-off: "&c❌ You disabled auto-restart notifications."
+  players-only: "&cThis command can only be used by players!"
+  smart-restart-queued: "⏳ **One-time** smart restart queued. It will trigger once online drops to 0 players.\n*(Run command again to cancel)*"
+  smart-restart-cancelled: "❌ One-time restart from queue **CANCELLED**."
+  smart-restart-now: "✅ No players on server. One-time restart will begin in a few seconds!"
+
+dragon:
+  summoned-chat: "&5&l[Dragon] &dThe Ender Dragon has been summoned in The End!"
+  summoned-discord: "🔮 **The Ender Dragon has been summoned in The End!**"
+  defeated-chat: "&5&l[Dragon] &aThe Ender Dragon was defeated by {0}!"
+  defeated-discord: "⚔️ **The Ender Dragon was defeated by {0}!**"
+
+afk:
+  enter: "&7[AFK] You are now AFK."
+  leave: "&a[AFK] You are no longer AFK."
+  broadcast-enter: "&7* {0} is now AFK"
+  broadcast-leave: "&7* {0} is no longer AFK"
+
+commands:
+  reload-success: "&a[MineCord] Configuration and localization reloaded successfully!"
+  no-permission: "&cYou do not have permission to use this command."
+  player-not-found: "&cPlayer not found."
+  sharecoords:
+    usage: "&cUsage: /sharecoords <description>"
+    broadcast: "&a[Coordinates] &e{0} shared: &f{1} &7(&eX: {2}, Y: {3}, Z: {4}&7) §b§n[🗺️ View on Map]"
+  report:
+    usage: "&cUsage: /report <player> <reason>"
+    sent: "&a✅ Your report has been sent to server moderators in Discord!"
+    cooldown: "&cPlease wait {0} seconds before submitting another report."
+    cannot-report-self: "&cYou cannot report yourself."
+  ticket:
+    usage: "&cUsage: /ticket create <message>"
+    sent: "&a✅ Ticket created! Staff will review it shortly."
+  map:
+    link: "&a[MineCord] Live 3D server map: &b{0}"
+  discord:
+    link: "&a[MineCord] Join our Discord server: &b{0}"
+
+discord:
+  online-header: "🟢 Players Online ({0}/{1}):"
+  online-empty: "There are currently no active players on the server."
+  serverinfo-title: "🖥️ Server Status"
+  serverinfo-tps: "TPS"
+  serverinfo-uptime: "Uptime"
+  serverinfo-ram: "RAM"
+  serverinfo-online: "Online"
+  stats-title: "📊 Player Statistics: {0}"
+  stats-no-data: "❌ No statistics found for player **{0}**."
+  top-title: "🏆 Leaderboard: {0}"
+  categories:
+    overall: "👑 Overall Top"
+    time: "⏱️ Play Time"
+    distance: "🏃 Distance Travelled"
+    kills: "⚔️ Mob Kills"
+    deaths: "💀 Deaths"
+    diamonds: "💎 Diamonds Mined"
+    blocks: "⛏️ Blocks Broken"
+  link:
+    instruction: "To link your account, join the Minecraft server and enter the 4-digit code using: `/link code <code>`"
+    success: "✅ Successfully linked Minecraft account **{0}** to your Discord!"
+    invalid-code: "❌ Invalid or expired 4-digit code."
+    already-linked: "⚠️ This account is already linked!"
+  maintenance:
+    enabled: "🛠️ **Maintenance mode enabled.** Only admins can join."
+    disabled: "✅ **Maintenance mode disabled.** Everyone can join now!"
+
+antispam:
+  cooldown: "&cPlease do not send messages so quickly!"
+  duplicate: "&cPlease avoid repeating identical messages!"
+  muted: "&cYou have been muted for {0} seconds due to spam."

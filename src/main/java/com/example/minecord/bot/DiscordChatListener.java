@@ -58,6 +58,12 @@ public class DiscordChatListener extends ListenerAdapter {
                     || cleanCmd.equals("minecraft:restart") || cleanCmd.startsWith("minecraft:restart ")
                     || cleanCmd.equals("queuerestart") || cleanCmd.startsWith("queuerestart ")) {
                 plugin.setRestarting(true);
+                plugin.recordPlayerPresenceBeforeShutdown();
+            } else if (cleanCmd.equals("stop") || cleanCmd.startsWith("stop ")
+                    || cleanCmd.equals("minecraft:stop") || cleanCmd.startsWith("minecraft:stop ")
+                    || cleanCmd.equals("spigot:stop") || cleanCmd.startsWith("spigot:stop ")
+                    || cleanCmd.equals("end") || cleanCmd.startsWith("end ")) {
+                plugin.recordPlayerPresenceBeforeShutdown();
             }
 
             // Execute on the main server thread

@@ -43,11 +43,11 @@ public class DragonEventListener implements Listener {
         lastDragonSpawnAlert = now;
 
         // In-game broadcast
-        plugin.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "[MineCord] " + ChatColor.DARK_PURPLE + "🐉 У Краї з'явився Ендер Дракон! Готуйтеся до битви!");
+        plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.summoned-chat"));
 
         // Discord embed
-        sendDiscordEmbed("🐉 Ендер Дракон прокинувся!",
-                "У Краї з'явився **Ендер Дракон**! Гравці готуються до битви за Край!",
+        sendDiscordEmbed("🐉 Ender Dragon",
+                plugin.getLanguageManager().getRaw("dragon.summoned-discord"),
                 0x9B59B6,
                 null);
     }
@@ -73,18 +73,18 @@ public class DragonEventListener implements Listener {
 
         if (killer != null) {
             String killerName = killer.getName();
-            plugin.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "[MineCord] " + ChatColor.GOLD + "🎉 Гравець " + ChatColor.YELLOW + killerName + ChatColor.GOLD + " завдав останнього смертельного удару Ендер Дракону!");
+            plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.defeated-chat", killerName));
 
             String avatar = SkinHelper.getAvatarUrl(killer);
-            sendDiscordEmbed("🐉 Ендер Дракон переможений!",
-                    "Гравець **" + killerName + "** завдав останнього смертельного удару Ендер Дракону в Краю! Вітаємо героїв!",
+            sendDiscordEmbed("🐉 Ender Dragon",
+                    plugin.getLanguageManager().getRaw("dragon.defeated-discord", killerName),
                     0xF1C40F,
                     avatar);
         } else {
-            plugin.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "[MineCord] " + ChatColor.GOLD + "🎉 Ендер Дракона було подолано хоробрими воїнами!");
+            plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.defeated-chat", "Heroes"));
 
-            sendDiscordEmbed("🐉 Ендер Дракон переможений!",
-                    "Ендер Дракон був подоланий хоробрими воїнами сервера!",
+            sendDiscordEmbed("🐉 Ender Dragon",
+                    plugin.getLanguageManager().getRaw("dragon.defeated-discord", "Heroes"),
                     0xF1C40F,
                     null);
         }

@@ -1,0 +1,103 @@
+# =======================================================
+# Lokalizácia MineCord - Slovenčina (sk)
+# =======================================================
+
+events:
+  first-join: "&6🎉 Vitajte nového hráča &e{0}&6 na serveri!"
+  first-join-embed: "{0} sa prvýkrát pripojil na server! Príjemnú hru!"
+  join: "{0} sa pripojil na server."
+  quit: "{0} sa odpojil zo servera."
+  death-coords: "&c[Smrť] &7Zomreli ste na súradniciach: &eX: {0}, Y: {1}, Z: {2} &7(&b{3}&7)"
+  death-coords-map-button: "§b§n[🗺️ Otvoriť na mape]"
+  death-coords-map-hover: "Kliknutím otvoríte miesto úmrtia na 3D mape"
+  death-coords-log: "Hráč {0} zomrel na súradniciach: X: {1}, Y: {2}, Z: {3} ({4})"
+  dimensions:
+    overworld: "Hlavný svet"
+    nether: "Nether"
+    end: "End"
+  server-start: "✅ **Server bol úspešne spustený!**"
+  server-stop: "🛑 **Server bol vypnutý!**"
+  server-restart: "🔄 **Server sa reštartuje...**"
+
+advancement:
+  embed: "🏆 {0} dosiahol úspech: {1}"
+
+sleep:
+  status: "&6[Spánok] &e{0} spí (&b{1}/{2}&e, potrebných &a{3}%&e)"
+  skipped: "&6[Spánok] &eHráči preskočili noc! Nastalo ráno."
+  discord-embed: "🌙 **Noc preskočená!** Hráči išli spať."
+
+restart:
+  warning-5m: "⚠️ Plánovaný reštart servera o 5 minút!"
+  warning-1m: "⚠️ Plánovaný reštart servera o 1 minútu!"
+  toggle-on: "&a✅ Zapli ste upozornenia na automatický reštart."
+  toggle-off: "&c❌ Vypli ste upozornenia na automatický reštart."
+  players-only: "&cTento príkaz môžu použiť iba hráči!"
+  smart-restart-queued: "⏳ **Jednorazový** reštart zaradený do frontu. Spustí sa, keď online klesne na 0 hráčov.\n*(Opätovným spustením príkazu frontu zrušíte)*"
+  smart-restart-cancelled: "❌ Jednorazový reštart z frontu **ZRUŠENÝ**."
+  smart-restart-now: "✅ Na serveri nie sú žiadni hráči. Jednorazový reštart sa začne o niekoľko sekúnd!"
+
+dragon:
+  summoned-chat: "&5&l[Drak] &dEnder Drak bol privolaný v Ende!"
+  summoned-discord: "🔮 **Ender Drak bol privolaný v Ende!**"
+  defeated-chat: "&5&l[Drak] &aEnder Drak bol porazený hráčom {0}!"
+  defeated-discord: "⚔️ **Ender Drak bol porazený hráčom {0}!**"
+
+afk:
+  enter: "&7[AFK] Prešli ste do režimu AFK."
+  leave: "&a[AFK] Už nie ste AFK."
+  broadcast-enter: "&7* {0} je teraz AFK"
+  broadcast-leave: "&7* {0} už nie je AFK"
+
+commands:
+  reload-success: "&a[MineCord] Konfigurácia a lokalizácia boli úspešne obnovené!"
+  no-permission: "&cNa použitie tohto príkazu nemáte oprávnenie."
+  player-not-found: "&cHráč nebol nájdený."
+  sharecoords:
+    usage: "&cPoužitie: /sharecoords <popis>"
+    broadcast: "&a[Súradnice] &e{0} zdieľa: &f{1} &7(&eX: {2}, Y: {3}, Z: {4}&7) §b§n[🗺️ Na mape]"
+  report:
+    usage: "&cPoužitie: /report <hráč> <dôvod>"
+    sent: "&a✅ Vaše hlásenie bolo odoslané moderátorom na Discorde!"
+    cooldown: "&cPočkajte {0} sekúnd pred odoslaním ďalšieho hlásenia."
+    cannot-report-self: "&cNemôžete nahlásiť sami seba."
+  ticket:
+    usage: "&cPoužitie: /ticket create <správa>"
+    sent: "&a✅ Žiadosť bola vytvorená! Moderátori ju čoskoro posúdia."
+  map:
+    link: "&a[MineCord] Živá 3D mapa servera: &b{0}"
+  discord:
+    link: "&a[MineCord] Náš Discord server: &b{0}"
+
+discord:
+  online-header: "🟢 Hráči online ({0}/{1}):"
+  online-empty: "Na serveri momentálne nie sú žiadni aktívni hráči."
+  serverinfo-title: "🖥️ Stav servera"
+  serverinfo-tps: "TPS"
+  serverinfo-uptime: "Čas behu (Uptime)"
+  serverinfo-ram: "RAM"
+  serverinfo-online: "Online"
+  stats-title: "📊 Štatistiky hráča: {0}"
+  stats-no-data: "❌ Štatistiky pre hráča **{0}** neboli nájdené."
+  top-title: "🏆 Rebríček: {0}"
+  categories:
+    overall: "👑 Celkový rebríček"
+    time: "⏱️ Odohraný čas"
+    distance: "🏃 Prekonaná vzdialenosť"
+    kills: "⚔️ Zabité moby"
+    deaths: "💀 Úmrtia"
+    diamonds: "💎 Vyťažené diamanty"
+    blocks: "⛏️ Zničené bloky"
+  link:
+    instruction: "Pre prepojenie účtu sa pripojte na Minecraft server a zadajte 4-miestny kód: `/link code <code>`"
+    success: "✅ Účet Minecraft **{0}** bol úspešne prepojený s vaším Discordom!"
+    invalid-code: "❌ Neplatný alebo expirovaný 4-miestny kód."
+    already-linked: "⚠️ Tento účet je už prepojený!"
+  maintenance:
+    enabled: "🛠️ **Režim údržby ZAPNUTÝ.** Vstup je povolený iba administrátorom."
+    disabled: "✅ **Režim údržby VYPNUTÝ.** Server je opäť otvorený pre všetkých!"
+
+antispam:
+  cooldown: "&cProsím, neposielajte správy tak rýchlo!"
+  duplicate: "&cProsím, neopakujte rovnaké správy!"
+  muted: "&cBoli ste dočasne stíšený na {0} sekúnd za spam."

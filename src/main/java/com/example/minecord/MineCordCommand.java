@@ -74,12 +74,11 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
 
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
-                sender.sendMessage(ChatColor.YELLOW + "Перезавантаження конфігурації та бота MineCord...");
                 plugin.reloadPlugin();
-                sender.sendMessage(ChatColor.GREEN + "MineCord успішно перезавантажено!");
+                sender.sendMessage(plugin.getLanguageManager().get("commands.reload-success"));
                 return true;
             } else {
-                sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
+                sender.sendMessage(plugin.getLanguageManager().get("commands.no-permission"));
                 return true;
             }
         }

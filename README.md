@@ -1,7 +1,7 @@
 # MineCord 🎮💬
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lines_of_Code-7.5k-blue?style=flat-square&logo=java&logoColor=white" alt="Lines of Code">
+  <img src="https://img.shields.io/badge/Lines_of_Code-11.2k-blue?style=flat-square&logo=java&logoColor=white" alt="Lines of Code">
   <img src="https://img.shields.io/badge/Platform-Paper%20%2F%20Purpur%2026.2%2B-orange?style=flat-square&logo=minecraft&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
 </p>
@@ -26,7 +26,7 @@
 | Модуль / Функціонал | Статус за замовчуванням | Перемикач у `config.yml` | Призначення |
 | :--- | :---: | :--- | :--- |
 | **Двосторонній чат (Cross-Chat)** | ✅ **Увімкнено** | `discord.chat-channel-id` | Minecraft ⇄ Discord через Webhooks з 3D скінами та Smart Mentions |
-| **Локалізація подій та смертей** | ✅ **Увімкнено** | `events.death`, `events.join-leave` | Офіційний переклад 100+ смертей укр., BlueMap лінки, здобутки |
+| **Багатомовність та локалізація** | ✅ **Увімкнено** | `language: "en"`, `events.*` | English (дефолт), Українська, Slovenčina. 100+ смертей, здобутки, команди |
 | **Офлайн-пошта (Mail System)** | ✅ **Увімкнено** | — (`/mail`) | Особисті повідомлення офлайн гравцям |
 | **Прив'язка акаунтів (Account Link)** | ✅ **Увімкнено** | — (`/discord link`) | Генерація кодів верифікації Minecraft ⇄ Discord |
 | **Тікети та скарги (/ticket, /report)** | ✅ **Увімкнено** | `discord.moderator-channel-id` | Звернення гравців та скарги з інтерактивними кнопками в Discord |
@@ -45,7 +45,6 @@
 | **Рольовий Whitelist** | ⚙️ *Вимкнено* | `whitelist.enabled: false` | Доступ на сервер лише верифікованим гравцям або за ролями Discord |
 | **Режим технічних робіт** | ⚙️ *Вимкнено* | `maintenance.enabled: false` | Швидке закриття сервера для гравців (`/maintenance`) |
 | **Авторестарти за розкладом** | ⚙️ *Вимкнено* | `autorestart.times: []` | Планові рестарти, титри на екрані, черга `/queuerestart` |
-| **Підказки та поради (Tips)** | ⚙️ *Вимкнено* | `tips.enabled: false` | Персональні корисні поради гравцям у випадковий час |
 | **Автооновлення BlueMap** | ⚙️ *Вимкнено* | `bluemap.auto-reload.enabled: false` | Автоматичне оновлення веб-карти за розкладом |
 | **Технічний моніторинг та Sentry** | ⚙️ *Вимкнено* | `technical.*`, `sentry.enabled: false`| Сповіщення про падіння TPS, пам'яті RAM та відлов помилок |
 
@@ -61,9 +60,23 @@
   * Якщо гравець прив'язав свій Discord-акаунт, у чаті Discord повідомлення автоматично перетворюється на реальний Discord-пінг (`<@id>`).
 * **Discord ➔ Minecraft**: Повідомлення з каналу Discord миттєво транслюються в ігровий чат із підтримкою кольорів ролей та зрозумілим форматуванням.
 
-#### 🌐 Локалізація та ігрові події
-* **Повна локалізація смертей**: Вбудований перекладач адаптує понад 100 офіційних причин смерті (з урахуванням мобів, снарядів та падінь) і відправляє їх у Discord українською мовою.
-* **Локалізація здобутків**: Сповіщення про виконання досягнень транслюються в Discord з їхніми офіційними назвами.
+#### 🌐 Багатомовність (Multi-Language) та ігрові події
+MineCord має гнучку багатомовну систему з можливістю гарячого перемикання мов без рестарту:
+* **Мови «з коробки»**:
+  * `en` — Англійська (English) — встановлена за замовчуванням у репозиторії;
+  * `uk` — Українська (Ukrainian) — повний переклад смертей, досягнень, команд та повідомлень;
+  * `sk` — Словацька (Slovenčina) — переклад усіх смертей, досягнень та Discord/чат сповіщень.
+* **Перемикання мови**:
+  У файлі `config.yml` вкажіть потрібний код мови:
+  ```yaml
+  # Available options: "en" (English), "uk" (Українська), "sk" (Slovenčina)
+  language: "uk"
+  ```
+  Виконайте `/minecord reload` — плагін негайно підхопить нову локалізацію!
+* **Кастомізація та Fallback**:
+  Усі тексти містяться у папці `plugins/MineCord/languages/` (`en.yml`, `uk.yml`, `sk.yml`). Ви можете додавати нові переклади або правити існуючі. Якщо певний рядок відсутній у вибраній мові, плагін автоматично візьме оригінал з `en.yml`.
+* **Повна локалізація смертей**: Вбудований перекладач адаптує понад 100 офіційних причин смерті (з урахуванням мобів, снарядів та падінь) і відправляє їх у чат та Discord обраною мовою.
+* **Локалізація здобутків**: Сповіщення про виконання досягнень транслюються в Discord з їхніми офіційними назвами обраною мовою.
 * **Інтерактивні координати смерті**: Гравець отримує приватне повідомлення з координатами своєї загибелі та прямим клікабельним посиланням на веб-карту (BlueMap).
 
 #### 📬 Офлайн-пошта (Mail System)
@@ -181,10 +194,7 @@
   * Спливаючі титри на екрані (Titles & Subtitles) перед рестартом.
   * Можливість для окремих гравців приховати набридливі повідомлення командою `/togglerestart`.
 * **Відкладений розумний рестарт (`/queuerestart`)**: Одноразовий рестарт, який ставиться в чергу через Discord і спрацьовує автоматично, щойно на сервері буде 0 онлайну. Працює як перемикач (toggle).
-
-#### 💡 Періодичні підказки та корисні поради (Tips)
-*Налаштування: `tips.enabled: false`*
-* Індивідуальне надсилання практичних порад та навігаційних підказок кожному онлайн-гравцю у випадковий часовий інтервал.
+* **Тихий режим при 0 онлайну (`events.notify-empty-server: false`)**: Якщо на сервері немає гравців, технічні повідомлення про рестарт чи вимкнення не надсилаються в Discord-чат, захищаючи від спаму.
 
 #### 🗺️ Періодичне автооновлення веб-карти (BlueMap Auto-Reload)
 *Налаштування: `bluemap.auto-reload.enabled: false`*
@@ -255,7 +265,7 @@ MineCord features a modular architecture designed for maximum flexibility. All c
 | Module / Feature | Default Status | Config Key (`config.yml`) | Description |
 | :--- | :---: | :--- | :--- |
 | **Two-Way Cross-Chat** | ✅ **Enabled** | `discord.chat-channel-id` | Minecraft ⇄ Discord via Webhooks with 3D skins & Smart Mentions |
-| **Event & Death Localization** | ✅ **Enabled** | `events.death`, `events.join-leave` | Official Ukrainian translation of 100+ deaths, BlueMap links, achievements |
+| **Multi-Language & Localization** | ✅ **Enabled** | `language: "en"`, `events.*` | Built-in English (default), Ukrainian, and Slovak. 100+ death messages, achievements, commands |
 | **Offline Mail System** | ✅ **Enabled** | — (`/mail`) | Private messaging system for offline players |
 | **Account Linking** | ✅ **Enabled** | — (`/discord link`) | One-time verification codes linking Minecraft ⇄ Discord |
 | **Tickets & Reports (/ticket, /report)**| ✅ **Enabled** | `discord.moderator-channel-id` | In-game reports & support tickets with Discord action buttons |
@@ -274,7 +284,6 @@ MineCord features a modular architecture designed for maximum flexibility. All c
 | **Role-Based Whitelist** | ⚙️ *Disabled* | `whitelist.enabled: false` | Restrict server entry to linked players or specific Discord roles |
 | **Maintenance Mode** | ⚙️ *Disabled* | `maintenance.enabled: false` | Lockdown server with customizable kick screen (`/maintenance`) |
 | **Scheduled Auto-Restart** | ⚙️ *Disabled* | `autorestart.times: []` | Timed reboots, title countdowns, `/queuerestart` empty server queue |
-| **Periodic Player Tips** | ⚙️ *Disabled* | `tips.enabled: false` | Scheduled personalized tips delivered to players in chat |
 | **BlueMap Auto-Reload** | ⚙️ *Disabled* | `bluemap.auto-reload.enabled: false` | Automatic timed web-map reloads |
 | **Technical Monitoring & Sentry** | ⚙️ *Disabled* | `technical.*`, `sentry.enabled: false`| Low TPS / high RAM alerts, automatic Spark profiling, crash tracking |
 
@@ -290,9 +299,23 @@ MineCord features a modular architecture designed for maximum flexibility. All c
   * If the player linked their Discord account, the mention automatically transforms into an authentic Discord ping (`<@id>`).
 * **Discord ➔ Minecraft**: Messages from Discord channels stream into Minecraft chat with role colors and clean formatting.
 
-#### 🌐 Event Localization & Navigation
-* **Death Messages**: Translates over 100 official death causes (mobs, projectiles, falls, voids) and relays them to Discord in clean Ukrainian format.
-* **Advancement Announcements**: Relays earned achievements to Discord with native names.
+#### 🌐 Multi-Language System & Event Localization
+MineCord features a built-in localization engine with hot-reload capabilities:
+* **Built-In Languages**:
+  * `en` — English (Default in repository);
+  * `uk` — Ukrainian (Українська) — full localization of deaths, advancements, commands, and chat alerts;
+  * `sk` — Slovak (Slovenčina) — complete translation of death messages, advancements, and Discord embeds.
+* **Switching Languages**:
+  In `plugins/MineCord/config.yml`, configure the `language` setting:
+  ```yaml
+  # Available options: "en" (English), "uk" (Українська), "sk" (Slovenčina)
+  language: "en"
+  ```
+  Run `/minecord reload` to switch languages immediately without restarting the server!
+* **Custom Translations & Fallback**:
+  Language files are stored in `plugins/MineCord/languages/` (`en.yml`, `uk.yml`, `sk.yml`). You can customize any translation or create new ones. If any key is missing from a translation file, MineCord automatically falls back to `en.yml`.
+* **Death Message Localization**: Translates over 100 official death causes (mobs, projectiles, falls, voids) and relays them to Discord and chat in the selected language.
+* **Advancement Announcements**: Relays earned achievements with localized names.
 * **Interactive Death Coordinates**: Players receive a private message with their death coordinates and an interactive clickable BlueMap link that opens the exact death spot in their browser.
 
 #### 📬 Offline Mail System
@@ -409,10 +432,7 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
   * On-screen Titles & Subtitles before rebooting.
   * Players can toggle countdown visibility for themselves via `/togglerestart`.
 * **Queued Restarts (`/queuerestart`)**: Queue a one-time restart via Discord that triggers automatically once the server is empty (0 online players). Operates as a toggle.
-
-#### 💡 Periodic Player Tips
-*Configuration: `tips.enabled: false`*
-* Personalized, scheduled in-game tips and advice sent individually to active online players.
+* **Quiet Mode on Empty Server (`events.notify-empty-server: false`)**: Suppresses restart and shutdown Discord embeds whenever 0 players are online, eliminating channel spam.
 
 #### 🗺️ BlueMap Auto-Reload
 *Configuration: `bluemap.auto-reload.enabled: false`*
