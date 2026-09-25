@@ -101,3 +101,13 @@ antispam:
   cooldown: "&cБудь ласка, не пишіть так швидко!"
   duplicate: "&cБудь ласка, не повторюйте однакові повідомлення!"
   muted: "&cВас тимчасово замучено на {0} секунд за спам."
+
+tablist:
+  default-header: "&b&lMineCord Server\n&7Ласкаво просимо на сервер!\n"
+  default-footer: "\n&7ТПС: %tps% &8| &7Аптайм: &e%uptime% &8| &7Пінг: %ping%мс"
+  units:
+    days: "д "
+    hours: "г "
+    minutes: "хв "
+    seconds: "с"
+

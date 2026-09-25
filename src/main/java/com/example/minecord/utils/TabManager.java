@@ -20,11 +20,22 @@ public class TabManager {
             String tpsStr = getTPSString();
             String uptimeStr = getUptimeString();
             
-            String header = plugin.getConfig().getString("tablist.header", "&b&lMineCord Server\n&7Welcome to the server!\n");
+            String header = plugin.getConfig().getString("tablist.header");
+            if (header == null || header.trim().isEmpty()) {
+                header = (plugin.getLanguageManager() != null)
+                        ? plugin.getLanguageManager().get("tablist.default-header")
+                        : "&b&lMineCord Server\n&7Welcome to the server!\n";
+            }
             header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
             
-            String footerTemplate = plugin.getConfig().getString("tablist.footer", "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms");
-            String baseFooter = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate)
+            String footerTemplate = plugin.getConfig().getString("tablist.footer");
+            if (footerTemplate == null || footerTemplate.trim().isEmpty()) {
+                footerTemplate = (plugin.getLanguageManager() != null)
+                        ? plugin.getLanguageManager().get("tablist.default-footer")
+                        : "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms";
+            }
+            footerTemplate = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate);
+            String baseFooter = footerTemplate
                     .replace("%tps%", tpsStr)
                     .replace("%uptime%", uptimeStr);
 
@@ -67,13 +78,16 @@ public class TabManager {
         long hours = diff / (60 * 60 * 1000) % 24;
         long days = diff / (24 * 60 * 60 * 1000);
         
-        String lang = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getLanguage() : "en";
-        boolean isUk = "uk".equalsIgnoreCase(lang);
+        LanguageManager lm = plugin.getLanguageManager();
+        String dayUnit = lm != null ? lm.getRaw("tablist.units.days") : "d ";
+        String hourUnit = lm != null ? lm.getRaw("tablist.units.hours") : "h ";
+        String minUnit = lm != null ? lm.getRaw("tablist.units.minutes") : "m ";
+        String secUnit = lm != null ? lm.getRaw("tablist.units.seconds") : "s";
 
-        String dayUnit = isUk ? "д " : "d ";
-        String hourUnit = isUk ? "г " : "h ";
-        String minUnit = isUk ? "хв " : "m ";
-        String secUnit = isUk ? "с" : "s";
+        if (dayUnit == null || dayUnit.equals("tablist.units.days")) dayUnit = "d ";
+        if (hourUnit == null || hourUnit.equals("tablist.units.hours")) hourUnit = "h ";
+        if (minUnit == null || minUnit.equals("tablist.units.minutes")) minUnit = "m ";
+        if (secUnit == null || secUnit.equals("tablist.units.seconds")) secUnit = "s";
 
         StringBuilder sb = new StringBuilder();
         if (days > 0) sb.append(days).append(dayUnit);

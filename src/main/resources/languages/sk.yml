@@ -101,3 +101,13 @@ antispam:
   cooldown: "&cProsím, neposielajte správy tak rýchlo!"
   duplicate: "&cProsím, neopakujte rovnaké správy!"
   muted: "&cBoli ste dočasne stíšený na {0} sekúnd za spam."
+
+tablist:
+  default-header: "&b&lMineCord Server\n&7Vitajte na serveri!\n"
+  default-footer: "\n&7TPS: %tps% &8| &7Čas behu: &e%uptime% &8| &7Ping: %ping%ms"
+  units:
+    days: "d "
+    hours: "h "
+    minutes: "m "
+    seconds: "s"
+

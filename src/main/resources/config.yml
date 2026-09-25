@@ -187,8 +187,10 @@ tablist:
   # Enable custom header and footer in the TAB player list
   enabled: true
   # Header text at the top of the TAB list (& color codes and \n supported)
+  # Leave empty "" to automatically use the localized default header from the language file
   header: "&b&lMineCord Server\n&7Welcome to the server!\n"
   # Footer template at the bottom of the TAB list (supports %tps%, %uptime%, %ping%)
+  # Leave empty "" to automatically use the localized default footer from the language file
   footer: "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms"
 
 # Синхронізація ролей з Discord до Minecraft (TAB, чат, кольори нікнеймів та сортування)

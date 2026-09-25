@@ -101,3 +101,13 @@ antispam:
   cooldown: "&cPlease do not send messages so quickly!"
   duplicate: "&cPlease avoid repeating identical messages!"
   muted: "&cYou have been muted for {0} seconds due to spam."
+
+tablist:
+  default-header: "&b&lMineCord Server\n&7Welcome to the server!\n"
+  default-footer: "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms"
+  units:
+    days: "d "
+    hours: "h "
+    minutes: "m "
+    seconds: "s"
+
