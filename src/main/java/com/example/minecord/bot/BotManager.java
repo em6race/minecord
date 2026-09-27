@@ -302,6 +302,7 @@ public class BotManager {
 
     private int statusIndex = 0;
     private String lastStatusText = "";
+    private OnlineStatus lastOnlineStatus = null;
 
     private void startStatusUpdater() {
         int interval = plugin.getConfig().getInt("status.update-interval-seconds", 15);
@@ -311,6 +312,8 @@ public class BotManager {
             if (jda == null || jda.getStatus() != JDA.Status.CONNECTED) return;
             
             boolean isMaintenance = plugin.getConfig().getBoolean("maintenance.enabled", false);
+            int online = Bukkit.getOnlinePlayers().size();
+            OnlineStatus targetStatus = isMaintenance ? OnlineStatus.DO_NOT_DISTURB : (online > 0 ? OnlineStatus.ONLINE : OnlineStatus.IDLE);
             String statusText;
             
             if (isMaintenance) {
@@ -326,7 +329,6 @@ public class BotManager {
                     template = plugin.getConfig().getString("status.text", "Грає в Minecraft (%online%/%max%)");
                 }
 
-                int online = Bukkit.getOnlinePlayers().size();
                 int max = Bukkit.getMaxPlayers();
                 double tps = 20.0;
                 try {
@@ -347,9 +349,10 @@ public class BotManager {
             }
             
             // Update presence only if changed to avoid Discord rate limits
-            if (!statusText.equals(lastStatusText)) {
-                jda.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing(statusText));
+            if (!statusText.equals(lastStatusText) || targetStatus != lastOnlineStatus) {
+                jda.getPresence().setPresence(targetStatus, Activity.playing(statusText));
                 lastStatusText = statusText;
+                lastOnlineStatus = targetStatus;
             }
         }, 0L, interval * 20L); // 20 ticks = 1 second
     }
