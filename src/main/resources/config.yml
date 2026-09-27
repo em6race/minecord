@@ -182,6 +182,21 @@ sentry:
   enabled: false
   dsn: ""
 
+# Automatic plugin updates from GitHub Releases (Latest Build)
+auto-update:
+  # Automatically check and download the latest build into plugins/update/
+  enabled: true
+  # GitHub repository (owner/repo)
+  repository: "em6race/minecord"
+  # Release tag to track
+  release-tag: "latest"
+  # Interval in minutes for background update checks
+  check-interval-minutes: 2
+  # Also check and download right before server shutdown/restart
+  download-on-shutdown: true
+  # Automatically restart once after boot if a new build was downloaded and 0 players are online
+  restart-on-boot-if-empty: true
+
 # Player list settings (TAB list header and footer)
 tablist:
   # Enable custom header and footer in the TAB player list

@@ -31,6 +31,7 @@ public final class MineCord extends JavaPlugin {
     private com.example.minecord.utils.RoleSyncManager roleSyncManager;
     private com.example.minecord.fun.FunManager funManager;
     private com.example.minecord.utils.LanguageManager languageManager;
+    private com.example.minecord.utils.AutoUpdateManager autoUpdateManager;
     private volatile boolean restarting = false;
     private volatile long lastPlayerSeenOnlineMillis = 0;
     private volatile Boolean hadPlayersBeforeShutdown = null;
@@ -103,6 +104,10 @@ public final class MineCord extends JavaPlugin {
         // Initialize Fun Manager for future server modes & mini-games
         this.funManager = new com.example.minecord.fun.FunManager(this);
         this.funManager.initialize();
+
+        // Initialize GitHub auto-updater
+        this.autoUpdateManager = new com.example.minecord.utils.AutoUpdateManager(this);
+        this.autoUpdateManager.start();
 
         // Register commands
         MineCordCommand cmd = new MineCordCommand(this);
@@ -228,6 +233,10 @@ public final class MineCord extends JavaPlugin {
         if (funManager != null) {
             funManager.shutdown();
         }
+        if (autoUpdateManager != null) {
+            autoUpdateManager.stop();
+            autoUpdateManager.checkOnShutdown();
+        }
         if (playerPresenceTaskId != -1) {
             getServer().getScheduler().cancelTask(playerPresenceTaskId);
             playerPresenceTaskId = -1;
@@ -292,6 +301,12 @@ public final class MineCord extends JavaPlugin {
 
         if (funManager != null) {
             funManager.reload();
+        }
+
+        if (autoUpdateManager != null) {
+            autoUpdateManager.stop();
+            this.autoUpdateManager = new com.example.minecord.utils.AutoUpdateManager(this);
+            this.autoUpdateManager.start();
         }
 
         if (playerCacheManager != null) {
@@ -398,5 +413,13 @@ public final class MineCord extends JavaPlugin {
 
     public com.example.minecord.utils.LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    public com.example.minecord.utils.AutoUpdateManager getAutoUpdateManager() {
+        return autoUpdateManager;
+    }
+
+    public java.io.File getPluginJarFile() {
+        return getFile();
     }
 }

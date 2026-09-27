@@ -83,6 +83,20 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
         }
 
+        if (args.length > 0 && args[0].equalsIgnoreCase("update")) {
+            if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                if (plugin.getAutoUpdateManager() != null) {
+                    plugin.getAutoUpdateManager().triggerManualUpdate(sender);
+                } else {
+                    sender.sendMessage(ChatColor.RED + "[MineCord] Менеджер оновлень не ініціалізовано.");
+                }
+                return true;
+            } else {
+                sender.sendMessage(plugin.getLanguageManager().get("commands.no-permission"));
+                return true;
+            }
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("links")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                 Map<UUID, String> allLinks = plugin.getLinkManager().getAllLinks();
@@ -487,6 +501,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 List<String> available = new ArrayList<>(List.of("link", "unlink", "help"));
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     available.add("reload");
+                    available.add("update");
                     available.add("links");
                     available.add("bot");
                     available.add("bloodmoon");
