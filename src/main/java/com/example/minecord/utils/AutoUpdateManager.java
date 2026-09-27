@@ -91,7 +91,7 @@ public class AutoUpdateManager {
     }
 
     public boolean isEnabled() {
-        return plugin.getConfig().getBoolean("auto-update.enabled", true);
+        return plugin.getConfig().getBoolean("auto-update.enabled", false);
     }
 
     private boolean checkAndDownload(boolean isShutdown, CommandSender notifySender) {

@@ -33,7 +33,7 @@
 | **Віддалена консоль (Remote Console)** | ✅ **Увімкнено** | `discord.console-channel-id` | Живий потік консолі та виконання команд прямо з Discord |
 | **Статистика, топи та TabList** | ✅ **Увімкнено** | — (`/stats`, `/top`) | Інформативний таб (TPS, пінг), топи, `/sharecoords` з мапою |
 | **Діагностика бота** | ✅ **Увімкнено** | — (`/minecord bot`) | Швидка перевірка зв'язку та гаряче перепідключення бота |
-| **Авто-оновлення з GitHub** | ✅ **Увімкнено** | `auto-update.enabled: true` | Автоматичне стягування свіжих збірок із GitHub Releases у `plugins/update/` |
+| **Авто-оновлення з GitHub** | ⚙️ *Вимкнено* | `auto-update.enabled: false` | Автоматичне стягування свіжих збірок із GitHub Releases у `plugins/update/` |
 | **Кривавий Місяць (Bloodmoon Event)** | ⚙️ *Вимкнено* | `fun.modes.bloodmoon.enabled: false` | 4 хардкорні рівні, орди, камікадзе-фантоми, 4 боси, рідкісний незерит |
 | **Тягун без дощу (Riptide without Rain)**| ⚙️ *Вимкнено* | `fun.modes.riptide_no_rain.enabled: false` | Ривки тризубцем на суші без дощу та води із захистом від падіння |
 | **Списи без голоду (Spear No Hunger)** | ⚙️ *Вимкнено* | `fun.modes.spear_no_hunger.enabled: false` | Усі види списів не витрачають очки голоду та виснаження |
@@ -273,7 +273,7 @@ MineCord features a modular architecture designed for maximum flexibility. All c
 | **Remote Discord Console** | ✅ **Enabled** | `discord.console-channel-id` | Live console stream & interactive command execution |
 | **Stats, Leaderboards & TabList** | ✅ **Enabled** | — (`/stats`, `/top`) | Detailed TabList (TPS, ping), leaderboards, `/sharecoords` |
 | **Bot Diagnostics** | ✅ **Enabled** | — (`/minecord bot`) | Gateway latency check and hot session reconnection |
-| **GitHub Auto-Updater** | ✅ **Enabled** | `auto-update.enabled: true` | Automatically pulls latest builds from GitHub Releases into `plugins/update/` |
+| **GitHub Auto-Updater** | ⚙️ *Disabled* | `auto-update.enabled: false` | Automatically pulls latest builds from GitHub Releases into `plugins/update/` |
 | **Bloodmoon Event** | ⚙️ *Disabled* | `fun.modes.bloodmoon.enabled: false` | 4 difficulty tiers, hordes, kamikaze phantoms, 4 bosses, netherite loot |
 | **Riptide without Rain** | ⚙️ *Disabled* | `fun.modes.riptide_no_rain.enabled: false`| Trident thrust on dry land with fall-damage protection |
 | **Spear No Hunger** | ⚙️ *Disabled* | `fun.modes.spear_no_hunger.enabled: false`| All spear types consume zero hunger/exhaustion points |

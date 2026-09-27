@@ -185,7 +185,7 @@ sentry:
 # Automatic plugin updates from GitHub Releases (Latest Build)
 auto-update:
   # Automatically check and download the latest build into plugins/update/
-  enabled: true
+  enabled: false
   # GitHub repository (owner/repo)
   repository: "em6race/minecord"
   # Release tag to track
