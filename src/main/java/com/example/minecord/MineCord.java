@@ -203,6 +203,10 @@ public final class MineCord extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (autoUpdateManager != null) {
+            autoUpdateManager.stop();
+            autoUpdateManager.startShutdownCheck();
+        }
         if (getConfig().getBoolean("sentry.enabled", false)) {
             io.sentry.Sentry.close();
         }
@@ -233,13 +237,12 @@ public final class MineCord extends JavaPlugin {
         if (funManager != null) {
             funManager.shutdown();
         }
-        if (autoUpdateManager != null) {
-            autoUpdateManager.stop();
-            autoUpdateManager.checkOnShutdown();
-        }
         if (playerPresenceTaskId != -1) {
             getServer().getScheduler().cancelTask(playerPresenceTaskId);
             playerPresenceTaskId = -1;
+        }
+        if (autoUpdateManager != null) {
+            autoUpdateManager.awaitShutdownCheck();
         }
     }
     

@@ -27,16 +27,16 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
- * Automatically checks GitHub Releases (Latest Build) for newer plugin artifacts
- * and stages them into Paper's plugins/update/ directory so they apply on restart.
+ * Automatically checks GitHub Releases (Latest Build) exclusively during server restart
+ * (scheduled/technical or manual) and stages the new artifact into Paper's plugins/update/
+ * directory so Paper applies it immediately as the server starts back up.
  */
 public class AutoUpdateManager {
 
     private final MineCord plugin;
-    private int taskId = -1;
     private String currentJarSha256;
     private final AtomicBoolean checking = new AtomicBoolean(false);
-    private volatile String lastDownloadedSha256 = null;
+    private volatile Thread activeUpdateThread = null;
 
     public AutoUpdateManager(MineCord plugin) {
         this.plugin = plugin;
@@ -46,40 +46,61 @@ public class AutoUpdateManager {
         if (!isEnabled()) {
             return;
         }
-
         File currentJar = plugin.getPluginJarFile();
         if (currentJar != null && currentJar.exists()) {
             this.currentJarSha256 = computeSha256(currentJar);
         }
-
-        int intervalMinutes = Math.max(1, plugin.getConfig().getInt("auto-update.check-interval-minutes", 2));
-        long intervalTicks = intervalMinutes * 60L * 20L;
-
-        // Initial check 3 seconds after server startup (after Done!), then periodically
-        taskId = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            boolean downloaded = checkAndDownload(false, null);
-            if (downloaded) {
-                maybeAutoRestartAfterBootUpdate();
-            }
-        }, 60L, intervalTicks).getTaskId();
     }
 
     public void stop() {
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
-        }
+        // No background polling tasks to cancel; updates run only during restart.
     }
 
     /**
-     * Called during onDisable() to ensure that if a user commits and immediately restarts
-     * the server, the latest release is pulled into plugins/update/ right before JVM exit.
+     * Triggered a few seconds before a scheduled/technical restart in AutoRestartManager
+     * so the download starts ahead of shutdown.
      */
-    public void checkOnShutdown() {
-        if (!isEnabled()) return;
-        if (!plugin.getConfig().getBoolean("auto-update.download-on-shutdown", true)) return;
+    public void prepareBeforeRestartAsync() {
+        if (!isEnabled()) {
+            return;
+        }
+        startUpdateThread(false);
+    }
 
-        checkAndDownload(true, null);
+    /**
+     * Starts the update check in a background thread right at the beginning of onDisable()
+     * so it runs in parallel while JDA/Discord shutdown completes.
+     */
+    public void startShutdownCheck() {
+        if (!isEnabled()) {
+            return;
+        }
+        startUpdateThread(true);
+    }
+
+    /**
+     * Waits for any in-flight update check/download to finish before onDisable() returns.
+     */
+    public void awaitShutdownCheck() {
+        Thread thread = this.activeUpdateThread;
+        if (thread != null && thread.isAlive()) {
+            try {
+                thread.join(20000L);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private synchronized void startUpdateThread(boolean isShutdown) {
+        Thread existing = this.activeUpdateThread;
+        if (existing != null && existing.isAlive()) {
+            return;
+        }
+        Thread thread = new Thread(() -> checkAndDownload(isShutdown, null), "MineCord-RestartUpdater");
+        thread.setDaemon(false);
+        this.activeUpdateThread = thread;
+        thread.start();
     }
 
     /**
@@ -127,8 +148,8 @@ public class AutoUpdateManager {
             String apiUrl = "https://api.github.com/repos/" + repo + "/releases/tags/" + tag;
             HttpURLConnection conn = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(isShutdown ? 3500 : 7000);
-            conn.setReadTimeout(isShutdown ? 5000 : 10000);
+            conn.setConnectTimeout(isShutdown ? 4000 : 7000);
+            conn.setReadTimeout(isShutdown ? 6000 : 10000);
             conn.setRequestProperty("Accept", "application/vnd.github+json");
             conn.setRequestProperty("User-Agent", "MineCord-AutoUpdater/1.0");
 
@@ -202,11 +223,11 @@ public class AutoUpdateManager {
             }
 
             File tempFile = new File(updateFolder, currentJar.getName() + ".tmp");
-            plugin.logPink("⬇️ Знайдено новий реліз на GitHub (Latest Build)! Завантаження оновлення...");
+            plugin.logPink("⬇️ Знайдено новий реліз на GitHub (Latest Build)! Завантаження оновлення перед рестартом...");
 
             HttpURLConnection dlConn = (HttpURLConnection) URI.create(downloadUrl).toURL().openConnection();
             dlConn.setInstanceFollowRedirects(true);
-            dlConn.setConnectTimeout(isShutdown ? 4000 : 10000);
+            dlConn.setConnectTimeout(isShutdown ? 5000 : 10000);
             dlConn.setReadTimeout(isShutdown ? 15000 : 30000);
             dlConn.setRequestProperty("User-Agent", "MineCord-AutoUpdater/1.0");
 
@@ -266,11 +287,10 @@ public class AutoUpdateManager {
             }
 
             Files.move(tempFile.toPath(), stagedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            this.lastDownloadedSha256 = downloadedSha;
 
             String infoMsg = "✅ Оновлення успішно завантажено в plugins/update/" + stagedFile.getName()
                     + " [коміт " + newCommitHash + (newCommitMsg.isEmpty() ? "" : ": " + newCommitMsg) + "]! "
-                    + "Воно автоматично застосується при перезапуску сервера.";
+                    + "Воно автоматично застосується під час запуску сервера.";
             plugin.logPink(infoMsg);
 
             if (notifySender != null) {
@@ -286,51 +306,6 @@ public class AutoUpdateManager {
         } finally {
             checking.set(false);
         }
-    }
-
-    /**
-     * If the server was offline when a new build was published, and just booted up with 0 players,
-     * automatically restart once so the newly staged build in plugins/update/ takes effect immediately.
-     */
-    private void maybeAutoRestartAfterBootUpdate() {
-        if (!plugin.getConfig().getBoolean("auto-update.restart-on-boot-if-empty", true)) {
-            return;
-        }
-
-        long uptimeMs = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
-        // Only trigger within the first 2 minutes after server boot
-        if (uptimeMs > 120_000L) {
-            return;
-        }
-
-        String sha = this.lastDownloadedSha256;
-        if (sha == null || sha.isEmpty()) {
-            return;
-        }
-
-        File markerFile = new File(plugin.getDataFolder(), ".last_boot_update_sha");
-        try {
-            if (markerFile.exists()) {
-                String lastRestartedSha = Files.readString(markerFile.toPath(), StandardCharsets.UTF_8).trim();
-                if (sha.equalsIgnoreCase(lastRestartedSha)) {
-                    // Already auto-restarted once for this exact build digest
-                    return;
-                }
-            }
-            plugin.getDataFolder().mkdirs();
-            Files.writeString(markerFile.toPath(), sha, StandardCharsets.UTF_8);
-        } catch (Throwable ignored) {
-        }
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!Bukkit.getOnlinePlayers().isEmpty()) {
-                return;
-            }
-            plugin.logPink("🔄 Сервер щойно запустився (0 гравців онлайн) і завантажив новий білд з GitHub. Виконую автоматичний перезапуск для застосування оновлення...");
-            plugin.setHadPlayersBeforeShutdown(false);
-            plugin.setRestarting(true);
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "restart");
-        });
     }
 
     private static String computeSha256(File file) {
