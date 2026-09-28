@@ -22,6 +22,12 @@ public class DiscordCommandListener extends ListenerAdapter {
 
     public DiscordCommandListener(MineCord plugin) {
         this.plugin = plugin;
+        try {
+            java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
+                sunOsBean.getProcessCpuLoad();
+            }
+        } catch (Throwable ignored) {}
     }
 
     @Override
@@ -40,7 +46,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                                   "🔹 `/link [code]` — Прив'язати акаунт Minecraft до Discord (або інструкція)\n" +
                                   "🔹 `/help` — Показує це повідомлення\n" +
                                   "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
-                                  "🔹 `/serverinfo` — Інформація та стан сервера (TPS, RAM, онлайн)\n" +
+                                  "🔹 `/serverinfo` — Інформація та стан сервера (TPS, CPU, RAM, онлайн)\n" +
                                   "🔹 `/top [категорія]` — Топ-10 гравців (абсолютний, час, відстань, вбивства, смерті, алмази, блоки)\n\n" +
                                   "👑 **Команди адміністратора:**\n" +
                                   "🔸 `/maintenance <увімкнути>` — Увімкнути/вимкнути режим технічних робіт\n" +
@@ -256,6 +262,7 @@ public class DiscordCommandListener extends ListenerAdapter {
 
             int onlineCount = plugin.getServer().getOnlinePlayers().size();
             int maxPlayers = plugin.getServer().getMaxPlayers();
+            String cpuInfo = getCpuUsageFormatted();
 
             net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
             embed.setTitle("🖥️ Інформація та стан сервера");
@@ -266,6 +273,7 @@ public class DiscordCommandListener extends ListenerAdapter {
             embed.addField("👥 Онлайн", onlineCount + " / " + maxPlayers, true);
             embed.addField("💾 RAM (Використано)", String.format("%.1f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
             embed.addField("📦 RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
+            embed.addField("🧠 CPU (Навантаження)", cpuInfo, true);
             embed.addField("⚙️ Ядро", plugin.getServer().getVersion(), false);
 
             event.getHook().sendMessageEmbeds(embed.build()).queue();
@@ -731,5 +739,101 @@ public class DiscordCommandListener extends ListenerAdapter {
             embed.setFooter("MineCord • Прив'язка акаунта");
         }
         return embed.build();
+    }
+
+    private String getCpuUsageFormatted() {
+        double allocatedCores = getAllocatedCpuCores();
+        int jvmProcs = Math.max(1, Runtime.getRuntime().availableProcessors());
+
+        double load = -1.0;
+        try {
+            java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
+                load = sunOsBean.getProcessCpuLoad();
+                if (load < 0.0 || Double.isNaN(load)) {
+                    load = sunOsBean.getCpuLoad();
+                }
+                if (load <= 0.0 || Double.isNaN(load)) {
+                    try {
+                        Thread.sleep(120L);
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                    load = sunOsBean.getProcessCpuLoad();
+                    if (load < 0.0 || Double.isNaN(load)) {
+                        load = sunOsBean.getCpuLoad();
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        if (load < 0.0 || Double.isNaN(load)) {
+            load = 0.0;
+        }
+
+        double usedCores = Math.max(0.0, load * jvmProcs);
+        if (usedCores > allocatedCores) {
+            usedCores = allocatedCores;
+        }
+        double cpuPercent = allocatedCores > 0.0 ? Math.min(100.0, (usedCores / allocatedCores) * 100.0) : 0.0;
+
+        String totalCoresStr = Math.abs(allocatedCores - Math.round(allocatedCores)) < 0.05
+                ? String.valueOf(Math.round(allocatedCores))
+                : String.format(java.util.Locale.US, "%.1f", allocatedCores);
+        String coresUnit = formatCoresUnit(allocatedCores);
+
+        return String.format(java.util.Locale.US, "%.1f%% (%.2f / %s %s)", cpuPercent, usedCores, totalCoresStr, coresUnit);
+    }
+
+    private double getAllocatedCpuCores() {
+        // 1. Check cgroup v2 (/sys/fs/cgroup/cpu.max -> "<quota> <period>")
+        try {
+            java.nio.file.Path cpuMaxPath = java.nio.file.Paths.get("/sys/fs/cgroup/cpu.max");
+            if (java.nio.file.Files.isReadable(cpuMaxPath)) {
+                String content = java.nio.file.Files.readString(cpuMaxPath).trim();
+                String[] parts = content.split("\\s+");
+                if (parts.length >= 2 && !"max".equalsIgnoreCase(parts[0])) {
+                    long quota = Long.parseLong(parts[0]);
+                    long period = Long.parseLong(parts[1]);
+                    if (quota > 0 && period > 0) {
+                        return (double) quota / period;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Check cgroup v1 (/sys/fs/cgroup/cpu/cpu.cfs_quota_us & cpu.cfs_period_us)
+        try {
+            java.nio.file.Path quotaPath = java.nio.file.Paths.get("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
+            java.nio.file.Path periodPath = java.nio.file.Paths.get("/sys/fs/cgroup/cpu/cpu.cfs_period_us");
+            if (java.nio.file.Files.isReadable(quotaPath) && java.nio.file.Files.isReadable(periodPath)) {
+                long quota = Long.parseLong(java.nio.file.Files.readString(quotaPath).trim());
+                long period = Long.parseLong(java.nio.file.Files.readString(periodPath).trim());
+                if (quota > 0 && period > 0) {
+                    return (double) quota / period;
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        return Math.max(1, Runtime.getRuntime().availableProcessors());
+    }
+
+    private String formatCoresUnit(double cores) {
+        if (Math.abs(cores - Math.round(cores)) >= 0.05) {
+            return "ядра";
+        }
+        long n = Math.abs(Math.round(cores));
+        long mod100 = n % 100;
+        long mod10 = n % 10;
+        if (mod100 >= 11 && mod100 <= 14) {
+            return "ядер";
+        }
+        if (mod10 == 1) {
+            return "ядро";
+        }
+        if (mod10 >= 2 && mod10 <= 4) {
+            return "ядра";
+        }
+        return "ядер";
     }
 }
