@@ -25,7 +25,7 @@ advancement:
 sleep:
   status: "&6[Sleep] &e{0} is sleeping (&b{1}/{2}&e, &a{3}%&e needed)"
   skipped: "&6[Sleep] &ePlayers skipped the night! Morning has arrived."
-  discord-embed: "🌙 **Night skipped!** Players went to sleep."
+  discord-embed: "🌙 Night skipped! Players went to sleep."
 
 restart:
   warning-5m: "⚠️ Scheduled server restart in 5 minutes!"

@@ -391,7 +391,7 @@ public class BotManager {
                     
                     if (playerName != null && !playerName.isEmpty()) {
                         String avatarUrl = SkinHelper.getAvatarUrl(playerName);
-                        embed.setAuthor(text, null, avatarUrl);
+                        embed.setAuthor(text != null ? text.replace("**", "") : "", null, avatarUrl);
                     } else {
                         embed.setDescription(text);
                     }
@@ -421,7 +421,7 @@ public class BotManager {
                     
                     if (playerName != null && !playerName.isEmpty()) {
                         String avatarUrl = SkinHelper.getAvatarUrl(playerName);
-                        embed.setAuthor(text, null, avatarUrl);
+                        embed.setAuthor(text != null ? text.replace("**", "") : "", null, avatarUrl);
                     } else {
                         embed.setDescription(text);
                     }

@@ -25,7 +25,7 @@ advancement:
 sleep:
   status: "&6[Spánok] &e{0} spí (&b{1}/{2}&e, potrebných &a{3}%&e)"
   skipped: "&6[Spánok] &eHráči preskočili noc! Nastalo ráno."
-  discord-embed: "🌙 **Noc preskočená!** Hráči išli spať."
+  discord-embed: "🌙 Noc preskočená! Hráči išli spať."
 
 restart:
   warning-5m: "⚠️ Plánovaný reštart servera o 5 minút!"
