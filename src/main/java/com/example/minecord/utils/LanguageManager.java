@@ -37,28 +37,43 @@ public class LanguageManager {
         }
 
         File langFile = new File(plugin.getDataFolder(), "languages/" + currentLang + ".yml");
+        InputStream bundledLangStream = plugin.getResource("languages/" + currentLang + ".yml");
+        FileConfiguration bundledLangConfig = bundledLangStream != null
+                ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledLangStream, StandardCharsets.UTF_8))
+                : null;
+
         if (langFile.exists()) {
             langConfig = YamlConfiguration.loadConfiguration(langFile);
-        } else {
-            InputStream in = plugin.getResource("languages/" + currentLang + ".yml");
-            if (in != null) {
-                langConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
-            } else {
-                langConfig = new YamlConfiguration();
+            if (bundledLangConfig != null) {
+                langConfig.setDefaults(bundledLangConfig);
+                langConfig.options().copyDefaults(true);
+                try {
+                    langConfig.save(langFile);
+                } catch (Throwable ignored) {}
             }
+        } else if (bundledLangConfig != null) {
+            langConfig = bundledLangConfig;
+        } else {
+            langConfig = new YamlConfiguration();
         }
 
         // Always keep 'en' as fallback
         File fallbackFile = new File(plugin.getDataFolder(), "languages/en.yml");
+        InputStream bundledEnStream = plugin.getResource("languages/en.yml");
+        FileConfiguration bundledEnConfig = bundledEnStream != null
+                ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledEnStream, StandardCharsets.UTF_8))
+                : null;
+
         if (fallbackFile.exists()) {
             fallbackConfig = YamlConfiguration.loadConfiguration(fallbackFile);
-        } else {
-            InputStream in = plugin.getResource("languages/en.yml");
-            if (in != null) {
-                fallbackConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
-            } else {
-                fallbackConfig = new YamlConfiguration();
+            if (bundledEnConfig != null) {
+                fallbackConfig.setDefaults(bundledEnConfig);
+                fallbackConfig.options().copyDefaults(true);
             }
+        } else if (bundledEnConfig != null) {
+            fallbackConfig = bundledEnConfig;
+        } else {
+            fallbackConfig = new YamlConfiguration();
         }
 
         plugin.logPink("Localization loaded: [" + currentLang.toUpperCase() + "]");

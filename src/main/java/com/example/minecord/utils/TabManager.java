@@ -20,18 +20,23 @@ public class TabManager {
             String tpsStr = getTPSString();
             String uptimeStr = getUptimeString();
             
+            LanguageManager lm = plugin.getLanguageManager();
+            boolean isNonEnglish = lm != null && !lm.isEnglish();
+
             String header = plugin.getConfig().getString("tablist.header");
-            if (header == null || header.trim().isEmpty()) {
-                header = (plugin.getLanguageManager() != null)
-                        ? plugin.getLanguageManager().get("tablist.default-header")
+            if (header == null || header.trim().isEmpty()
+                    || (isNonEnglish && header.equals("&b&lMineCord Server\n&7Welcome to the server!\n"))) {
+                header = (lm != null)
+                        ? lm.get("tablist.default-header")
                         : "&b&lMineCord Server\n&7Welcome to the server!\n";
             }
             header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
             
             String footerTemplate = plugin.getConfig().getString("tablist.footer");
-            if (footerTemplate == null || footerTemplate.trim().isEmpty()) {
-                footerTemplate = (plugin.getLanguageManager() != null)
-                        ? plugin.getLanguageManager().get("tablist.default-footer")
+            if (footerTemplate == null || footerTemplate.trim().isEmpty()
+                    || (isNonEnglish && footerTemplate.equals("\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms"))) {
+                footerTemplate = (lm != null)
+                        ? lm.get("tablist.default-footer")
                         : "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms";
             }
             footerTemplate = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate);
