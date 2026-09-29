@@ -124,26 +124,32 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             dimension = "Верхній світ";
         }
 
-        String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
-        if (mapUrl == null || mapUrl.trim().isEmpty()) {
-            mapUrl = "http://localhost:8100/";
-        }
-        if (!mapUrl.endsWith("/")) mapUrl += "/";
+        boolean hasMap = plugin.isMapAvailable();
+        String fullUrl = null;
+        if (hasMap) {
+            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
+            if (mapUrl == null || mapUrl.trim().isEmpty()) {
+                mapUrl = "http://localhost:8100/";
+            }
+            if (!mapUrl.endsWith("/")) mapUrl += "/";
 
-        // BlueMap URL format
-        String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", 
-                mapUrl, worldName, targetX, targetY, targetZ);
+            // BlueMap URL format
+            fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", 
+                    mapUrl, worldName, targetX, targetY, targetZ);
+        }
 
         // In-game broadcast components
         String header = ChatColor.GOLD + "📍 Гравець " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " поділився координатами: " + ChatColor.WHITE + comment;
-        String coordsPart = String.format("§7Координати: §eX: %d, Y: %d, Z: %d §7(%s) ", 
+        String coordsPart = String.format("§7Координати: §eX: %d, Y: %d, Z: %d §7(%s)", 
                 targetX, targetY, targetZ, dimension);
 
-        TextComponent line2 = new TextComponent(coordsPart);
-        TextComponent linkComp = new TextComponent("§b§n[🗺️ Відкрити на мапі]");
-        linkComp.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, fullUrl));
-        linkComp.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("§aНатисніть, щоб відкрити мітку на 3D-мапі сервера")));
-        line2.addExtra(linkComp);
+        TextComponent line2 = new TextComponent(hasMap ? (coordsPart + " ") : coordsPart);
+        if (hasMap && fullUrl != null) {
+            TextComponent linkComp = new TextComponent("§b§n[🗺️ Відкрити на мапі]");
+            linkComp.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, fullUrl));
+            linkComp.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("§aНатисніть, щоб відкрити мітку на 3D-мапі сервера")));
+            line2.addExtra(linkComp);
+        }
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.sendMessage(header);
@@ -156,8 +162,9 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         final int finalY = targetY;
         final int finalZ = targetZ;
         final String finalComment = comment;
+        final String finalUrl = fullUrl;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            sendCoordsToDiscord(player, finalComment, finalX, finalY, finalZ, dimension, fullUrl);
+            sendCoordsToDiscord(player, finalComment, finalX, finalY, finalZ, dimension, finalUrl);
         });
 
         return true;
@@ -182,12 +189,19 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(channelId.trim());
             if (channel != null) {
                 EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle("📍 Мітка на мапі: " + comment);
                 embed.setColor(0x3498DB);
-                embed.setDescription(String.format("Гравець **%s** поділився координатами:\n**X: %d, Y: %d, Z: %d** (`%s`)\n\n[🗺️ Відкрити на інтерактивній мапі](%s)",
-                        player.getName(), x, y, z, dimension, mapUrl));
+                if (mapUrl != null && !mapUrl.isEmpty()) {
+                    embed.setTitle("📍 Мітка на мапі: " + comment);
+                    embed.setDescription(String.format("Гравець **%s** поділився координатами:\n**X: %d, Y: %d, Z: %d** (`%s`)\n\n[🗺️ Відкрити на інтерактивній мапі](%s)",
+                            player.getName(), x, y, z, dimension, mapUrl));
+                    embed.setFooter("MineCord Map Integration");
+                } else {
+                    embed.setTitle("📍 Координати: " + comment);
+                    embed.setDescription(String.format("Гравець **%s** поділився координатами:\n**X: %d, Y: %d, Z: %d** (`%s`)",
+                            player.getName(), x, y, z, dimension));
+                    embed.setFooter("MineCord Coordinates");
+                }
                 embed.setThumbnail(SkinHelper.getAvatarUrl(player));
-                embed.setFooter("MineCord Map Integration");
                 channel.sendMessageEmbeds(embed.build()).queue();
             }
         } catch (Throwable e) {

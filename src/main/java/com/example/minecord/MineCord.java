@@ -349,6 +349,17 @@ public final class MineCord extends JavaPlugin {
         return blueMapManager;
     }
 
+    public boolean isMapAvailable() {
+        String[] mapPlugins = {"BlueMap", "dynmap", "squaremap", "Pl3xMap"};
+        for (String name : mapPlugins) {
+            org.bukkit.plugin.Plugin p = getServer().getPluginManager().getPlugin(name);
+            if (p != null && p.isEnabled()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public com.example.minecord.utils.LeaderboardManager getLeaderboardManager() {
         return leaderboardManager;
     }

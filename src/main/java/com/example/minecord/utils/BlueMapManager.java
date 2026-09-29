@@ -21,6 +21,17 @@ public class BlueMapManager {
         this.plugin = plugin;
     }
 
+    public boolean isMapAvailable() {
+        String[] mapPlugins = {"BlueMap", "dynmap", "squaremap", "Pl3xMap"};
+        for (String name : mapPlugins) {
+            Plugin p = Bukkit.getPluginManager().getPlugin(name);
+            if (p != null && p.isEnabled()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void start() {
         stop();
 

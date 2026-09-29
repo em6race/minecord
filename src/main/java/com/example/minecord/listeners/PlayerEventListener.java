@@ -197,28 +197,32 @@ public class PlayerEventListener implements Listener {
             else if (worldName.endsWith("_the_end")) dimensionKey = "events.dimensions.end";
             String dimension = plugin.getLanguageManager().getRaw(dimensionKey);
             
-            // Send coordinates to player with clickable map link
+            // Send coordinates to player (with clickable map link only if a map plugin is installed)
             String coordsMsg = plugin.getLanguageManager().get("events.death-coords", 
                     loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
             
-            String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
-            if (mapUrl == null || mapUrl.trim().isEmpty()) {
-                mapUrl = "http://localhost:8100/";
+            if (plugin.isMapAvailable()) {
+                String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
+                if (mapUrl == null || mapUrl.trim().isEmpty()) {
+                    mapUrl = "http://localhost:8100/";
+                }
+                if (!mapUrl.endsWith("/")) mapUrl += "/";
+                
+                // Link format for BlueMap (version 4/5+ requires 10 parameters)
+                String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                
+                String buttonText = plugin.getLanguageManager().getRaw("events.death-coords-map-button");
+                String hoverText = plugin.getLanguageManager().getRaw("events.death-coords-map-hover");
+                net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
+                net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent(buttonText);
+                linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
+                linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text(hoverText)));
+                
+                msgComponent.addExtra(linkComponent);
+                player.spigot().sendMessage(msgComponent);
+            } else {
+                player.sendMessage(coordsMsg);
             }
-            if (!mapUrl.endsWith("/")) mapUrl += "/";
-            
-            // Link format for BlueMap (version 4/5+ requires 10 parameters)
-            String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-            
-            String buttonText = plugin.getLanguageManager().getRaw("events.death-coords-map-button");
-            String hoverText = plugin.getLanguageManager().getRaw("events.death-coords-map-hover");
-            net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
-            net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent(buttonText);
-            linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
-            linkComponent.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new net.md_5.bungee.api.chat.hover.content.Text(hoverText)));
-            
-            msgComponent.addExtra(linkComponent);
-            player.spigot().sendMessage(msgComponent);
             
             // Log to server console
             plugin.getLogger().info(plugin.getLanguageManager().getRaw("events.death-coords-log", 

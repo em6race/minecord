@@ -4,7 +4,7 @@ main: com.example.minecord.MineCord
 api-version: '1.13'
 prefix: MineCord
 authors: [ You ]
-softdepend: [SkinsRestorer, BlueMap]
+softdepend: [SkinsRestorer, BlueMap, dynmap, squaremap, Pl3xMap]
 description: A plugin that connects Minecraft with Discord.
 commands:
   discord:

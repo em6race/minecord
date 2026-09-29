@@ -81,54 +81,50 @@ public class BotManager {
                 } catch (Throwable ignored) {}
 
                 // Register slash commands
-                jda.updateCommands().addCommands(
-                        Commands.slash("help", "Показує список всіх доступних команд бота"),
-                        Commands.slash("online", "Список гравців"),
+                java.util.List<net.dv8tion.jda.api.interactions.commands.build.CommandData> slashCommands = new java.util.ArrayList<>();
+                slashCommands.add(Commands.slash("help", "Показує список всіх доступних команд бота"));
+                slashCommands.add(Commands.slash("online", "Список гравців"));
+                if (plugin.isMapAvailable()) {
+                    slashCommands.add(Commands.slash("map", "Отримати посилання на веб-мапу сервера"));
+                }
+                slashCommands.add(Commands.slash("link", "Прив'язати акаунт Minecraft до Discord (або інструкція)")
+                        .addOption(OptionType.STRING, "code", "4-значний код з гри (залиште порожнім для інструкції)", false));
+                slashCommands.add(Commands.slash("maintenance", "Увімкнути/вимкнути режим технічних робіт")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                        .addOption(OptionType.BOOLEAN, "enabled", "Увімкнути (True) чи Вимкнути (False)", true));
+                slashCommands.add(Commands.slash("autorestart", "Управління авторестартами сервера")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                        .addSubcommands(
+                                new SubcommandData("add", "Додати час (наприклад, 04:00)")
+                                        .addOption(OptionType.STRING, "time", "Час у форматі HH:mm", true),
+                                new SubcommandData("remove", "Видалити час")
+                                        .addOption(OptionType.STRING, "time", "Час у форматі HH:mm", true),
+                                new SubcommandData("list", "Список авторестартів"),
+                                new SubcommandData("clear", "Очистити всі авторестарти"),
+                                new SubcommandData("toggle", "Призупинити/відновити всі авторестарти")
+                        ));
+                slashCommands.add(Commands.slash("queuerestart", "Одноразовий рестарт у чергу при 0 онлайну (повтор команди скасовує)")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)));
+                slashCommands.add(Commands.slash("stats", "Статистика гравця (або ваша, якщо не вказано нік)")
+                        .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true));
+                slashCommands.add(Commands.slash("serverinfo", "Інформація та стан сервера (TPS, CPU, оперативна пам'ять, онлайн)"));
+                slashCommands.add(Commands.slash("top", "Рейтинг найкращих гравців сервера")
+                        .addOptions(new net.dv8tion.jda.api.interactions.commands.build.OptionData(OptionType.STRING, "category", "Категорія рейтингу", false)
+                                .addChoice("👑 Абсолютний топ", "overall")
+                                .addChoice("⏱️ Награний час", "time")
+                                .addChoice("🏃 Подолана відстань", "distance")
+                                .addChoice("⚔️ Вбито мобів", "kills")
+                                .addChoice("💀 Смертей", "deaths")
+                                .addChoice("💎 Добуто алмазів", "diamonds")
+                                .addChoice("⛏️ Зламано блоків", "blocks")));
+                slashCommands.add(Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                        .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true, true)
+                        .addOption(OptionType.USER, "user", "Користувач Discord", true));
+                slashCommands.add(Commands.slash("links", "Переглянути список усіх прив'язаних акаунтів (адміни)")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)));
 
-                        Commands.slash("map", "Отримати посилання на веб-мапу сервера"),
-                        Commands.slash("link", "Прив'язати акаунт Minecraft до Discord (або інструкція)")
-                                .addOption(OptionType.STRING, "code", "4-значний код з гри (залиште порожнім для інструкції)", false),
-                        Commands.slash("maintenance", "Увімкнути/вимкнути режим технічних робіт")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                                .addOption(OptionType.BOOLEAN, "enabled", "Увімкнути (True) чи Вимкнути (False)", true),
-                        //Commands.slash("ticket", "Ticket settings")
-                        //        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                        //        .addSubcommands(
-                        //                new SubcommandData("setup", "Create a 'Create Ticket' button in this channel")
-                        //        ),
-                        Commands.slash("autorestart", "Управління авторестартами сервера")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                                .addSubcommands(
-                                        new SubcommandData("add", "Додати час (наприклад, 04:00)")
-                                                .addOption(OptionType.STRING, "time", "Час у форматі HH:mm", true),
-                                        new SubcommandData("remove", "Видалити час")
-                                                .addOption(OptionType.STRING, "time", "Час у форматі HH:mm", true),
-                                        new SubcommandData("list", "Список авторестартів"),
-                                        new SubcommandData("clear", "Очистити всі авторестарти"),
-                                        new SubcommandData("toggle", "Призупинити/відновити всі авторестарти")
-                                ),
-
-                        Commands.slash("queuerestart", "Одноразовий рестарт у чергу при 0 онлайну (повтор команди скасовує)")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)),
-                        Commands.slash("stats", "Статистика гравця (або ваша, якщо не вказано нік)")
-                                .addOption(OptionType.STRING, "player", "Нікнейм гравця", false, true),
-                        Commands.slash("serverinfo", "Інформація та стан сервера (TPS, оперативна пам'ять, онлайн)"),
-                        Commands.slash("top", "Рейтинг найкращих гравців сервера")
-                                .addOptions(new net.dv8tion.jda.api.interactions.commands.build.OptionData(OptionType.STRING, "category", "Категорія рейтингу", false)
-                                        .addChoice("👑 Абсолютний топ", "overall")
-                                        .addChoice("⏱️ Награний час", "time")
-                                        .addChoice("🏃 Подолана відстань", "distance")
-                                        .addChoice("⚔️ Вбито мобів", "kills")
-                                        .addChoice("💀 Смертей", "deaths")
-                                        .addChoice("💎 Добуто алмазів", "diamonds")
-                                        .addChoice("⛏️ Зламано блоків", "blocks")),
-                        Commands.slash("linkadmin", "Примусово прив'язати гравця до Discord (адміни)")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                                .addOption(OptionType.STRING, "player", "Нікнейм гравця в Minecraft", true, true)
-                                .addOption(OptionType.USER, "user", "Користувач Discord", true),
-                        Commands.slash("links", "Переглянути список усіх прив'язаних акаунтів (адміни)")
-                                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
-                ).queue();
+                jda.updateCommands().addCommands(slashCommands).queue();
 
                 // Initialize Webhook for chat bridge
                 webhookManager = new WebhookManager(plugin);

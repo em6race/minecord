@@ -42,7 +42,7 @@ public class DiscordCommandListener extends ListenerAdapter {
                 embed.setColor(0x5865F2); // Discord blurple
 
                 String commands = "🔹 `/online` — Показує список гравців на сервері\n" +
-                                  "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" +
+                                  (plugin.isMapAvailable() ? "🔹 `/map` — Отримати посилання на веб-мапу сервера\n" : "") +
                                   "🔹 `/link [code]` — Прив'язати акаунт Minecraft до Discord (або інструкція)\n" +
                                   "🔹 `/help` — Показує це повідомлення\n" +
                                   "🔹 `/stats [гравець]` — Показати свою статистику або статистику гравця\n" +
@@ -83,6 +83,10 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
             else if (event.getName().equals("map")) {
                 event.deferReply(true).queue();
+                if (!plugin.isMapAvailable()) {
+                    event.getHook().sendMessage("❌ На цьому сервері плагін веб-мапи не встановлений.").queue();
+                    return;
+                }
                 String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
                 if (mapUrl == null || mapUrl.trim().isEmpty()) {
                     mapUrl = "http://localhost:8100/";
