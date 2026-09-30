@@ -105,7 +105,7 @@ public class LanguageManager {
     /**
      * Resolves the language code ("en", "uk", "sk") for a specific player or sender.
      * If per-player-language is enabled and sender is a Player, reads player.getLocale() (e.g. "uk_ua" -> "uk").
-     * Falls back to the global server language if the client locale is not among supported languages.
+     * If the player's client language is not in the supported list, defaults to "en" (English).
      */
     public String resolvePlayerLang(CommandSender sender) {
         if (perPlayerLanguage && sender instanceof Player player) {
@@ -116,9 +116,10 @@ public class LanguageManager {
                     String prefix = lower.contains("_") ? lower.substring(0, lower.indexOf('_')) : lower;
                     if (prefix.equals("uk")) return "uk";
                     if (prefix.equals("sk") || prefix.equals("cs")) return "sk";
-                    if (prefix.equals("en")) return "en";
+                    return "en";
                 }
             } catch (Throwable ignored) {}
+            return "en";
         }
         return currentLang;
     }
