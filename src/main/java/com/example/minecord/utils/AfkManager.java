@@ -168,7 +168,11 @@ public class AfkManager implements Listener {
                 player.setPlayerListName(ChatColor.GRAY + "[АФК] " + ChatColor.RESET + player.getName());
             }
             
-            player.sendMessage(ChatColor.GRAY + "Ви перейшли в режим АФК" + (isMobInvulnerableEnabled() ? " (захист та фіксація позиції увімкнені)." : "."));
+            if (plugin.getLanguageManager() != null) {
+                player.sendMessage(plugin.getLanguageManager().get(player, "afk.enter"));
+            } else {
+                player.sendMessage(ChatColor.GRAY + "Ви перейшли в режим АФК.");
+            }
         } else {
             player.setCollidable(true);
             if (data.display != null && data.display.isValid()) {
@@ -182,7 +186,11 @@ public class AfkManager implements Listener {
                 player.setPlayerListName(player.getName());
             }
             
-            player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");
+            if (plugin.getLanguageManager() != null) {
+                player.sendMessage(plugin.getLanguageManager().get(player, "afk.leave"));
+            } else {
+                player.sendMessage(ChatColor.GRAY + "Ви вийшли з режиму АФК.");
+            }
         }
 
         // Notify SleepManager that an AFK transition occurred
@@ -202,13 +210,23 @@ public class AfkManager implements Listener {
         boolean newStatus = !data.isAfk;
         setAfk(player, data, newStatus, System.currentTimeMillis());
         if (newStatus) {
-            if (reason != null && !reason.trim().isEmpty()) {
-                Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " тепер АФК: " + ChatColor.YELLOW + reason.trim());
-            } else {
-                Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " тепер в режимі АФК.");
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                String baseMsg = plugin.getLanguageManager() != null
+                        ? plugin.getLanguageManager().get(onlinePlayer, "afk.broadcast-enter", player.getName())
+                        : (ChatColor.GRAY + "* " + player.getName() + " тепер в режимі АФК");
+                if (reason != null && !reason.trim().isEmpty()) {
+                    onlinePlayer.sendMessage(baseMsg + ": " + ChatColor.YELLOW + reason.trim());
+                } else {
+                    onlinePlayer.sendMessage(baseMsg);
+                }
             }
         } else {
-            Bukkit.broadcastMessage(ChatColor.GRAY + "* " + player.getName() + " повернувся до гри.");
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                String msg = plugin.getLanguageManager() != null
+                        ? plugin.getLanguageManager().get(onlinePlayer, "afk.broadcast-leave", player.getName())
+                        : (ChatColor.GRAY + "* " + player.getName() + " повернувся до гри");
+                onlinePlayer.sendMessage(msg);
+            }
         }
     }
 

@@ -118,8 +118,9 @@ public class PlayerEventListener implements Listener {
             }
 
             if (!player.hasPlayedBefore() && plugin.getConfig().getBoolean("events.first-join", true)) {
-                String welcomeMessage = plugin.getLanguageManager().get("events.first-join", player.getName());
-                plugin.getServer().broadcastMessage(welcomeMessage);
+                for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                    onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "events.first-join", player.getName()));
+                }
                 
                 if (plugin.getBotManager() != null) {
                     String embedText = plugin.getLanguageManager().getRaw("events.first-join-embed", player.getName());
@@ -195,11 +196,12 @@ public class PlayerEventListener implements Listener {
             String dimensionKey = "events.dimensions.overworld";
             if (worldName.endsWith("_nether")) dimensionKey = "events.dimensions.nether";
             else if (worldName.endsWith("_the_end")) dimensionKey = "events.dimensions.end";
-            String dimension = plugin.getLanguageManager().getRaw(dimensionKey);
+            String playerDimension = plugin.getLanguageManager().getRaw(player, dimensionKey);
+            String serverDimension = plugin.getLanguageManager().getRaw(dimensionKey);
             
-            // Send coordinates to player (with clickable map link only if a map plugin is installed)
-            String coordsMsg = plugin.getLanguageManager().get("events.death-coords", 
-                    loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension);
+            // Send coordinates to player in their client language (with clickable map link only if a map plugin is installed)
+            String coordsMsg = plugin.getLanguageManager().get(player, "events.death-coords", 
+                    loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), playerDimension);
             
             if (plugin.isMapAvailable()) {
                 String mapUrl = plugin.getConfig().getString("discord.map-url", "http://localhost:8100/");
@@ -211,8 +213,8 @@ public class PlayerEventListener implements Listener {
                 // Link format for BlueMap (version 4/5+ requires 10 parameters)
                 String fullUrl = String.format("%s#%s:%d:%d:%d:30:0:0:0:0:flat", mapUrl, worldName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
                 
-                String buttonText = plugin.getLanguageManager().getRaw("events.death-coords-map-button");
-                String hoverText = plugin.getLanguageManager().getRaw("events.death-coords-map-hover");
+                String buttonText = plugin.getLanguageManager().getRaw(player, "events.death-coords-map-button");
+                String hoverText = plugin.getLanguageManager().getRaw(player, "events.death-coords-map-hover");
                 net.md_5.bungee.api.chat.TextComponent msgComponent = new net.md_5.bungee.api.chat.TextComponent(coordsMsg + " ");
                 net.md_5.bungee.api.chat.TextComponent linkComponent = new net.md_5.bungee.api.chat.TextComponent(buttonText);
                 linkComponent.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.OPEN_URL, fullUrl));
@@ -224,9 +226,9 @@ public class PlayerEventListener implements Listener {
                 player.sendMessage(coordsMsg);
             }
             
-            // Log to server console
+            // Log to server console in server language
             plugin.getLogger().info(plugin.getLanguageManager().getRaw("events.death-coords-log", 
-                    player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), dimension));
+                    player.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), serverDimension));
 
             if (plugin.getConfig().getBoolean("events.death", true)) {
                 String deathMessage = event.getDeathMessage();

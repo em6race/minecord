@@ -187,7 +187,9 @@ public class SleepManager implements Listener {
                 world.setStorm(false);
                 world.setThundering(false);
             }
-            Bukkit.broadcastMessage(plugin.getLanguageManager().get("sleep.skipped"));
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "sleep.skipped"));
+            }
 
             if (plugin.getConfig().getBoolean("events.night-skip", true) && plugin.getBotManager() != null) {
                 String headPlayer = !sleepingPlayers.isEmpty() ? sleepingPlayers.get(0).getName() : null;
@@ -195,8 +197,10 @@ public class SleepManager implements Listener {
                 plugin.getBotManager().sendSystemEmbed(text, 0xFFD700, headPlayer);
             }
         } else if (bedEnterer != null) {
-            Bukkit.broadcastMessage(plugin.getLanguageManager().get("sleep.status", 
-                bedEnterer.getName(), sleepingCount, totalActive, percent));
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "sleep.status", 
+                    bedEnterer.getName(), sleepingCount, totalActive, percent));
+            }
         }
     }
 }

@@ -192,16 +192,16 @@ public class AutoRestartManager implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(plugin.getLanguageManager().get("restart.players-only"));
+            sender.sendMessage(plugin.getLanguageManager().get(sender, "restart.players-only"));
             return true;
         }
         Player p = (Player) sender;
         if (ignoredPlayers.contains(p.getUniqueId())) {
             ignoredPlayers.remove(p.getUniqueId());
-            p.sendMessage(plugin.getLanguageManager().get("restart.toggle-on"));
+            p.sendMessage(plugin.getLanguageManager().get(p, "restart.toggle-on"));
         } else {
             ignoredPlayers.add(p.getUniqueId());
-            p.sendMessage(plugin.getLanguageManager().get("restart.toggle-off"));
+            p.sendMessage(plugin.getLanguageManager().get(p, "restart.toggle-off"));
         }
         return true;
     }

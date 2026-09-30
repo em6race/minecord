@@ -2,22 +2,29 @@ package com.example.minecord.utils;
 
 import com.example.minecord.MineCord;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Manages plugin localization across English, Ukrainian, and Slovak.
+ * Manages plugin localization across English, Ukrainian, and Slovak,
+ * supporting both global server language (for Discord/console) and per-player client language in-game.
  */
 public class LanguageManager {
     private final MineCord plugin;
     private String currentLang = "en";
+    private boolean perPlayerLanguage = true;
+    private final Map<String, FileConfiguration> langConfigs = new HashMap<>();
     private FileConfiguration langConfig;
     private FileConfiguration fallbackConfig;
 
@@ -35,48 +42,38 @@ public class LanguageManager {
             plugin.getLogger().warning("Unknown language '" + currentLang + "' specified in config.yml! Falling back to 'en'.");
             currentLang = "en";
         }
+        perPlayerLanguage = plugin.getConfig().getBoolean("per-player-language", true);
 
-        File langFile = new File(plugin.getDataFolder(), "languages/" + currentLang + ".yml");
-        InputStream bundledLangStream = plugin.getResource("languages/" + currentLang + ".yml");
-        FileConfiguration bundledLangConfig = bundledLangStream != null
-                ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledLangStream, StandardCharsets.UTF_8))
-                : null;
+        langConfigs.clear();
+        for (String lang : SUPPORTED_LANGUAGES) {
+            File langFile = new File(plugin.getDataFolder(), "languages/" + lang + ".yml");
+            InputStream bundledStream = plugin.getResource("languages/" + lang + ".yml");
+            FileConfiguration bundledConfig = bundledStream != null
+                    ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledStream, StandardCharsets.UTF_8))
+                    : null;
 
-        if (langFile.exists()) {
-            langConfig = YamlConfiguration.loadConfiguration(langFile);
-            if (bundledLangConfig != null) {
-                langConfig.setDefaults(bundledLangConfig);
-                langConfig.options().copyDefaults(true);
-                try {
-                    langConfig.save(langFile);
-                } catch (Throwable ignored) {}
+            FileConfiguration cfg;
+            if (langFile.exists()) {
+                cfg = YamlConfiguration.loadConfiguration(langFile);
+                if (bundledConfig != null) {
+                    cfg.setDefaults(bundledConfig);
+                    cfg.options().copyDefaults(true);
+                    try {
+                        cfg.save(langFile);
+                    } catch (Throwable ignored) {}
+                }
+            } else if (bundledConfig != null) {
+                cfg = bundledConfig;
+            } else {
+                cfg = new YamlConfiguration();
             }
-        } else if (bundledLangConfig != null) {
-            langConfig = bundledLangConfig;
-        } else {
-            langConfig = new YamlConfiguration();
+            langConfigs.put(lang, cfg);
         }
 
-        // Always keep 'en' as fallback
-        File fallbackFile = new File(plugin.getDataFolder(), "languages/en.yml");
-        InputStream bundledEnStream = plugin.getResource("languages/en.yml");
-        FileConfiguration bundledEnConfig = bundledEnStream != null
-                ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledEnStream, StandardCharsets.UTF_8))
-                : null;
+        fallbackConfig = langConfigs.getOrDefault("en", new YamlConfiguration());
+        langConfig = langConfigs.getOrDefault(currentLang, fallbackConfig);
 
-        if (fallbackFile.exists()) {
-            fallbackConfig = YamlConfiguration.loadConfiguration(fallbackFile);
-            if (bundledEnConfig != null) {
-                fallbackConfig.setDefaults(bundledEnConfig);
-                fallbackConfig.options().copyDefaults(true);
-            }
-        } else if (bundledEnConfig != null) {
-            fallbackConfig = bundledEnConfig;
-        } else {
-            fallbackConfig = new YamlConfiguration();
-        }
-
-        plugin.logPink("Localization loaded: [" + currentLang.toUpperCase() + "]");
+        plugin.logPink("Localization loaded: [" + currentLang.toUpperCase() + "] (per-player client language: " + (perPlayerLanguage ? "ON" : "OFF") + ")");
     }
 
     private void saveDefaultLanguageFiles() {
@@ -105,10 +102,36 @@ public class LanguageManager {
         return false;
     }
 
-    public String getRaw(String key, Object... args) {
+    /**
+     * Resolves the language code ("en", "uk", "sk") for a specific player or sender.
+     * If per-player-language is enabled and sender is a Player, reads player.getLocale() (e.g. "uk_ua" -> "uk").
+     * Falls back to the global server language if the client locale is not among supported languages.
+     */
+    public String resolvePlayerLang(CommandSender sender) {
+        if (perPlayerLanguage && sender instanceof Player player) {
+            try {
+                String locale = player.getLocale();
+                if (locale != null && !locale.isEmpty()) {
+                    String lower = locale.toLowerCase().trim();
+                    String prefix = lower.contains("_") ? lower.substring(0, lower.indexOf('_')) : lower;
+                    if (prefix.equals("uk")) return "uk";
+                    if (prefix.equals("sk") || prefix.equals("cs")) return "sk";
+                    if (prefix.equals("en")) return "en";
+                }
+            } catch (Throwable ignored) {}
+        }
+        return currentLang;
+    }
+
+    public String getRawByLang(String lang, String key, Object... args) {
+        FileConfiguration targetConfig = (lang != null) ? langConfigs.get(lang.toLowerCase()) : langConfig;
+        if (targetConfig == null) {
+            targetConfig = langConfig;
+        }
+
         String msg = null;
-        if (langConfig != null) {
-            msg = langConfig.getString(key);
+        if (targetConfig != null) {
+            msg = targetConfig.getString(key);
         }
         if (msg == null && fallbackConfig != null) {
             msg = fallbackConfig.getString(key);
@@ -126,9 +149,25 @@ public class LanguageManager {
         return msg;
     }
 
-    public String get(String key, Object... args) {
-        String raw = getRaw(key, args);
+    public String getByLang(String lang, String key, Object... args) {
+        String raw = getRawByLang(lang, key, args);
         return ChatColor.translateAlternateColorCodes('&', raw);
+    }
+
+    public String getRaw(CommandSender sender, String key, Object... args) {
+        return getRawByLang(resolvePlayerLang(sender), key, args);
+    }
+
+    public String get(CommandSender sender, String key, Object... args) {
+        return getByLang(resolvePlayerLang(sender), key, args);
+    }
+
+    public String getRaw(String key, Object... args) {
+        return getRawByLang(currentLang, key, args);
+    }
+
+    public String get(String key, Object... args) {
+        return getByLang(currentLang, key, args);
     }
 
     public List<String> getList(String key) {
@@ -150,6 +189,10 @@ public class LanguageManager {
 
     public String getLanguage() {
         return currentLang;
+    }
+
+    public boolean isPerPlayerLanguage() {
+        return perPlayerLanguage;
     }
 
     public boolean isEnglish() {

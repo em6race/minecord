@@ -76,6 +76,8 @@ public class DeathTranslator {
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Pale Oak Boat") + "\\b", "Блідо-дубовий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Piglin Brute") + "\\b", "Брутальний піґлін"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Polar Bear") + "\\b", "Білий ведмідь"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Poplar Boat with Chest") + "\\b", "Тополевий човен зі скринею"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Poplar Boat") + "\\b", "Тополевий човен"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Shulker Bullet") + "\\b", "Куля шалкера"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton Horse") + "\\b", "Кінь-скелет"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Small Fireball") + "\\b", "Мала вогняна куля"));
@@ -168,6 +170,7 @@ public class DeathTranslator {
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cow") + "\\b", "Корова"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creaking") + "\\b", "Скрипень"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Creeper") + "\\b", "Кріпер"));
+        mobRules.add(new TranslationRule("\\b" + Pattern.quote("Cushion") + "\\b", "Подушка"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Dolphin") + "\\b", "Дельфін"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Donkey") + "\\b", "Віслюк"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Drowned") + "\\b", "Потопельник"));
@@ -233,17 +236,24 @@ public class DeathTranslator {
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zoglin") + "\\b", "Зоґлін"));
         mobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie") + "\\b", "Зомбі"));
 
-        // --- death message rules from uk_ua.json ---
+        // --- death message rules from uk_ua.json (Minecraft 26.3) ---
+        // Note: .item rules are placed BEFORE their non-.item counterparts so "using/with ..." matches first!
         // death.attack.anvil
         rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil$", "$1 розчавлено падучим ковадлом"));
         // death.attack.anvil.player
         rules.add(new TranslationRule("^(.*?) was squashed by a falling anvil while fighting (.*?)$", "$1 розчавлено падучим ковадлом під час битви з $2"));
-        // death.attack.arrow
-        rules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$2 застрелив $1"));
         // death.attack.arrow.item
         rules.add(new TranslationRule("^(.*?) was shot by (.*?) using (.*?)$", "$2 застрелив $1 за допомогою: $3"));
+        // death.attack.arrow
+        rules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$2 застрелив $1"));
         // death.attack.badRespawnPoint.link
         rules.add(new TranslationRule("^Intentional Game Design$", "навмисної властивости гри"));
+        // death.attack.indirectMagic
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using magic$", "$2 убив $1 за допомогою магії"));
+        // death.attack.indirectMagic.item
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using (.*?)$", "$2 убив $1 за допомогою: $3"));
+        // death.attack.thorns.item
+        rules.add(new TranslationRule("^(.*?) was killed by (.*?) while trying to hurt (.*?)$", "$2 убив $1 під час спроби нашкодити $3"));
         // death.attack.badRespawnPoint.message
         rules.add(new TranslationRule("^(.*?) was killed by (.*?)$", "$1 загинув унаслідок $2"));
         // death.attack.cactus
@@ -270,10 +280,10 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was killed by even more magic$", "$1 убито ще більшою магією"));
         // death.attack.explosion
         rules.add(new TranslationRule("^(.*?) blew up$", "$1 вибухнув"));
-        // death.attack.explosion.player
-        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$2 підірвав $1"));
         // death.attack.explosion.player.item
         rules.add(new TranslationRule("^(.*?) was blown up by (.*?) using (.*?)$", "$2 підірвав $1 за допомогою: $3"));
+        // death.attack.explosion.player
+        rules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$2 підірвав $1"));
         // death.attack.fall
         rules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 занадто сильно вдарився об землю"));
         // death.attack.fall.player
@@ -286,10 +296,10 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was skewered by a falling stalactite$", "$1 проткнуто падучим сталактитом"));
         // death.attack.fallingStalactite.player
         rules.add(new TranslationRule("^(.*?) was skewered by a falling stalactite while fighting (.*?)$", "$1 проткнуто падучим сталактитом під час битви з $2"));
-        // death.attack.fireball
-        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?)$", "$2 убив $1 вогняною кулею"));
         // death.attack.fireball.item
         rules.add(new TranslationRule("^(.*?) was fireballed by (.*?) using (.*?)$", "$2 убив $1 вогняною кулею за допомогою: $3"));
+        // death.attack.fireball
+        rules.add(new TranslationRule("^(.*?) was fireballed by (.*?)$", "$2 убив $1 вогняною кулею"));
         // death.attack.fireworks
         rules.add(new TranslationRule("^(.*?) went off with a bang$", "$1 з тріском розлетівся"));
         // death.attack.fireworks.item  (%3$s fired from, %2$s by)
@@ -316,10 +326,6 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) discovered the floor was lava$", "$1 помітив, що підлога — це лава"));
         // death.attack.hotFloor.player
         rules.add(new TranslationRule("^(.*?) walked into the danger zone due to (.*?)$", "$1 увійшов у небезпечну зону через $2"));
-        // death.attack.indirectMagic
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using magic$", "$2 убив $1 за допомогою магії"));
-        // death.attack.indirectMagic.item
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) using (.*?)$", "$2 убив $1 за допомогою: $3"));
         // death.attack.inFire
         rules.add(new TranslationRule("^(.*?) went up in flames$", "$1 згорів"));
         // death.attack.inFire.player
@@ -336,20 +342,20 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was struck by lightning$", "$1 уразила блискавка"));
         // death.attack.lightningBolt.player
         rules.add(new TranslationRule("^(.*?) was struck by lightning while fighting (.*?)$", "$1 уразила блискавка під час битви з $2"));
-        // death.attack.mace_smash
-        rules.add(new TranslationRule("^(.*?) was smashed by (.*?)$", "$2 розтрощив $1"));
         // death.attack.mace_smash.item
         rules.add(new TranslationRule("^(.*?) was smashed by (.*?) with (.*?)$", "$2 розтрощив $1 за допомогою: $3"));
+        // death.attack.mace_smash
+        rules.add(new TranslationRule("^(.*?) was smashed by (.*?)$", "$2 розтрощив $1"));
         // death.attack.magic
         rules.add(new TranslationRule("^(.*?) was killed by magic$", "$1 убито магією"));
         // death.attack.magic.player
         rules.add(new TranslationRule("^(.*?) was killed by magic while trying to escape (.*?)$", "$1 убито магією під час спроби втекти від $2"));
         // death.attack.message_too_long  (%s no index)
         rules.add(new TranslationRule("^Actually, the message was too long to deliver fully\\. Sorry! Here's a stripped version: (.*?)$", "Насправді повідомлення було надто довгим, щоб доставити його повністю. Вибачте! Ось обрізана версія: $1"));
-        // death.attack.mob / death.attack.player  (same EN pattern)
-        rules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$2 убив $1"));
         // death.attack.mob.item / death.attack.player.item
         rules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$2 убив $1 за допомогою: $3"));
+        // death.attack.mob / death.attack.player  (same EN pattern)
+        rules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$2 убив $1"));
         // death.attack.onFire
         rules.add(new TranslationRule("^(.*?) burned to death$", "$1 згорів живцем"));
         // death.attack.onFire.item
@@ -370,10 +376,10 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was obliterated by a sonically-charged shriek while trying to escape (.*?) wielding (.*?)$", "$1 знищено потужною звуковою хвилею під час спроби втекти від $2 з: $3"));
         // death.attack.sonic_boom.player
         rules.add(new TranslationRule("^(.*?) was obliterated by a sonically-charged shriek while trying to escape (.*?)$", "$1 знищено потужною звуковою хвилею під час спроби втекти від $2"));
-        // death.attack.spear
-        rules.add(new TranslationRule("^(.*?) was speared by (.*?)$", "$2 проштрикнув $1"));
         // death.attack.spear.item
         rules.add(new TranslationRule("^(.*?) was speared by (.*?) using (.*?)$", "$2 проштрикнув $1 за допомогою: $3"));
+        // death.attack.spear
+        rules.add(new TranslationRule("^(.*?) was speared by (.*?)$", "$2 проштрикнув $1"));
         // death.attack.stalagmite
         rules.add(new TranslationRule("^(.*?) was impaled on a stalagmite$", "$1 проткнуто сталагмітом"));
         // death.attack.stalagmite.player
@@ -390,6 +396,8 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was stung to death by (.*?)$", "$2 зажалив $1 до смерти"));
         // death.attack.sulfurCubeHot
         rules.add(new TranslationRule("^(.*?) died because not just the floor is lava$", "$1 загинув, бо не лише підлога є лавою"));
+        // death.attack.sulfurCubeHot.item
+        rules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava using (.*?)$", "$1 показав $2, що не лише підлога є лавою, за допомогою: $3"));
         // death.attack.sulfurCubeHot.player
         rules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava$", "$1 показав $2, що не лише підлога є лавою"));
         // death.attack.sweetBerryBush
@@ -398,24 +406,22 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) was poked to death by a sweet berry bush while trying to escape (.*?)$", "$1 заколовся до смерти кущем солодких ягід під час спроби втекти від $2"));
         // death.attack.thorns
         rules.add(new TranslationRule("^(.*?) was killed while trying to hurt (.*?)$", "$1 убито під час спроби нашкодити $2"));
-        // death.attack.thorns.item
-        rules.add(new TranslationRule("^(.*?) was killed by (.*?) while trying to hurt (.*?)$", "$2 убив $1 під час спроби нашкодити $3"));
-        // death.attack.thrown
-        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?)$", "$2 забив $1 до смерти"));
         // death.attack.thrown.item
         rules.add(new TranslationRule("^(.*?) was pummeled by (.*?) using (.*?)$", "$2 забив $1 до смерти за допомогою: $3"));
-        // death.attack.trident
-        rules.add(new TranslationRule("^(.*?) was impaled by (.*?)$", "$2 проткнув $1"));
+        // death.attack.thrown
+        rules.add(new TranslationRule("^(.*?) was pummeled by (.*?)$", "$2 забив $1 до смерти"));
         // death.attack.trident.item
         rules.add(new TranslationRule("^(.*?) was impaled by (.*?) with (.*?)$", "$2 проткнув $1 за допомогою: $3"));
+        // death.attack.trident
+        rules.add(new TranslationRule("^(.*?) was impaled by (.*?)$", "$2 проткнув $1"));
         // death.attack.wither
         rules.add(new TranslationRule("^(.*?) withered away$", "$1 висушився"));
         // death.attack.wither.player
         rules.add(new TranslationRule("^(.*?) withered away while fighting (.*?)$", "$1 висушився під час битви з $2"));
-        // death.attack.witherSkull
-        rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?)$", "$1 уражено черепом від $2"));
         // death.attack.witherSkull.item
         rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?) using (.*?)$", "$1 уражено черепом від $2 за допомогою: $3"));
+        // death.attack.witherSkull
+        rules.add(new TranslationRule("^(.*?) was shot by a skull from (.*?)$", "$1 уражено черепом від $2"));
         // death.fell.accident.generic
         rules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 упав із високого місця"));
         // death.fell.accident.ladder
@@ -430,14 +436,14 @@ public class DeathTranslator {
         rules.add(new TranslationRule("^(.*?) fell off some vines$", "$1 упав із ліз"));
         // death.fell.accident.weeping_vines
         rules.add(new TranslationRule("^(.*?) fell off some weeping vines$", "$1 упав із плакучих ліз"));
-        // death.fell.assist
-        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?)$", "$2 прирік $1 на падіння"));
         // death.fell.assist.item
         rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?) using (.*?)$", "$2 прирік $1 на падіння за допомогою: $3"));
-        // death.fell.finish
-        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?)$", "$1 упав занадто високо та був добитий $2"));
+        // death.fell.assist
+        rules.add(new TranslationRule("^(.*?) was doomed to fall by (.*?)$", "$2 прирік $1 на падіння"));
         // death.fell.finish.item
         rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?) using (.*?)$", "$1 упав занадто високо та був добитий $2 за допомогою: $3"));
+        // death.fell.finish
+        rules.add(new TranslationRule("^(.*?) fell too far and was finished by (.*?)$", "$1 упав занадто високо та був добитий $2"));
         // death.fell.killer
         rules.add(new TranslationRule("^(.*?) was doomed to fall$", "$1 приречено на падіння"));
         // death.fell.accident.from_high_place_and_out_of_world (not in lang but kept as fallback)
@@ -447,7 +453,14 @@ public class DeathTranslator {
     }
 
     private static void initSlovakRules() {
-        // --- Slovak mob names ---
+        // --- Slovak mob names (Minecraft 26.3) ---
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Poplar Boat with Chest") + "\\b", "Topoľový čln s truhlicou"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Poplar Boat") + "\\b", "Topoľový čln"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Camel Husk") + "\\b", "Vysušená ťava"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie Nautilus") + "\\b", "Zombie lodienka"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Copper Golem") + "\\b", "Medený golem"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Happy Ghast") + "\\b", "Šťastný ghast"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Sulfur Cube") + "\\b", "Sírový slizúň"));
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Zombie") + "\\b", "Zombie"));
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Skeleton") + "\\b", "Kostlivec"));
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Creeper") + "\\b", "Creeper"));
@@ -476,25 +489,36 @@ public class DeathTranslator {
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Elder Guardian") + "\\b", "Prastarý strážca"));
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Breeze") + "\\b", "Vánok"));
         skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Bogged") + "\\b", "Zablatok"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Creaking") + "\\b", "Vŕzgavec"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Parched") + "\\b", "Vyprahnutec"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Nautilus") + "\\b", "Lodienka"));
+        skMobRules.add(new TranslationRule("\\b" + Pattern.quote("Cushion") + "\\b", "Vankúš"));
 
-        // --- Slovak death templates ---
+        // --- Slovak death templates (Minecraft 26.3) ---
         skRules.add(new TranslationRule("^(.*?) was slain by (.*?) using (.*?)$", "$1 bol zabitý hráčom/tvorom $2 pomocou $3"));
         skRules.add(new TranslationRule("^(.*?) was slain by (.*?)$", "$1 bol zabitý hráčom/tvorom $2"));
         skRules.add(new TranslationRule("^(.*?) was shot by (.*?) using (.*?)$", "$1 bol zastrelený $2 pomocou $3"));
         skRules.add(new TranslationRule("^(.*?) was shot by (.*?)$", "$1 bol zastrelený $2"));
-        skRules.add(new TranslationRule("^(.*?) drowned whilst trying to escape (.*?)$", "$1 sa utopil pri pokuse o útek pred $2"));
+        skRules.add(new TranslationRule("^(.*?) was speared by (.*?) using (.*?)$", "$2 prebodol $1 oštepom pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) was speared by (.*?)$", "$2 prebodol $1 oštepom"));
+        skRules.add(new TranslationRule("^(.*?) was smashed by (.*?) with (.*?)$", "$2 rozmliaždil $1 pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) was smashed by (.*?)$", "$2 rozmliaždil $1"));
+        skRules.add(new TranslationRule("^(.*?) died because not just the floor is lava$", "$1 zomrel, pretože nielen podlaha je láva"));
+        skRules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava using (.*?)$", "$1 ukázal $2, že nielen podlaha je láva, pomocou $3"));
+        skRules.add(new TranslationRule("^(.*?) showed (.*?) that not just the floor is lava$", "$1 ukázal $2, že nielen podlaha je láva"));
+        skRules.add(new TranslationRule("^(.*?) drowned (?:while|whilst) trying to escape (.*?)$", "$1 sa utopil pri pokuse o útek pred $2"));
         skRules.add(new TranslationRule("^(.*?) drowned$", "$1 sa utopil"));
-        skRules.add(new TranslationRule("^(.*?) hit the ground too hard whilst trying to escape (.*?)$", "$1 dopadol na zem príliš tvrdo pri úteku pred $2"));
+        skRules.add(new TranslationRule("^(.*?) hit the ground too hard (?:while|whilst) trying to escape (.*?)$", "$1 dopadol na zem príliš tvrdo pri úteku pred $2"));
         skRules.add(new TranslationRule("^(.*?) hit the ground too hard$", "$1 dopadol na zem príliš tvrdo"));
         skRules.add(new TranslationRule("^(.*?) fell from a high place$", "$1 spadol z veľkej výšky"));
-        skRules.add(new TranslationRule("^(.*?) fell off a scaffolding$", "$1 spadol z lešenia"));
+        skRules.add(new TranslationRule("^(.*?) fell off (?:a )?scaffolding$", "$1 spadol z lešenia"));
         skRules.add(new TranslationRule("^(.*?) was blown up by (.*?) using (.*?)$", "$1 bol vyhodený do vzduchu $2 pomocou $3"));
         skRules.add(new TranslationRule("^(.*?) was blown up by (.*?)$", "$1 bol vyhodený do vzduchu $2"));
         skRules.add(new TranslationRule("^(.*?) blew up$", "$1 vybuchol"));
-        skRules.add(new TranslationRule("^(.*?) walked into fire whilst fighting (.*?)$", "$1 vošiel do ohňa pri boji s $2"));
+        skRules.add(new TranslationRule("^(.*?) walked into fire (?:while|whilst) fighting (.*?)$", "$1 vošiel do ohňa pri boji s $2"));
         skRules.add(new TranslationRule("^(.*?) went up in flames$", "$1 zhorel v plameňoch"));
         skRules.add(new TranslationRule("^(.*?) burned to death$", "$1 zhorel na smrť"));
-        skRules.add(new TranslationRule("^(.*?) tried to swim in lava whilst trying to escape (.*?)$", "$1 sa pokúsil plávať v láve pri úteku pred $2"));
+        skRules.add(new TranslationRule("^(.*?) tried to swim in lava (?:to|while trying to|whilst trying to) escape (.*?)$", "$1 sa pokúsil plávať v láve pri úteku pred $2"));
         skRules.add(new TranslationRule("^(.*?) tried to swim in lava$", "$1 sa pokúsil plávať v láve"));
         skRules.add(new TranslationRule("^(.*?) starved to death$", "$1 zomrel od hladu"));
         skRules.add(new TranslationRule("^(.*?) suffocated in a wall$", "$1 sa udusil v stene"));

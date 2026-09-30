@@ -4,7 +4,12 @@
 
 # Plugin language / Мова плагіна / Jazyk pluginu
 # Available options: "en" (English), "uk" (Українська), "sk" (Slovenčina)
+# Used for Discord embeds, bot status, console logs, and as fallback language.
 language: "en"
+
+# Automatically detect each player's Minecraft client language (uk_ua, sk_sk, en_us)
+# for in-game messages and TAB list, while keeping Discord & bot status in the global 'language' above.
+per-player-language: true
 
 discord:
   # Insert your bot token here (from Discord Developer Portal)

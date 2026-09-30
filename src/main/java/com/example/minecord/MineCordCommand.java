@@ -79,10 +79,10 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                 plugin.reloadPlugin();
-                sender.sendMessage(plugin.getLanguageManager().get("commands.reload-success"));
+                sender.sendMessage(plugin.getLanguageManager().get(sender, "commands.reload-success"));
                 return true;
             } else {
-                sender.sendMessage(plugin.getLanguageManager().get("commands.no-permission"));
+                sender.sendMessage(plugin.getLanguageManager().get(sender, "commands.no-permission"));
                 return true;
             }
         }
@@ -96,7 +96,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 }
                 return true;
             } else {
-                sender.sendMessage(plugin.getLanguageManager().get("commands.no-permission"));
+                sender.sendMessage(plugin.getLanguageManager().get(sender, "commands.no-permission"));
                 return true;
             }
         }

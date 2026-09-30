@@ -18,39 +18,43 @@ public class TabManager {
 
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             String tpsStr = getTPSString();
-            String uptimeStr = getUptimeString();
-            
             LanguageManager lm = plugin.getLanguageManager();
-            boolean isNonEnglish = lm != null && !lm.isEnglish();
 
-            String header = plugin.getConfig().getString("tablist.header");
-            if (header == null || header.trim().isEmpty()
-                    || (isNonEnglish && header.equals("&b&lMineCord Server\n&7Welcome to the server!\n"))) {
-                header = (lm != null)
-                        ? lm.get("tablist.default-header")
-                        : "&b&lMineCord Server\n&7Welcome to the server!\n";
-            }
-            header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
-            
-            String footerTemplate = plugin.getConfig().getString("tablist.footer");
-            if (footerTemplate == null || footerTemplate.trim().isEmpty()
-                    || (isNonEnglish && footerTemplate.equals("\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms"))) {
-                footerTemplate = (lm != null)
-                        ? lm.get("tablist.default-footer")
-                        : "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms";
-            }
-            footerTemplate = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate);
-            String baseFooter = footerTemplate
-                    .replace("%tps%", tpsStr)
-                    .replace("%uptime%", uptimeStr);
+            String customHeader = plugin.getConfig().getString("tablist.header");
+            String customFooter = plugin.getConfig().getString("tablist.footer");
 
             for (Player player : plugin.getServer().getOnlinePlayers()) {
+                String pLang = lm != null ? lm.resolvePlayerLang(player) : "en";
+                boolean isNonEnglish = !"en".equalsIgnoreCase(pLang);
+
+                String header = customHeader;
+                if (header == null || header.trim().isEmpty()
+                        || (isNonEnglish && header.equals("&b&lMineCord Server\n&7Welcome to the server!\n"))) {
+                    header = (lm != null)
+                            ? lm.getByLang(pLang, "tablist.default-header")
+                            : "&b&lMineCord Server\n&7Welcome to the server!\n";
+                }
+                header = org.bukkit.ChatColor.translateAlternateColorCodes('&', header);
+
+                String footerTemplate = customFooter;
+                if (footerTemplate == null || footerTemplate.trim().isEmpty()
+                        || (isNonEnglish && footerTemplate.equals("\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms"))) {
+                    footerTemplate = (lm != null)
+                            ? lm.getByLang(pLang, "tablist.default-footer")
+                            : "\n&7TPS: %tps% &8| &7Uptime: &e%uptime% &8| &7Ping: %ping%ms";
+                }
+                footerTemplate = org.bukkit.ChatColor.translateAlternateColorCodes('&', footerTemplate);
+
                 int ping = player.getPing();
                 String pingColor = "§a";
                 if (ping > 80) pingColor = "§e";
                 if (ping > 150) pingColor = "§c";
-                
-                String playerFooter = baseFooter.replace("%ping%", pingColor + ping);
+
+                String uptimeStr = getUptimeString(pLang);
+                String playerFooter = footerTemplate
+                        .replace("%tps%", tpsStr)
+                        .replace("%uptime%", uptimeStr)
+                        .replace("%ping%", pingColor + ping);
                 player.setPlayerListHeaderFooter(header, playerFooter);
             }
         }, 20L, 20L);
@@ -76,7 +80,7 @@ public class TabManager {
         }
     }
     
-    private String getUptimeString() {
+    private String getUptimeString(String lang) {
         long diff = System.currentTimeMillis() - startTime;
         long seconds = diff / 1000 % 60;
         long minutes = diff / (60 * 1000) % 60;
@@ -84,10 +88,10 @@ public class TabManager {
         long days = diff / (24 * 60 * 60 * 1000);
         
         LanguageManager lm = plugin.getLanguageManager();
-        String dayUnit = lm != null ? lm.getRaw("tablist.units.days") : "d ";
-        String hourUnit = lm != null ? lm.getRaw("tablist.units.hours") : "h ";
-        String minUnit = lm != null ? lm.getRaw("tablist.units.minutes") : "m ";
-        String secUnit = lm != null ? lm.getRaw("tablist.units.seconds") : "s";
+        String dayUnit = lm != null ? lm.getRawByLang(lang, "tablist.units.days") : "d ";
+        String hourUnit = lm != null ? lm.getRawByLang(lang, "tablist.units.hours") : "h ";
+        String minUnit = lm != null ? lm.getRawByLang(lang, "tablist.units.minutes") : "m ";
+        String secUnit = lm != null ? lm.getRawByLang(lang, "tablist.units.seconds") : "s";
 
         if (dayUnit == null || dayUnit.equals("tablist.units.days")) dayUnit = "d ";
         if (hourUnit == null || hourUnit.equals("tablist.units.hours")) hourUnit = "h ";

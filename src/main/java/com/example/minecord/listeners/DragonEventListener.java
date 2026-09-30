@@ -42,8 +42,10 @@ public class DragonEventListener implements Listener {
         }
         lastDragonSpawnAlert = now;
 
-        // In-game broadcast
-        plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.summoned-chat"));
+        // In-game broadcast per player's client language
+        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+            onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "dragon.summoned-chat"));
+        }
 
         // Discord embed
         sendDiscordEmbed("🐉 Ender Dragon",
@@ -73,7 +75,9 @@ public class DragonEventListener implements Listener {
 
         if (killer != null) {
             String killerName = killer.getName();
-            plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.defeated-chat", killerName));
+            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "dragon.defeated-chat", killerName));
+            }
 
             String avatar = SkinHelper.getAvatarUrl(killer);
             sendDiscordEmbed("🐉 Ender Dragon",
@@ -81,7 +85,9 @@ public class DragonEventListener implements Listener {
                     0xF1C40F,
                     avatar);
         } else {
-            plugin.getServer().broadcastMessage(plugin.getLanguageManager().get("dragon.defeated-chat", "Heroes"));
+            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                onlinePlayer.sendMessage(plugin.getLanguageManager().get(onlinePlayer, "dragon.defeated-chat", "Heroes"));
+            }
 
             sendDiscordEmbed("🐉 Ender Dragon",
                     plugin.getLanguageManager().getRaw("dragon.defeated-discord", "Heroes"),

@@ -4,11 +4,149 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AdvancementTranslator {
+    private static final Map<String, String> enTranslations = new HashMap<>();
     private static final Map<String, String> ukTranslations = new HashMap<>();
     private static final Map<String, String> skTranslations = new HashMap<>();
 
     static {
-        // ==================== UKRAINIAN (uk) ====================
+        // ==================== ENGLISH (en - Minecraft 26.3) ====================
+        // --- story ---
+        enTranslations.put("story/root", "Minecraft");
+        enTranslations.put("story/mine_stone", "Stone Age");
+        enTranslations.put("story/upgrade_tools", "Getting an Upgrade");
+        enTranslations.put("story/smelt_iron", "Acquire Hardware");
+        enTranslations.put("story/obtain_armor", "Suit Up");
+        enTranslations.put("story/lava_bucket", "Hot Stuff");
+        enTranslations.put("story/iron_tools", "Isn't It Iron Pick");
+        enTranslations.put("story/deflect_arrow", "Not Today, Thank You");
+        enTranslations.put("story/form_obsidian", "Ice Bucket Challenge");
+        enTranslations.put("story/mine_diamond", "Diamonds!");
+        enTranslations.put("story/enter_the_nether", "We Need to Go Deeper");
+        enTranslations.put("story/shiny_gear", "Cover Me with Diamonds");
+        enTranslations.put("story/enchant_item", "Enchanter");
+        enTranslations.put("story/cure_zombie_villager", "Zombie Doctor");
+        enTranslations.put("story/follow_ender_eye", "Eye Spy");
+        enTranslations.put("story/enter_the_end", "The End?");
+        // --- nether ---
+        enTranslations.put("nether/root", "Nether");
+        enTranslations.put("nether/find_fortress", "A Terrible Fortress");
+        enTranslations.put("nether/get_wither_skull", "Spooky Scary Skeleton");
+        enTranslations.put("nether/obtain_blaze_rod", "Into Fire");
+        enTranslations.put("nether/brew_potion", "Local Brewery");
+        enTranslations.put("nether/summon_wither", "Withering Heights");
+        enTranslations.put("nether/all_potions", "A Furious Cocktail");
+        enTranslations.put("nether/all_effects", "How Did We Get Here?");
+        enTranslations.put("nether/uneasy_alliance", "Uneasy Alliance");
+        enTranslations.put("nether/explore_nether", "Hot Tourist Destinations");
+        enTranslations.put("nether/fast_travel", "Subspace Bubble");
+        enTranslations.put("nether/find_bastion", "Those Were the Days");
+        enTranslations.put("nether/obtain_ancient_debris", "Hidden in the Depths");
+        enTranslations.put("nether/obtain_crying_obsidian", "Who is Cutting Onions?");
+        enTranslations.put("nether/distract_piglin", "Oh Shiny");
+        enTranslations.put("nether/loot_bastion", "War Pigs");
+        enTranslations.put("nether/ride_strider", "This Boat Has Legs");
+        enTranslations.put("nether/ride_strider_in_overworld_lava", "Feels Like Home");
+        enTranslations.put("nether/return_to_sender", "Return to Sender");
+        enTranslations.put("nether/use_lodestone", "Country Lode, Take Me Home");
+        enTranslations.put("nether/netherite_armor", "Cover Me in Debris");
+        enTranslations.put("nether/charge_respawn_anchor", "Not Quite \"Nine\" Lives");
+        enTranslations.put("nether/create_beacon", "Bring Home the Beacon");
+        enTranslations.put("nether/create_full_beacon", "Beaconator");
+        // --- end ---
+        enTranslations.put("end/root", "The End");
+        enTranslations.put("end/kill_dragon", "Free the End");
+        enTranslations.put("end/dragon_egg", "The Next Generation");
+        enTranslations.put("end/enter_end_gateway", "Remote Getaway");
+        enTranslations.put("end/find_end_city", "The City at the End of the Game");
+        enTranslations.put("end/elytra", "Sky's the Limit");
+        enTranslations.put("end/levitate", "Great View From Up Here");
+        enTranslations.put("end/dragon_breath", "You Need a Mint");
+        enTranslations.put("end/respawn_dragon", "The End... Again...");
+        // --- adventure ---
+        enTranslations.put("adventure/root", "Adventure");
+        enTranslations.put("adventure/adventuring_time", "Adventuring Time");
+        enTranslations.put("adventure/sleep_in_bed", "Sweet Dreams");
+        enTranslations.put("adventure/hero_of_the_village", "Hero of the Village");
+        enTranslations.put("adventure/trade", "What a Deal!");
+        enTranslations.put("adventure/honey_block_slide", "Sticky Situation");
+        enTranslations.put("adventure/ol_betsy", "Ol' Betsy");
+        enTranslations.put("adventure/whos_the_pillager_now", "Who's the Pillager Now?");
+        enTranslations.put("adventure/two_birds_one_arrow", "Two Birds, One Arrow");
+        enTranslations.put("adventure/shoot_arrow", "Take Aim");
+        enTranslations.put("adventure/kill_a_mob", "Monster Hunter");
+        enTranslations.put("adventure/kill_all_mobs", "Monsters Hunted");
+        enTranslations.put("adventure/sniper_duel", "Sniper Duel");
+        enTranslations.put("adventure/throw_trident", "A Throwaway Joke");
+        enTranslations.put("adventure/totem_of_undying", "Postmortal");
+        enTranslations.put("adventure/summon_iron_golem", "Hired Help");
+        enTranslations.put("adventure/trade_at_world_height", "Star Trader");
+        enTranslations.put("adventure/very_very_frightening", "Very Very Frightening");
+        enTranslations.put("adventure/lightning_rod_with_villager_no_fire", "Surge Protector");
+        enTranslations.put("adventure/fall_from_world_height", "Caves & Cliffs");
+        enTranslations.put("adventure/walk_on_powder_snow_with_leather_boots", "Light as a Rabbit");
+        enTranslations.put("adventure/avoid_vibration", "Sneak 100");
+        enTranslations.put("adventure/spyglass_at_parrot", "Is It a Bird?");
+        enTranslations.put("adventure/spyglass_at_ghast", "Is It a Balloon?");
+        enTranslations.put("adventure/spyglass_at_dragon", "Is It a Plane?");
+        enTranslations.put("adventure/bullseye", "Bullseye");
+        enTranslations.put("adventure/read_power_from_chiseled_bookshelf", "The Power of Books");
+        enTranslations.put("adventure/read_power_of_chiseled_bookshelf", "The Power of Books");
+        enTranslations.put("adventure/under_lock_and_key", "Under Lock and Key");
+        enTranslations.put("adventure/voluntary_exile", "Voluntary Exile");
+        enTranslations.put("adventure/who_needs_rockets", "Who Needs Rockets?");
+        enTranslations.put("adventure/trim_with_any_armor_pattern", "Crafting a New Look");
+        enTranslations.put("adventure/trim_with_all_exclusive_armor_patterns", "Smithing with Style");
+        enTranslations.put("adventure/salvage_sherd", "Respecting the Remnants");
+        enTranslations.put("adventure/craft_decorated_pot_using_only_sherds", "Careful Restoration");
+        enTranslations.put("adventure/arbalistic", "Arbalistic");
+        enTranslations.put("adventure/overoverkill", "Over-Overkill");
+        enTranslations.put("adventure/spear_many_mobs", "Mob Kabob");
+        enTranslations.put("adventure/kill_mob_near_sculk_catalyst", "It Spreads");
+        enTranslations.put("adventure/play_jukebox_in_meadows", "Sound of Music");
+        enTranslations.put("adventure/use_lodestone", "Country Lode, Take Me Home");
+        enTranslations.put("adventure/lighten_up", "Lighten Up");
+        enTranslations.put("adventure/heart_transplanter", "Heart Transplanter");
+        enTranslations.put("adventure/revaulting", "Revaulting");
+        enTranslations.put("adventure/minecraft_trials_edition", "Minecraft: Trial(s) Edition");
+        enTranslations.put("adventure/crafters_crafting_crafters", "Crafters Crafting Crafters");
+        enTranslations.put("adventure/blowback", "Blowback");
+        enTranslations.put("adventure/brush_armadillo", "Isn't It Scute?");
+        // --- husbandry ---
+        enTranslations.put("husbandry/root", "Husbandry");
+        enTranslations.put("husbandry/plant_seed", "A Seedy Place");
+        enTranslations.put("husbandry/breed_an_animal", "The Parrots and the Bats");
+        enTranslations.put("husbandry/tame_an_animal", "Best Friends Forever");
+        enTranslations.put("husbandry/fishy_business", "Fishy Business");
+        enTranslations.put("husbandry/silk_touch_nest", "Total Beelocation");
+        enTranslations.put("husbandry/safely_harvest_honey", "Bee Our Guest");
+        enTranslations.put("husbandry/breed_all_animals", "Two by Two");
+        enTranslations.put("husbandry/bred_all_animals", "Two by Two");
+        enTranslations.put("husbandry/complete_catalogue", "A Complete Catalogue");
+        enTranslations.put("husbandry/balanced_diet", "A Balanced Diet");
+        enTranslations.put("husbandry/netherite_hoe", "Serious Dedication");
+        enTranslations.put("husbandry/obtain_netherite_hoe", "Serious Dedication");
+        enTranslations.put("husbandry/wax_on", "Wax On");
+        enTranslations.put("husbandry/wax_off", "Wax Off");
+        enTranslations.put("husbandry/make_a_sign_glow", "Glow and Behold!");
+        enTranslations.put("husbandry/kill_axolotl_target", "The Healing Power of Friendship!");
+        enTranslations.put("husbandry/axolotl_in_a_bucket", "The Cutest Predator");
+        enTranslations.put("husbandry/tadpole_in_a_bucket", "Bukkit Bukkit");
+        enTranslations.put("husbandry/froglights", "With Our Powers Combined!");
+        enTranslations.put("husbandry/leash_all_frog_variants", "When the Squad Hops into Town");
+        enTranslations.put("husbandry/ride_a_boat_with_a_goat", "Whatever Floats Your Goat!");
+        enTranslations.put("husbandry/allay_deliver_item_to_player", "You've Got a Friend in Me");
+        enTranslations.put("husbandry/allay_deliver_cake_to_note_block", "Birthday Song");
+        enTranslations.put("husbandry/tactical_fishing", "Tactical Fishing");
+        enTranslations.put("husbandry/feed_snifflet", "Little Sniffs");
+        enTranslations.put("husbandry/obtain_sniffer_egg", "Smells Interesting");
+        enTranslations.put("husbandry/plant_any_sniffer_seed", "Planting the Past");
+        enTranslations.put("husbandry/whole_pack", "The Whole Pack");
+        enTranslations.put("husbandry/uh_oh", "Uh Oh");
+        enTranslations.put("husbandry/repair_wolf_armor", "Good as New");
+        enTranslations.put("husbandry/remove_wolf_armor", "Shear Brilliance");
+        enTranslations.put("husbandry/place_dried_ghast_in_water", "Stay Hydrated!");
+
+        // ==================== UKRAINIAN (uk - Minecraft 26.3) ====================
         // --- story ---
         ukTranslations.put("story/root", "Minecraft");
         ukTranslations.put("story/mine_stone", "Кам'яна доба");
@@ -89,6 +227,7 @@ public class AdvancementTranslator {
         ukTranslations.put("adventure/spyglass_at_dragon", "Це літак?");
         ukTranslations.put("adventure/bullseye", "У яблучко!");
         ukTranslations.put("adventure/read_power_from_chiseled_bookshelf", "Знання — сила");
+        ukTranslations.put("adventure/read_power_of_chiseled_bookshelf", "Знання — сила");
         ukTranslations.put("adventure/under_lock_and_key", "Під замком і ключем");
         ukTranslations.put("adventure/voluntary_exile", "Добровільне вигнання");
         ukTranslations.put("adventure/who_needs_rockets", "Кому потрібні ракети?");
@@ -118,9 +257,11 @@ public class AdvancementTranslator {
         ukTranslations.put("husbandry/silk_touch_nest", "Дзижчить у кишенях");
         ukTranslations.put("husbandry/safely_harvest_honey", "Бдж-ж-жолиний гість");
         ukTranslations.put("husbandry/breed_all_animals", "Велика сім'я");
+        ukTranslations.put("husbandry/bred_all_animals", "Велика сім'я");
         ukTranslations.put("husbandry/complete_catalogue", "Повний «коталог»");
         ukTranslations.put("husbandry/balanced_diet", "Як не з'їм, то понадкушую");
         ukTranslations.put("husbandry/netherite_hoe", "Серйозні наміри");
+        ukTranslations.put("husbandry/obtain_netherite_hoe", "Серйозні наміри");
         ukTranslations.put("husbandry/wax_on", "Наноси віск");
         ukTranslations.put("husbandry/wax_off", "Стирай віск");
         ukTranslations.put("husbandry/make_a_sign_glow", "Просвітлення");
@@ -142,7 +283,7 @@ public class AdvancementTranslator {
         ukTranslations.put("husbandry/remove_wolf_armor", "Філігранно");
         ukTranslations.put("husbandry/place_dried_ghast_in_water", "Час освіжитися!");
 
-        // ==================== SLOVAK (sk) ====================
+        // ==================== SLOVAK (sk - Minecraft 26.3) ====================
         // --- story ---
         skTranslations.put("story/root", "Minecraft");
         skTranslations.put("story/mine_stone", "Doba kamenná");
@@ -223,6 +364,7 @@ public class AdvancementTranslator {
         skTranslations.put("adventure/spyglass_at_dragon", "Je to lietadlo?");
         skTranslations.put("adventure/bullseye", "Zásah do čierneho");
         skTranslations.put("adventure/read_power_from_chiseled_bookshelf", "Sila poznania");
+        skTranslations.put("adventure/read_power_of_chiseled_bookshelf", "Sila poznania");
         skTranslations.put("adventure/under_lock_and_key", "Pod zámkom a kľúčom");
         skTranslations.put("adventure/voluntary_exile", "Dobrovoľné vyhnanstvo");
         skTranslations.put("adventure/who_needs_rockets", "Kto potrebuje rakety?");
@@ -252,9 +394,11 @@ public class AdvancementTranslator {
         skTranslations.put("husbandry/silk_touch_nest", "Úplná včelovosť");
         skTranslations.put("husbandry/safely_harvest_honey", "Buď naším hosťom");
         skTranslations.put("husbandry/breed_all_animals", "Dvaja po dvoch");
+        skTranslations.put("husbandry/bred_all_animals", "Dvaja po dvoch");
         skTranslations.put("husbandry/complete_catalogue", "Kompletný mačkalóg");
         skTranslations.put("husbandry/balanced_diet", "Vyvážená strava");
         skTranslations.put("husbandry/netherite_hoe", "Vážne odhodlanie");
+        skTranslations.put("husbandry/obtain_netherite_hoe", "Vážne odhodlanie");
         skTranslations.put("husbandry/wax_on", "Navoskovať");
         skTranslations.put("husbandry/wax_off", "Odvoskovať");
         skTranslations.put("husbandry/make_a_sign_glow", "Rozjasniť");
@@ -283,11 +427,11 @@ public class AdvancementTranslator {
 
     public static String translate(String key, String fallbackTitle, String lang) {
         if (lang == null || lang.equalsIgnoreCase("en")) {
-            return fallbackTitle;
+            return enTranslations.getOrDefault(key, fallbackTitle);
         }
         if (lang.equalsIgnoreCase("sk")) {
-            return skTranslations.getOrDefault(key, fallbackTitle);
+            return skTranslations.getOrDefault(key, enTranslations.getOrDefault(key, fallbackTitle));
         }
-        return ukTranslations.getOrDefault(key, fallbackTitle);
+        return ukTranslations.getOrDefault(key, enTranslations.getOrDefault(key, fallbackTitle));
     }
 }
