@@ -27,8 +27,18 @@ public class SleepManager implements Listener {
         this.plugin = plugin;
     }
     
+    public boolean isEnabled() {
+        return plugin.getConfig().getBoolean("sleep.enabled", false);
+    }
+    
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+
+        if (!isEnabled()) {
+            restoreVanillaGamerule();
+            return;
+        }
+
         // Disable vanilla sleep skipping by setting the gamerule very high so our custom system has full control
         for (World world : Bukkit.getWorlds()) {
             if (world.getEnvironment() == World.Environment.NORMAL) {
@@ -54,6 +64,18 @@ public class SleepManager implements Listener {
         if (checkTaskId != -1) {
             Bukkit.getScheduler().cancelTask(checkTaskId);
             checkTaskId = -1;
+        }
+        restoreVanillaGamerule();
+    }
+
+    private void restoreVanillaGamerule() {
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getEnvironment() == World.Environment.NORMAL) {
+                Integer current = world.getGameRuleValue(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE);
+                if (current != null && current > 100) {
+                    world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 100);
+                }
+            }
         }
     }
 
@@ -81,12 +103,15 @@ public class SleepManager implements Listener {
             return;
         }
         
+        if (!isEnabled()) return;
+        
         // Wait 10 ticks (half a second) to ensure the player is registered as "sleeping" by Bukkit
         Bukkit.getScheduler().runTaskLater(plugin, () -> checkSleep(world, event.getPlayer()), 10L);
     }
 
     @EventHandler
     public void onBedLeave(PlayerBedLeaveEvent event) {
+        if (!isEnabled()) return;
         World world = event.getPlayer().getWorld();
         if (world.getEnvironment() == World.Environment.NORMAL) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -99,6 +124,7 @@ public class SleepManager implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
+        if (!isEnabled()) return;
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (World world : Bukkit.getWorlds()) {
                 if (world.getEnvironment() == World.Environment.NORMAL) {
@@ -112,6 +138,7 @@ public class SleepManager implements Listener {
 
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
+        if (!isEnabled()) return;
         World fromWorld = event.getFrom();
         if (fromWorld.getEnvironment() == World.Environment.NORMAL) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -126,7 +153,7 @@ public class SleepManager implements Listener {
      * Called whenever a player enters or exits AFK status so sleep voting updates immediately.
      */
     public void onAfkStateChanged(Player player) {
-        if (player == null) return;
+        if (!isEnabled() || player == null) return;
         World world = player.getWorld();
         if (world != null && world.getEnvironment() == World.Environment.NORMAL) {
             if (world.getPlayers().stream().anyMatch(Player::isSleeping)) {
@@ -136,6 +163,7 @@ public class SleepManager implements Listener {
     }
 
     public void checkSleep(World world, Player bedEnterer) {
+        if (!isEnabled()) return;
         if (world == null || world.getEnvironment() != World.Environment.NORMAL) return;
 
         if (isBloodmoonPreventingSleep(world)) {
