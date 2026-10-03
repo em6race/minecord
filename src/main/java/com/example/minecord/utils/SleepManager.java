@@ -32,12 +32,12 @@ public class SleepManager implements Listener {
     }
     
     public void start() {
-        Bukkit.getPluginManager().registerEvents(this, plugin);
-
         if (!isEnabled()) {
             restoreVanillaGamerule();
             return;
         }
+
+        Bukkit.getPluginManager().registerEvents(this, plugin);
 
         // Disable vanilla sleep skipping by setting the gamerule very high so our custom system has full control
         for (World world : Bukkit.getWorlds()) {
@@ -71,10 +71,7 @@ public class SleepManager implements Listener {
     private void restoreVanillaGamerule() {
         for (World world : Bukkit.getWorlds()) {
             if (world.getEnvironment() == World.Environment.NORMAL) {
-                Integer current = world.getGameRuleValue(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE);
-                if (current != null && current > 100) {
-                    world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 100);
-                }
+                world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 100);
             }
         }
     }
