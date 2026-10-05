@@ -48,10 +48,10 @@ status:
 # Event notification settings
 events:
   server-start: "✅ **Server started successfully!**"
-  server-stop: "🛑 **Server stopped!**"
+  server-stop: "🛑 **Server closed!**"
   server-restart: "🔄 **Server is restarting...**"
   # Send restart/shutdown/start notifications to Discord even when 0 players online (false = quiet mode)
-  notify-empty-server: true
+  notify-empty-server: false
   join-leave: true
   first-join: true
   death: true
