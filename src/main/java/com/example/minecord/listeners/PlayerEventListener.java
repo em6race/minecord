@@ -300,11 +300,11 @@ public class PlayerEventListener implements Listener {
             // Safely attempt to get advancement display; ignore hidden technical/datapack advancements
             String fallbackTitle = advKey;
             try {
-                org.bukkit.advancement.AdvancementDisplay display = event.getAdvancement().getDisplay();
+                io.papermc.paper.advancement.AdvancementDisplay display = event.getAdvancement().getDisplay();
                 if (display == null) {
                     return;
                 }
-                fallbackTitle = display.getTitle();
+                fallbackTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(display.title());
             } catch (Throwable ignored) {
                 // Fallback if getDisplay() is unsupported on a specific server build
             }

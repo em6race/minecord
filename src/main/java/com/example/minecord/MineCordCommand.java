@@ -425,7 +425,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
 
             if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
-                String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+                long left = plugin.getAntiSpamManager().getMuteRemainingSeconds(player.getUniqueId());
                 player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
                 return true;
             }
@@ -518,7 +518,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
-                String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+                long left = plugin.getAntiSpamManager().getMuteRemainingSeconds(player.getUniqueId());
                 player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
                 return true;
             }

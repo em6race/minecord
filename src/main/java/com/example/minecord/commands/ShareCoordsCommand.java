@@ -67,7 +67,7 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
 
         // Prevent muted players from bypassing chat mute via /sharecoords
         if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
-            String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+            long left = plugin.getAntiSpamManager().getMuteRemainingSeconds(player.getUniqueId());
             player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
             return true;
         }
