@@ -197,6 +197,17 @@ auto-update:
   # Release tag to track
   release-tag: "latest"
 
+# Action Bar HUD above the hotbar: coordinates, compass and world day.
+# In the Nether it also shows the matching Overworld coordinates. Players toggle it with /hud.
+hud:
+  enabled: false
+  # Update interval in ticks (5 = 0.25s)
+  update-ticks: 5
+  # World whose time is used for the day counter
+  overworld-world: "world"
+  # Nether -> Overworld coordinate multiplier
+  nether-scale: 8.0
+
 # Player list settings (TAB list header and footer)
 tablist:
   # Enable custom header and footer in the TAB player list

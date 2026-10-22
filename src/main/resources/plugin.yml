@@ -42,6 +42,9 @@ commands:
     aliases: [coords]
     description: Поділитися координатами з описом місця
     usage: /sharecoords [X Y Z] <опис місця>
+  hud:
+    description: Toggle the coordinates / day HUD above the hotbar
+    usage: /hud
   afk:
     description: Ввійти або вийти з режиму АФК
     usage: /afk [причина]

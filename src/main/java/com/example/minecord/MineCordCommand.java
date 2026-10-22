@@ -67,6 +67,20 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (command.getName().equalsIgnoreCase("hud")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(ChatColor.RED + "Цю команду можуть використовувати лише гравці.");
+                return true;
+            }
+            if (plugin.getHudManager() == null || !plugin.getHudManager().isEnabled()) {
+                player.sendMessage(ChatColor.RED + "HUD вимкнено в конфігурації сервера.");
+                return true;
+            }
+            boolean on = plugin.getHudManager().toggle(player);
+            player.sendMessage(on ? ChatColor.GREEN + "HUD: ON" : ChatColor.RED + "HUD: OFF");
+            return true;
+        }
+
         if (command.getName().equalsIgnoreCase("afk")) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(ChatColor.RED + "Цю команду можуть використовувати лише гравці.");

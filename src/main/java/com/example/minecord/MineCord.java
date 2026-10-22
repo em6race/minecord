@@ -24,6 +24,7 @@ public final class MineCord extends JavaPlugin {
     private PerformanceMonitor performanceMonitor;
     private com.example.minecord.utils.TabManager tabManager;
     private AfkManager afkManager;
+    private com.example.minecord.utils.HudManager hudManager;
     private SleepManager sleepManager;
     private BlueMapManager blueMapManager;
     private com.example.minecord.utils.LeaderboardManager leaderboardManager;
@@ -84,6 +85,10 @@ public final class MineCord extends JavaPlugin {
         // Initialize tab list manager
         this.tabManager = new com.example.minecord.utils.TabManager(this);
         this.tabManager.start();
+
+        // Initialize Action Bar HUD (coordinates / day), disabled by default
+        this.hudManager = new com.example.minecord.utils.HudManager(this);
+        this.hudManager.start();
         
         // Initialize Discord role sync manager
         this.roleSyncManager = new com.example.minecord.utils.RoleSyncManager(this);
@@ -133,6 +138,9 @@ public final class MineCord extends JavaPlugin {
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(cmd);
             getCommand("unmute").setTabCompleter(cmd);
+        }
+        if (getCommand("hud") != null) {
+            getCommand("hud").setExecutor(cmd);
         }
         if (getCommand("afk") != null) {
             getCommand("afk").setExecutor(cmd);
@@ -220,6 +228,9 @@ public final class MineCord extends JavaPlugin {
         if (tabManager != null) {
             tabManager.stop();
         }
+        if (hudManager != null) {
+            hudManager.stop();
+        }
         if (afkManager != null) {
             afkManager.stop();
         }
@@ -267,6 +278,11 @@ public final class MineCord extends JavaPlugin {
         if (tabManager != null) {
             tabManager.stop();
             tabManager.start();
+        }
+
+        if (hudManager != null) {
+            hudManager.stop();
+            hudManager.start();
         }
         
         if (roleSyncManager != null) {
@@ -349,6 +365,10 @@ public final class MineCord extends JavaPlugin {
 
     public AfkManager getAfkManager() {
         return afkManager;
+    }
+
+    public com.example.minecord.utils.HudManager getHudManager() {
+        return hudManager;
     }
 
     public BlueMapManager getBlueMapManager() {
