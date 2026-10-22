@@ -4,10 +4,12 @@ import com.example.minecord.MineCord;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +17,7 @@ public class BlueMapManager {
     private final MineCord plugin;
     private int repeatingTaskId = -1;
     private int startupTaskId = -1;
-    private int lastReloadMinute = -1;
+    private LocalDateTime lastReloadMinuteSlot = null;
 
     public BlueMapManager(MineCord plugin) {
         this.plugin = plugin;
@@ -66,7 +68,7 @@ public class BlueMapManager {
                 try {
                     String clean = t.trim();
                     if (clean.length() == 4) clean = "0" + clean;
-                    targetTimes.add(LocalTime.parse(clean));
+                    targetTimes.add(LocalTime.parse(clean).truncatedTo(ChronoUnit.MINUTES));
                 } catch (DateTimeParseException e) {
                     plugin.getLogger().warning("Невірний формат часу в bluemap.auto-reload.times: " + t);
                 }
@@ -78,19 +80,18 @@ public class BlueMapManager {
         plugin.logPink(String.format("Планувальник BlueMap активовано: після старту (+%dс) та о %s (за Києвом).",
                 startupDelaySeconds, targetTimes));
 
-        // Перевірка щосекунди за київським часом
+        // Перевірка щосекунди за київським часом (стійка до пропусків секунд при лагах і щоденних повторень)
         repeatingTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             ZonedDateTime nowZoned = ZonedDateTime.now(ZoneId.of("Europe/Kyiv"));
-            int currentMinute = nowZoned.getMinute();
-            int currentSecond = nowZoned.getSecond();
+            LocalDateTime currentSlot = nowZoned.toLocalDateTime().truncatedTo(ChronoUnit.MINUTES);
+            if (currentSlot.equals(lastReloadMinuteSlot)) {
+                return;
+            }
 
-            if (currentSecond != 0) return;
-            if (currentMinute == lastReloadMinute) return;
-
-            LocalTime nowTime = nowZoned.toLocalTime().withSecond(0).withNano(0);
+            LocalTime nowTime = currentSlot.toLocalTime();
             for (LocalTime target : targetTimes) {
                 if (nowTime.equals(target)) {
-                    lastReloadMinute = currentMinute;
+                    lastReloadMinuteSlot = currentSlot;
                     executeReload(command, "за розкладом о " + target);
                     break;
                 }
@@ -122,6 +123,6 @@ public class BlueMapManager {
             Bukkit.getScheduler().cancelTask(startupTaskId);
             startupTaskId = -1;
         }
-        lastReloadMinute = -1;
+        lastReloadMinuteSlot = null;
     }
 }

@@ -1,6 +1,7 @@
 package com.example.minecord.utils;
 
 import com.example.minecord.MineCord;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -11,20 +12,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class AccountLinkManager {
     private final MineCord plugin;
-    // FIX: Changed HashMap → ConcurrentHashMap since access occurs
-    // from multiple threads (Discord callbacks, AsyncPlayerPreLoginEvent, etc.)
+    // ConcurrentHashMap since access occurs from multiple threads (Discord callbacks, AsyncPlayerPreLoginEvent, etc.)
     private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
     private final Map<UUID, String> linkedAccounts = new ConcurrentHashMap<>();
     private final Set<UUID> adminLinkedAccounts = ConcurrentHashMap.newKeySet();
-    // FIX: Store code creation time for automatic expiration after 10 mins
+    // Store code creation time for automatic expiration after 10 mins
     private final Map<String, Long> codeExpiry = new ConcurrentHashMap<>();
     private static final long CODE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
 
+    private final Object saveLock = new Object();
     private File linksFile;
     private FileConfiguration linksConfig;
 
@@ -33,78 +34,109 @@ public class AccountLinkManager {
         loadLinks();
     }
 
+    public void reload() {
+        synchronized (saveLock) {
+            linkedAccounts.clear();
+            adminLinkedAccounts.clear();
+            loadLinks();
+        }
+    }
+
     // Load saved links from links.yml
     private void loadLinks() {
-        linksFile = new File(plugin.getDataFolder(), "links.yml");
-        if (!linksFile.exists()) {
-            try {
-                linksFile.getParentFile().mkdirs(); // FIX: ensure parent directory exists
-                linksFile.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().severe("Не вдалося створити links.yml: " + e.getMessage());
-            }
-        }
-        linksConfig = YamlConfiguration.loadConfiguration(linksFile);
-
-        if (linksConfig.contains("links")) {
-            for (String uuidStr : linksConfig.getConfigurationSection("links").getKeys(false)) {
+        synchronized (saveLock) {
+            linksFile = new File(plugin.getDataFolder(), "links.yml");
+            if (!linksFile.exists()) {
                 try {
-                    linkedAccounts.put(UUID.fromString(uuidStr), linksConfig.getString("links." + uuidStr));
-                } catch (IllegalArgumentException ignored) {
-                    // FIX: Ignore corrupted records with invalid UUID
+                    if (linksFile.getParentFile() != null) {
+                        linksFile.getParentFile().mkdirs();
+                    }
+                    linksFile.createNewFile();
+                } catch (IOException e) {
+                    plugin.getLogger().severe("Не вдалося створити links.yml: " + e.getMessage());
                 }
             }
-        }
+            linksConfig = YamlConfiguration.loadConfiguration(linksFile);
 
-        if (linksConfig.contains("admin-links")) {
-            for (String uuidStr : linksConfig.getStringList("admin-links")) {
-                try {
-                    adminLinkedAccounts.add(UUID.fromString(uuidStr));
-                } catch (IllegalArgumentException ignored) {}
+            ConfigurationSection linksSection = linksConfig.getConfigurationSection("links");
+            if (linksSection != null) {
+                for (String uuidStr : linksSection.getKeys(false)) {
+                    try {
+                        linkedAccounts.put(UUID.fromString(uuidStr), linksConfig.getString("links." + uuidStr));
+                    } catch (IllegalArgumentException ignored) {
+                        // Ignore corrupted records with invalid UUID
+                    }
+                }
+            }
+
+            if (linksConfig.contains("admin-links")) {
+                for (String uuidStr : linksConfig.getStringList("admin-links")) {
+                    try {
+                        adminLinkedAccounts.add(UUID.fromString(uuidStr));
+                    } catch (IllegalArgumentException ignored) {}
+                }
             }
         }
     }
 
-    // Save links to file
+    // Save links to file (thread-safe)
     public void saveLinks() {
-        linksConfig.set("links", null); // Clear old section
-        for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
-            linksConfig.set("links." + entry.getKey().toString(), entry.getValue());
-        }
-        List<String> adminList = new ArrayList<>();
-        for (UUID u : adminLinkedAccounts) {
-            adminList.add(u.toString());
-        }
-        linksConfig.set("admin-links", adminList);
-        try {
-            linksConfig.save(linksFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Не вдалося зберегти links.yml: " + e.getMessage());
+        synchronized (saveLock) {
+            linksConfig.set("links", null); // Clear old section
+            for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
+                linksConfig.set("links." + entry.getKey().toString(), entry.getValue());
+            }
+            List<String> adminList = new ArrayList<>();
+            for (UUID u : adminLinkedAccounts) {
+                adminList.add(u.toString());
+            }
+            linksConfig.set("admin-links", adminList);
+            try {
+                linksConfig.save(linksFile);
+            } catch (IOException e) {
+                plugin.getLogger().severe("Не вдалося зберегти links.yml: " + e.getMessage());
+            }
         }
     }
 
     // Generate a 4-digit code for player
     public String generateCode(UUID playerUUID) {
-        // Remove old player code if requested again
-        pendingCodes.values().remove(playerUUID);
-
-        // FIX: Clean up expired codes concurrently
-        long now = System.currentTimeMillis();
-        codeExpiry.entrySet().removeIf(e -> now > e.getValue());
-        codeExpiry.forEach((code, expiry) -> {
-            if (now > expiry) pendingCodes.remove(code);
+        // Remove old player code if requested again from both maps
+        pendingCodes.entrySet().removeIf(entry -> {
+            if (playerUUID.equals(entry.getValue())) {
+                codeExpiry.remove(entry.getKey());
+                return true;
+            }
+            return false;
         });
 
-        String code = String.format("%04d", new Random().nextInt(10000));
+        // Clean up expired codes atomically from both maps
+        long now = System.currentTimeMillis();
+        codeExpiry.entrySet().removeIf(e -> {
+            if (now > e.getValue()) {
+                pendingCodes.remove(e.getKey());
+                return true;
+            }
+            return false;
+        });
+
+        String code;
+        int attempts = 0;
+        do {
+            code = String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
+            attempts++;
+        } while (pendingCodes.containsKey(code) && attempts < 25);
+
         pendingCodes.put(code, playerUUID);
         codeExpiry.put(code, now + CODE_TTL_MS);
         return code;
     }
 
     public UUID getUUIDFromCode(String code) {
-        // FIX: Verify code is not expired
+        if (code == null) return null;
+        // Verify code is not expired
         Long expiry = codeExpiry.get(code);
-        if (expiry != null && System.currentTimeMillis() > expiry) {
+        if (expiry == null || System.currentTimeMillis() > expiry) {
             pendingCodes.remove(code);
             codeExpiry.remove(code);
             return null;
@@ -114,7 +146,7 @@ public class AccountLinkManager {
 
     // Link account
     public boolean linkAccount(String code, String discordId) {
-        UUID uuid = pendingCodes.get(code);
+        UUID uuid = getUUIDFromCode(code);
         if (uuid == null || discordId == null) return false;
         if (adminLinkedAccounts.contains(uuid)) {
             return false;

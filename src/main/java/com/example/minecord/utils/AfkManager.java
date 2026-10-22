@@ -17,9 +17,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -27,6 +29,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerVelocityEvent;
 import org.bukkit.util.Transformation;
@@ -70,7 +73,9 @@ public class AfkManager implements Listener {
                 Location currentLoc = player.getLocation();
                 Location lastLoc = data.lastLocation;
                 
-                boolean moved = currentLoc.getX() != lastLoc.getX() || 
+                boolean moved = lastLoc == null ||
+                                currentLoc.getWorld() != lastLoc.getWorld() ||
+                                currentLoc.getX() != lastLoc.getX() || 
                                 currentLoc.getY() != lastLoc.getY() || 
                                 currentLoc.getZ() != lastLoc.getZ() ||
                                 currentLoc.getYaw() != lastLoc.getYaw() ||
@@ -105,8 +110,11 @@ public class AfkManager implements Listener {
         }
         for (Map.Entry<UUID, AfkData> entry : afkDataMap.entrySet()) {
             AfkData data = entry.getValue();
-            if (data.display != null && data.display.isValid()) {
-                data.display.remove();
+            if (data.display != null) {
+                try {
+                    data.display.remove();
+                } catch (Exception ignored) {}
+                data.display = null;
             }
             Player p = Bukkit.getPlayer(entry.getKey());
             if (p != null && p.isOnline()) {
@@ -127,12 +135,21 @@ public class AfkManager implements Listener {
         if (afk) {
             data.afkStartTime = now;
 
+            // Remove any leftover display entity first
+            if (data.display != null) {
+                try {
+                    data.display.remove();
+                } catch (Exception ignored) {}
+                data.display = null;
+            }
+
             // Prevent mobs from physically pushing the AFK player
             if (isMobInvulnerableEnabled()) {
                 player.setCollidable(false);
             }
 
             TextDisplay display = player.getWorld().spawn(player.getLocation().add(0, 2.3, 0), TextDisplay.class, entity -> {
+                entity.setPersistent(false);
                 entity.setBillboard(Display.Billboard.CENTER);
                 entity.setText(ChatColor.GRAY + "АФК: " + ChatColor.YELLOW + "0с");
                 entity.setDefaultBackground(true);
@@ -151,8 +168,7 @@ public class AfkManager implements Listener {
             if (isMobInvulnerableEnabled()) {
                 try {
                     for (Entity entity : player.getNearbyEntities(16, 16, 16)) {
-                        if (entity instanceof Mob) {
-                            Mob mob = (Mob) entity;
+                        if (entity instanceof Mob mob) {
                             if (player.equals(mob.getTarget())) {
                                 mob.setTarget(null);
                             }
@@ -175,8 +191,10 @@ public class AfkManager implements Listener {
             }
         } else {
             player.setCollidable(true);
-            if (data.display != null && data.display.isValid()) {
-                data.display.remove();
+            if (data.display != null) {
+                try {
+                    data.display.remove();
+                } catch (Exception ignored) {}
                 data.display = null;
             }
             // Restore tab list name
@@ -244,12 +262,14 @@ public class AfkManager implements Listener {
     }
 
     public void updateActivity(Player player) {
-        if (!isEnabled()) return;
+        if (!isEnabled() || player == null) return;
         AfkData data = afkDataMap.get(player.getUniqueId());
         if (data != null) {
-            data.lastActivityTime = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
+            data.lastActivityTime = now;
+            data.lastLocation = player.getLocation();
             if (data.isAfk) {
-                setAfk(player, data, false, System.currentTimeMillis());
+                setAfk(player, data, false, now);
             }
         }
     }
@@ -262,6 +282,7 @@ public class AfkManager implements Listener {
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
+        if (!plugin.isEnabled()) return;
         Bukkit.getScheduler().runTask(plugin, () -> updateActivity(event.getPlayer()));
     }
 
@@ -276,9 +297,27 @@ public class AfkManager implements Listener {
             event.getPlayer().setCollidable(true);
         } catch (Exception ignored) {}
         AfkData data = afkDataMap.remove(event.getPlayer().getUniqueId());
-        if (data != null && data.display != null && data.display.isValid()) {
-            data.display.remove();
+        if (data != null && data.display != null) {
+            try {
+                data.display.remove();
+            } catch (Exception ignored) {}
+            data.display = null;
         }
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        updateActivity(event.getEntity());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        updateActivity(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        updateActivity(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -299,13 +338,14 @@ public class AfkManager implements Listener {
 
         // If coordinates changed without rotation:
         if (from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ()) {
-            // If in liquid (water/lava current trying to displace the AFK player), prevent pushing
-            if (from.getBlock().isLiquid() || to.getBlock().isLiquid()) {
+            // If in liquid (water/lava current trying to displace the AFK player), prevent passive drift
+            // unless the player is actively swimming upward (Spacebar)
+            if ((from.getBlock().isLiquid() || to.getBlock().isLiquid()) && to.getY() <= from.getY() + 0.05) {
                 event.setTo(from);
                 return;
             }
 
-            // Player walked or jumped on solid ground (WASD / Space) -> exit AFK
+            // Player walked, jumped, or swam upward -> exit AFK
             updateActivity(player);
         }
     }
@@ -361,12 +401,10 @@ public class AfkManager implements Listener {
         if (damager instanceof Mob) {
             return true;
         }
-        if (damager instanceof Projectile) {
-            Projectile projectile = (Projectile) damager;
+        if (damager instanceof Projectile projectile) {
             return projectile.getShooter() instanceof Mob;
         }
-        if (damager instanceof AreaEffectCloud) {
-            AreaEffectCloud cloud = (AreaEffectCloud) damager;
+        if (damager instanceof AreaEffectCloud cloud) {
             return cloud.getSource() instanceof Mob;
         }
         return false;
@@ -375,8 +413,7 @@ public class AfkManager implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityTarget(EntityTargetLivingEntityEvent event) {
         if (!isMobInvulnerableEnabled()) return;
-        if (event.getTarget() instanceof Player) {
-            Player player = (Player) event.getTarget();
+        if (event.getTarget() instanceof Player player) {
             if (isAfk(player)) {
                 event.setCancelled(true);
             }
@@ -386,13 +423,12 @@ public class AfkManager implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         // If a player attacks, remove their AFK status immediately
-        if (event.getDamager() instanceof Player) {
-            updateActivity((Player) event.getDamager());
+        if (event.getDamager() instanceof Player damager) {
+            updateActivity(damager);
         }
 
         // Protect AFK player from mob attacks and projectiles
-        if (isMobInvulnerableEnabled() && event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if (isMobInvulnerableEnabled() && event.getEntity() instanceof Player player) {
             if (isAfk(player) && isMobDamage(event.getDamager())) {
                 event.setCancelled(true);
             }

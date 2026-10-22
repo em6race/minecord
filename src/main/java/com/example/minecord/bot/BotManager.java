@@ -17,12 +17,15 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.bukkit.Bukkit;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class BotManager {
     private final MineCord plugin;
-    private JDA jda;
-    private WebhookManager webhookManager;
-    private ConsoleManager consoleManager;
+    private volatile JDA jda;
+    private volatile WebhookManager webhookManager;
+    private volatile ConsoleManager consoleManager;
     private int statusTaskId = -1;
+    private final AtomicBoolean reconnecting = new AtomicBoolean(false);
 
     public BotManager(MineCord plugin) {
         this.plugin = plugin;
@@ -138,13 +141,21 @@ public class BotManager {
                     }
                 }
 
-                // Initialize console logger
-                consoleManager = new ConsoleManager(plugin);
-                consoleManager.start();
+                // Initialize Bukkit-coupled managers and sync online players on the main server thread
+                if (plugin.isEnabled()) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (!plugin.isEnabled() || jda == null) return;
+                        consoleManager = new ConsoleManager(plugin);
+                        consoleManager.start();
 
-                // Start status updater
-                if (plugin.getConfig().getBoolean("status.enabled", true)) {
-                    startStatusUpdater();
+                        if (plugin.getConfig().getBoolean("status.enabled", true)) {
+                            startStatusUpdater();
+                        }
+
+                        if (plugin.getRoleSyncManager() != null) {
+                            plugin.getRoleSyncManager().syncAllOnlinePlayers();
+                        }
+                    });
                 }
 
                 // Send startup notification
@@ -183,6 +194,8 @@ public class BotManager {
             Bukkit.getScheduler().cancelTask(statusTaskId);
             statusTaskId = -1;
         }
+        lastStatusText = "";
+        lastOnlineStatus = null;
         
         // Send shutdown / restart notification (synchronously so it completes before process exits)
         if (jda != null && !isReload) {
@@ -232,9 +245,11 @@ public class BotManager {
 
         if (consoleManager != null) {
             consoleManager.stop();
+            consoleManager = null;
         }
         if (webhookManager != null) {
             webhookManager.close();
+            webhookManager = null;
         }
         if (jda != null) {
             try {
@@ -265,30 +280,41 @@ public class BotManager {
     }
 
     public String getStatusInfo() {
-        if (jda == null) {
+        JDA currentJda = this.jda;
+        if (currentJda == null) {
             return "§cВИМКНЕНО (не ініціалізовано)";
         }
-        JDA.Status status = jda.getStatus();
+        JDA.Status status = currentJda.getStatus();
         String statusColor = status == JDA.Status.CONNECTED ? "§a" : "§e";
-        long ping = jda.getGatewayPing();
-        String selfName = jda.getSelfUser() != null ? jda.getSelfUser().getAsTag() : "Невідомо";
-        int guilds = jda.getGuilds().size();
+        long ping = currentJda.getGatewayPing();
+        String selfName = currentJda.getSelfUser() != null ? currentJda.getSelfUser().getAsTag() : "Невідомо";
+        int guilds = currentJda.getGuilds().size();
         return String.format("%s%s §7| Пінг: §f%d ms §7| Бот: §b%s §7| Серверів Discord: §f%d",
                 statusColor, status.name(), ping, selfName, guilds);
     }
 
     public void reconnect() {
+        if (!reconnecting.compareAndSet(false, true)) {
+            plugin.getLogger().info("[MineCord] Перепідключення бота вже виконується...");
+            return;
+        }
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            plugin.getLogger().info("[MineCord] Запуск перепідключення Discord бота...");
             try {
-                stop();
-            } catch (Throwable t) {
-                plugin.getLogger().warning("[MineCord] Помилка зупинки бота перед перепідключенням: " + t.getMessage());
+                plugin.getLogger().info("[MineCord] Запуск перепідключення Discord бота...");
+                try {
+                    stop(true);
+                } catch (Throwable t) {
+                    plugin.getLogger().warning("[MineCord] Помилка зупинки бота перед перепідключенням: " + t.getMessage());
+                }
+                try {
+                    Thread.sleep(1500);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+                start(true);
+            } finally {
+                reconnecting.set(false);
             }
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException ignored) {}
-            start();
         });
     }
 
@@ -301,11 +327,16 @@ public class BotManager {
     private OnlineStatus lastOnlineStatus = null;
 
     private void startStatusUpdater() {
+        if (statusTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(statusTaskId);
+            statusTaskId = -1;
+        }
         int interval = plugin.getConfig().getInt("status.update-interval-seconds", 15);
         if (interval < 5) interval = 5;
 
         statusTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-            if (jda == null || jda.getStatus() != JDA.Status.CONNECTED) return;
+            JDA currentJda = this.jda;
+            if (currentJda == null || currentJda.getStatus() != JDA.Status.CONNECTED) return;
             
             boolean isMaintenance = plugin.getConfig().getBoolean("maintenance.enabled", false);
             int online = Bukkit.getOnlinePlayers().size();
@@ -346,7 +377,7 @@ public class BotManager {
             
             // Update presence only if changed to avoid Discord rate limits
             if (!statusText.equals(lastStatusText) || targetStatus != lastOnlineStatus) {
-                jda.getPresence().setPresence(targetStatus, Activity.playing(statusText));
+                currentJda.getPresence().setPresence(targetStatus, Activity.playing(statusText));
                 lastStatusText = statusText;
                 lastOnlineStatus = targetStatus;
             }
@@ -355,11 +386,12 @@ public class BotManager {
     
     // Helper method for sending system messages (deaths, joins, etc.)
     public void sendSystemMessage(String message) {
-        if (jda == null) return;
+        JDA currentJda = this.jda;
+        if (currentJda == null) return;
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
-                TextChannel channel = jda.getTextChannelById(channelId.trim());
+                TextChannel channel = currentJda.getTextChannelById(channelId.trim());
                 if (channel != null) {
                     channel.sendMessage(message).queue();
                 }
@@ -371,7 +403,8 @@ public class BotManager {
     
     // Send message as Discord Embed card
     public void sendSystemEmbed(String text, int color, String playerName) {
-        if (jda == null) return;
+        JDA currentJda = this.jda;
+        if (currentJda == null) return;
         if (text != null && plugin.getRoleSyncManager() != null) {
             text = plugin.getRoleSyncManager().cleanRoleTags(text);
         } else if (text != null) {
@@ -380,7 +413,7 @@ public class BotManager {
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
-                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId.trim());
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = currentJda.getTextChannelById(channelId.trim());
                 if (channel != null) {
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                     embed.setColor(color);
@@ -401,7 +434,8 @@ public class BotManager {
 
     // Synchronous delivery to ensure message is delivered before shutdown
     public void sendSystemEmbedSync(String text, int color, String playerName) {
-        if (jda == null) return;
+        JDA currentJda = this.jda;
+        if (currentJda == null) return;
         if (text != null && plugin.getRoleSyncManager() != null) {
             text = plugin.getRoleSyncManager().cleanRoleTags(text);
         } else if (text != null) {
@@ -410,7 +444,7 @@ public class BotManager {
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
         if (channelId != null && !channelId.equals("000000000000000000") && !channelId.trim().isEmpty()) {
             try {
-                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId.trim());
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = currentJda.getTextChannelById(channelId.trim());
                 if (channel != null) {
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                     embed.setColor(color);

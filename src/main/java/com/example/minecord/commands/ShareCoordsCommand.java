@@ -22,10 +22,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
 
     private final MineCord plugin;
+    private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+    private static final long COOLDOWN_MS = 5000L;
 
     public ShareCoordsCommand(MineCord plugin) {
         this.plugin = plugin;
@@ -60,6 +65,21 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        // Prevent muted players from bypassing chat mute via /sharecoords
+        if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
+            String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+            player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
+            return true;
+        }
+
+        long now = System.currentTimeMillis();
+        Long lastUse = cooldowns.get(player.getUniqueId());
+        if (lastUse != null && (now - lastUse < COOLDOWN_MS)) {
+            long waitSec = Math.max(1L, (COOLDOWN_MS - (now - lastUse)) / 1000L);
+            player.sendMessage(ChatColor.RED + "⏳ Зачекайте ще " + waitSec + " сек. перед повторним надсиланням координат.");
+            return true;
+        }
+
         Location loc = player.getLocation();
         int currentX = loc.getBlockX();
         int currentY = loc.getBlockY();
@@ -78,30 +98,31 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         // Check if user entered manual coordinates
         // Case 1: 3 coordinates: X Y Z (e.g. /sharecoords 100 64 -200 База)
         Integer c0 = parseCoord(args[0], currentX);
-        Integer c1 = args.length > 1 ? parseCoord(args[1], currentY) : null;
+        Integer c1AsY = args.length > 1 ? parseCoord(args[1], currentY) : null;
+        Integer c1AsZ = args.length > 1 ? parseCoord(args[1], currentZ) : null;
         Integer c2 = args.length > 2 ? parseCoord(args[2], currentZ) : null;
 
-        if (c0 != null && c1 != null && c2 != null) {
+        if (c0 != null && c1AsY != null && c2 != null) {
             // User provided 3 coordinates
             if (args.length == 3) {
                 player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати опис місця до цих координат!");
-                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1 + " " + c2 + " База в горах");
+                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1AsY + " " + c2 + " База в горах");
                 return true;
             }
             targetX = c0;
-            targetY = c1;
+            targetY = c1AsY;
             targetZ = c2;
             comment = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
-        } else if (c0 != null && c1 != null && c2 == null && args.length >= 2) {
-            // Case 2: 2 coordinates: X Z (e.g. /sharecoords 100 -200 База)
+        } else if (c0 != null && c1AsZ != null && c2 == null && args.length >= 2) {
+            // Case 2: 2 coordinates: X Z (e.g. /sharecoords 100 -200 База) - relative ~ uses currentZ!
             if (args.length == 2) {
                 player.sendMessage(ChatColor.RED + "❌ Помилка: ви обов'язково маєте вказати опис місця до цих координат!");
-                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1 + " База в горах");
+                player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.YELLOW + "/" + label + " " + c0 + " " + c1AsZ + " База в горах");
                 return true;
             }
             targetX = c0;
             targetY = currentY;
-            targetZ = c1;
+            targetZ = c1AsZ;
             comment = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         } else {
             // Case 3: Automatic player coordinates, entire argument line is the comment
@@ -112,6 +133,8 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
             sendUsageHelp(player);
             return true;
         }
+
+        cooldowns.put(player.getUniqueId(), now);
 
         String worldName = loc.getWorld() != null ? loc.getWorld().getName() : "world";
 
@@ -139,7 +162,9 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         }
 
         // In-game broadcast components
-        String header = ChatColor.GOLD + "📍 Гравець " + ChatColor.YELLOW + player.getName() + ChatColor.GOLD + " поділився координатами: " + ChatColor.WHITE + comment;
+        String playerName = player.getName();
+        String avatarUrl = SkinHelper.getAvatarUrl(player);
+        String header = ChatColor.GOLD + "📍 Гравець " + ChatColor.YELLOW + playerName + ChatColor.GOLD + " поділився координатами: " + ChatColor.WHITE + comment;
         String coordsPart = String.format("§7Координати: §eX: %d, Y: %d, Z: %d §7(%s)", 
                 targetX, targetY, targetZ, dimension);
 
@@ -164,7 +189,7 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         final String finalComment = comment;
         final String finalUrl = fullUrl;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            sendCoordsToDiscord(player, finalComment, finalX, finalY, finalZ, dimension, finalUrl);
+            sendCoordsToDiscord(playerName, avatarUrl, finalComment, finalX, finalY, finalZ, dimension, finalUrl);
         });
 
         return true;
@@ -179,7 +204,7 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.GRAY + "Приклад: " + ChatColor.WHITE + "/sharecoords Моя база" + ChatColor.GRAY + " або " + ChatColor.WHITE + "/sharecoords 120 64 -350 База");
     }
 
-    private void sendCoordsToDiscord(Player player, String comment, int x, int y, int z, String dimension, String mapUrl) {
+    private void sendCoordsToDiscord(String playerName, String avatarUrl, String comment, int x, int y, int z, String dimension, String mapUrl) {
         if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) return;
 
         String channelId = plugin.getConfig().getString("discord.chat-channel-id");
@@ -188,20 +213,21 @@ public class ShareCoordsCommand implements CommandExecutor, TabCompleter {
         try {
             TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(channelId.trim());
             if (channel != null) {
+                String safeComment = comment.length() > 220 ? comment.substring(0, 220) + "..." : comment;
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setColor(0x3498DB);
                 if (mapUrl != null && !mapUrl.isEmpty()) {
-                    embed.setTitle("📍 Мітка на мапі: " + comment);
+                    embed.setTitle("📍 Мітка на мапі: " + safeComment);
                     embed.setDescription(String.format("Гравець **%s** поділився координатами:\n**X: %d, Y: %d, Z: %d** (`%s`)\n\n[🗺️ Відкрити на інтерактивній мапі](%s)",
-                            player.getName(), x, y, z, dimension, mapUrl));
+                            playerName, x, y, z, dimension, mapUrl));
                     embed.setFooter("MineCord Map Integration");
                 } else {
-                    embed.setTitle("📍 Координати: " + comment);
+                    embed.setTitle("📍 Координати: " + safeComment);
                     embed.setDescription(String.format("Гравець **%s** поділився координатами:\n**X: %d, Y: %d, Z: %d** (`%s`)",
-                            player.getName(), x, y, z, dimension));
+                            playerName, x, y, z, dimension));
                     embed.setFooter("MineCord Coordinates");
                 }
-                embed.setThumbnail(SkinHelper.getAvatarUrl(player));
+                embed.setThumbnail(avatarUrl);
                 channel.sendMessageEmbeds(embed.build()).queue();
             }
         } catch (Throwable e) {

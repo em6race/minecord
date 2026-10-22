@@ -101,11 +101,15 @@ processResources {
     def gitHash = getGitHash()
     def gitMsg = getGitMessage()
     def gitStats = getGitStats()
+    inputs.property "version", project.version
     inputs.property "gitHash", gitHash
     inputs.property "gitMsg", gitMsg
     inputs.property "gitFiles", gitStats.files
     inputs.property "gitInsertions", gitStats.insertions
     inputs.property "gitDeletions", gitStats.deletions
+    filesMatching("plugin.yml") {
+        expand('version': project.version)
+    }
     filesMatching("git.properties") {
         expand(
             'gitHash': gitHash,
@@ -124,5 +128,3 @@ shadowJar {
 }
 
 tasks.build.dependsOn tasks.shadowJar
-
-

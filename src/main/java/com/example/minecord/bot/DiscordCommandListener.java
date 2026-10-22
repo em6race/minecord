@@ -1,6 +1,7 @@
 package com.example.minecord.bot;
 
 import com.example.minecord.MineCord;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import java.util.List;
@@ -13,12 +14,23 @@ import org.jetbrains.annotations.NotNull;
 public class DiscordCommandListener extends ListenerAdapter {
 
     private final MineCord plugin;
-    private static final org.bukkit.Material[] BLOCK_MATERIALS = java.util.Arrays.stream(org.bukkit.Material.values())
-            .filter(org.bukkit.Material::isBlock)
+    public static final org.bukkit.Material[] BLOCK_MATERIALS = java.util.Arrays.stream(org.bukkit.Material.values())
+            .filter(m -> m.isBlock() && !m.isLegacy())
             .toArray(org.bukkit.Material[]::new);
-    private static final org.bukkit.Material[] ITEM_MATERIALS = java.util.Arrays.stream(org.bukkit.Material.values())
-            .filter(org.bukkit.Material::isItem)
+    public static final org.bukkit.Material[] PLACEABLE_BLOCK_MATERIALS = java.util.Arrays.stream(org.bukkit.Material.values())
+            .filter(m -> m.isBlock() && m.isItem() && !m.isLegacy())
             .toArray(org.bukkit.Material[]::new);
+    public static final org.bukkit.Material[] ITEM_MATERIALS = java.util.Arrays.stream(org.bukkit.Material.values())
+            .filter(m -> m.isItem() && !m.isLegacy())
+            .toArray(org.bukkit.Material[]::new);
+    public static final org.bukkit.Statistic[] DIST_STATS = {
+            org.bukkit.Statistic.WALK_ONE_CM, org.bukkit.Statistic.SPRINT_ONE_CM, org.bukkit.Statistic.SWIM_ONE_CM,
+            org.bukkit.Statistic.FLY_ONE_CM, org.bukkit.Statistic.MINECART_ONE_CM, org.bukkit.Statistic.HORSE_ONE_CM,
+            org.bukkit.Statistic.PIG_ONE_CM, org.bukkit.Statistic.BOAT_ONE_CM, org.bukkit.Statistic.AVIATE_ONE_CM,
+            org.bukkit.Statistic.CLIMB_ONE_CM, org.bukkit.Statistic.FALL_ONE_CM, org.bukkit.Statistic.WALK_ON_WATER_ONE_CM,
+            org.bukkit.Statistic.WALK_UNDER_WATER_ONE_CM, org.bukkit.Statistic.CROUCH_ONE_CM, org.bukkit.Statistic.STRIDER_ONE_CM
+    };
+    private static final double ALLOCATED_CORES = detectAllocatedCpuCores();
 
     public DiscordCommandListener(MineCord plugin) {
         this.plugin = plugin;
@@ -33,6 +45,7 @@ public class DiscordCommandListener extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         try {
+            if (!plugin.isEnabled()) return;
             plugin.getLogger().info("[Discord] Користувач " + event.getUser().getName() + " використав команду: /" + event.getName());
             
             if (event.getName().equals("help")) {
@@ -60,26 +73,28 @@ public class DiscordCommandListener extends ListenerAdapter {
             }
             else if (event.getName().equals("online")) {
                 event.deferReply().queue();
-                int onlineCount = plugin.getServer().getOnlinePlayers().size();
-                int maxPlayers = plugin.getServer().getMaxPlayers();
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    int onlineCount = plugin.getServer().getOnlinePlayers().size();
+                    int maxPlayers = plugin.getServer().getMaxPlayers();
 
-                net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
 
-                if (onlineCount == 0) {
-                    embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-empty", onlineCount, maxPlayers));
-                    embed.setColor(0xFF0000);
-                } else {
-                    embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-header", onlineCount, maxPlayers));
-                    embed.setColor(0x00FF00);
+                    if (onlineCount == 0) {
+                        embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-empty", onlineCount, maxPlayers));
+                        embed.setColor(0xFF0000);
+                    } else {
+                        embed.setTitle(plugin.getLanguageManager().getRaw("discord.online-header", onlineCount, maxPlayers));
+                        embed.setColor(0x00FF00);
 
-                    StringBuilder playersList = new StringBuilder();
-                    for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
-                        playersList.append("`").append(player.getName()).append("` ");
+                        StringBuilder playersList = new StringBuilder();
+                        for (org.bukkit.entity.Player player : plugin.getServer().getOnlinePlayers()) {
+                            playersList.append("`").append(player.getName()).append("` ");
+                        }
+                        embed.setDescription(playersList.toString());
                     }
-                    embed.setDescription(playersList.toString());
-                }
 
-                event.getHook().sendMessageEmbeds(embed.build()).queue();
+                    event.getHook().sendMessageEmbeds(embed.build()).queue();
+                });
             }
             else if (event.getName().equals("map")) {
                 event.deferReply(true).queue();
@@ -101,10 +116,12 @@ public class DiscordCommandListener extends ListenerAdapter {
                 if (codeOpt == null || codeOpt.getAsString().trim().isEmpty()) {
                     java.util.UUID existingUuid = plugin.getLinkManager().getUUIDFromDiscordId(event.getUser().getId());
                     if (existingUuid != null) {
-                        org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
-                        String pName = linkedPlayer.getName();
-                        if (pName == null && plugin.getPlayerCacheManager() != null) {
-                            pName = plugin.getPlayerCacheManager().resolvePlayerName(existingUuid);
+                        String pName = plugin.getPlayerCacheManager() != null
+                                ? plugin.getPlayerCacheManager().resolvePlayerName(existingUuid)
+                                : null;
+                        if (pName == null) {
+                            org.bukkit.OfflinePlayer linkedPlayer = plugin.getServer().getOfflinePlayer(existingUuid);
+                            pName = linkedPlayer.getName();
                         }
                         if (pName == null) pName = "Гравець";
                         event.getHook().sendMessage("✅ Ваш Discord акаунт вже прив'язано до Minecraft-акаунта **" + pName + "**!\n" +
@@ -181,55 +198,61 @@ public class DiscordCommandListener extends ListenerAdapter {
                 if (sub == null) return;
 
                 com.example.minecord.utils.AutoRestartManager manager = plugin.getAutoRestartManager();
+                if (manager == null) {
+                    event.getHook().sendMessage("❌ Менеджер авторестартів не ініціалізовано.").queue();
+                    return;
+                }
 
-                if (sub.equals("add")) {
-                    String time = event.getOption("time").getAsString();
-                    if (time.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
-                        manager.addTime(time);
-                        event.getHook().sendMessage("✅ Час `" + time + "` успішно додано до авторестартів.").queue();
-                    } else {
-                        event.getHook().sendMessage("❌ Невірний формат часу! Використовуйте HH:mm (наприклад, 04:00 або 15:30)").queue();
-                    }
-                }
-                else if (sub.equals("remove")) {
-                    String time = event.getOption("time").getAsString();
-                    if (manager.removeTime(time)) {
-                        event.getHook().sendMessage("✅ Час `" + time + "` видалено з розкладу.").queue();
-                    } else {
-                        event.getHook().sendMessage("❌ Такого часу немає в списку авторестартів.").queue();
-                    }
-                }
-                else if (sub.equals("list")) {
-                    java.util.List<String> times = manager.getTimes();
-                    if (times.isEmpty()) {
-                        event.getHook().sendMessage("ℹ️ Список авторестартів порожній.").queue();
-                    } else {
-                        net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                        embed.setTitle("⏰ Заплановані авторестарти");
-                        embed.setColor(0x00FFFF);
-                        StringBuilder sb = new StringBuilder();
-                        for (String t : times) {
-                            sb.append("• `").append(t).append("`\n");
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    if (sub.equals("add")) {
+                        String time = event.getOption("time").getAsString();
+                        if (time.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+                            manager.addTime(time);
+                            event.getHook().sendMessage("✅ Час `" + time + "` успішно додано до авторестартів.").queue();
+                        } else {
+                            event.getHook().sendMessage("❌ Невірний формат часу! Використовуйте HH:mm (наприклад, 04:00 або 15:30)").queue();
                         }
-                        embed.setDescription(sb.toString());
-                        embed.setFooter("Час вказано за Києвом");
+                    }
+                    else if (sub.equals("remove")) {
+                        String time = event.getOption("time").getAsString();
+                        if (manager.removeTime(time)) {
+                            event.getHook().sendMessage("✅ Час `" + time + "` видалено з розкладу.").queue();
+                        } else {
+                            event.getHook().sendMessage("❌ Такого часу немає в списку авторестартів.").queue();
+                        }
+                    }
+                    else if (sub.equals("list")) {
+                        java.util.List<String> times = manager.getTimes();
+                        if (times.isEmpty()) {
+                            event.getHook().sendMessage("ℹ️ Список авторестартів порожній.").queue();
+                        } else {
+                            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                            embed.setTitle("⏰ Заплановані авторестарти");
+                            embed.setColor(0x00FFFF);
+                            StringBuilder sb = new StringBuilder();
+                            for (String t : times) {
+                                sb.append("• `").append(t).append("`\n");
+                            }
+                            embed.setDescription(sb.toString());
+                            embed.setFooter("Час вказано за Києвом");
 
-                        event.getHook().sendMessageEmbeds(embed.build()).queue();
+                            event.getHook().sendMessageEmbeds(embed.build()).queue();
+                        }
                     }
-                }
-                else if (sub.equals("clear")) {
-                    manager.clearTimes();
-                    event.getHook().sendMessage("🗑️ Всі авторестарти повністю видалено.").queue();
-                }
-                else if (sub.equals("toggle")) {
-                    boolean isPaused = !manager.isPaused();
-                    manager.setPaused(isPaused);
-                    if (isPaused) {
-                        event.getHook().sendMessage("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").queue();
-                    } else {
-                        event.getHook().sendMessage("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").queue();
+                    else if (sub.equals("clear")) {
+                        manager.clearTimes();
+                        event.getHook().sendMessage("🗑️ Всі авторестарти повністю видалено.").queue();
                     }
-                }
+                    else if (sub.equals("toggle")) {
+                        boolean isPaused = !manager.isPaused();
+                        manager.setPaused(isPaused);
+                        if (isPaused) {
+                            event.getHook().sendMessage("⏸️ **Авторестарти ПРИЗУПИНЕНО.** Сервер більше не буде автоматично перезавантажуватись.").queue();
+                        } else {
+                            event.getHook().sendMessage("▶️ **Авторестарти ВІДНОВЛЕНО.** Розклад знову працює.").queue();
+                        }
+                    }
+                });
             }
             else if (event.getName().equals("queuerestart")) {
                 event.deferReply(true).queue();
@@ -238,50 +261,57 @@ public class DiscordCommandListener extends ListenerAdapter {
                     event.getHook().sendMessage("❌ Менеджер авторестартів не активний.").queue();
                     return;
                 }
-                boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
-                if (isPending) {
-                    if (plugin.getServer().getOnlinePlayers().isEmpty()) {
-                        event.getHook().sendMessage("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за кілька секунд!").queue();
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    boolean isPending = plugin.getAutoRestartManager().toggleSmartRestart();
+                    if (isPending) {
+                        if (plugin.getServer().getOnlinePlayers().isEmpty()) {
+                            event.getHook().sendMessage("✅ На сервері немає гравців. Одноразовий рестарт розпочнеться за кілька секунд!").queue();
+                        } else {
+                            event.getHook().sendMessage("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
+                                    "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
+                                    "*(Повторний виклик команди скасує чергу)*").queue();
+                        }
                     } else {
-                        event.getHook().sendMessage("⏳ **Одноразовий** розумний рестарт додано в чергу.\n" +
-                                "Він спрацює лише 1 раз, щойно онлайн опуститься до 0 гравців.\n" +
-                                "*(Повторний виклик команди скасує чергу)*").queue();
+                        event.getHook().sendMessage("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").queue();
                     }
-                } else {
-                    event.getHook().sendMessage("❌ Одноразовий рестарт із черги **СКАСОВАНО**.").queue();
-                }
+                });
             }
 
-        else if (event.getName().equals("serverinfo")) {
-            event.deferReply().queue();
-            double currentTps = 20.0;
-            try {
-                currentTps = plugin.getServer().getTPS()[0];
-            } catch (Exception ignored) {}
+            else if (event.getName().equals("serverinfo")) {
+                event.deferReply().queue();
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    double tps = 20.0;
+                    try {
+                        tps = Math.min(20.0, plugin.getServer().getTPS()[0]);
+                    } catch (Exception ignored) {}
+                    final double currentTps = tps;
+                    final int onlineCount = plugin.getServer().getOnlinePlayers().size();
+                    final int maxPlayers = plugin.getServer().getMaxPlayers();
+                    final String serverVersion = plugin.getServer().getVersion();
 
-            Runtime runtime = Runtime.getRuntime();
-            long maxMemory = runtime.maxMemory();
-            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-            double ramPercent = ((double) usedMemory / maxMemory) * 100.0;
+                    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                        Runtime runtime = Runtime.getRuntime();
+                        long maxMemory = runtime.maxMemory();
+                        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+                        double ramPercent = ((double) usedMemory / maxMemory) * 100.0;
+                        String cpuInfo = getCpuUsageFormatted();
 
-            int onlineCount = plugin.getServer().getOnlinePlayers().size();
-            int maxPlayers = plugin.getServer().getMaxPlayers();
-            String cpuInfo = getCpuUsageFormatted();
+                        net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+                        embed.setTitle("🖥️ Інформація та стан сервера");
+                        embed.setColor(0x00FF00);
 
-            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-            embed.setTitle("🖥️ Інформація та стан сервера");
-            embed.setColor(0x00FF00);
+                        String tpsStatus = currentTps >= 18.5 ? "🟢 Стабільний" : (currentTps >= 15.0 ? "🟡 Невелике навантаження" : "🔴 Лаги");
+                        embed.addField("📊 TPS", String.format("%.2f (%s)", currentTps, tpsStatus), true);
+                        embed.addField("👥 Онлайн", onlineCount + " / " + maxPlayers, true);
+                        embed.addField("💾 RAM (Використано)", String.format("%.1f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
+                        embed.addField("📦 RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
+                        embed.addField("🧠 CPU (Навантаження)", cpuInfo, true);
+                        embed.addField("⚙️ Ядро", serverVersion, false);
 
-            String tpsStatus = currentTps >= 18.5 ? "🟢 Стабільний" : (currentTps >= 15.0 ? "🟡 Невелике навантаження" : "🔴 Лаги");
-            embed.addField("📊 TPS", String.format("%.2f (%s)", currentTps, tpsStatus), true);
-            embed.addField("👥 Онлайн", onlineCount + " / " + maxPlayers, true);
-            embed.addField("💾 RAM (Використано)", String.format("%.1f%% (%.0f MB)", ramPercent, usedMemory / 1024.0 / 1024.0), true);
-            embed.addField("📦 RAM (Виділено)", String.format("%.0f MB", maxMemory / 1024.0 / 1024.0), true);
-            embed.addField("🧠 CPU (Навантаження)", cpuInfo, true);
-            embed.addField("⚙️ Ядро", plugin.getServer().getVersion(), false);
-
-            event.getHook().sendMessageEmbeds(embed.build()).queue();
-        }
+                        event.getHook().sendMessageEmbeds(embed.build()).queue();
+                    });
+                });
+            }
 
         else if (event.getName().equals("stats")) {
             net.dv8tion.jda.api.interactions.commands.OptionMapping playerOpt = event.getOption("player");
@@ -430,6 +460,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                     if (isOnline) {
                         for (org.bukkit.Material mat : BLOCK_MATERIALS) {
                             try { blocksBroken += onlineP.getStatistic(org.bukkit.Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
+                        }
+                        for (org.bukkit.Material mat : PLACEABLE_BLOCK_MATERIALS) {
                             try { blocksPlaced += onlineP.getStatistic(org.bukkit.Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
                         }
                         for (org.bukkit.Material mat : ITEM_MATERIALS) {
@@ -438,6 +470,8 @@ public class DiscordCommandListener extends ListenerAdapter {
                     } else {
                         for (org.bukkit.Material mat : BLOCK_MATERIALS) {
                             try { blocksBroken += offlinePlayer.getStatistic(org.bukkit.Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
+                        }
+                        for (org.bukkit.Material mat : PLACEABLE_BLOCK_MATERIALS) {
                             try { blocksPlaced += offlinePlayer.getStatistic(org.bukkit.Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
                         }
                         for (org.bukkit.Material mat : ITEM_MATERIALS) {
@@ -446,19 +480,12 @@ public class DiscordCommandListener extends ListenerAdapter {
                     }
 
                     long distanceCm = 0;
-                    org.bukkit.Statistic[] distStats = {
-                            org.bukkit.Statistic.WALK_ONE_CM, org.bukkit.Statistic.SPRINT_ONE_CM, org.bukkit.Statistic.SWIM_ONE_CM,
-                            org.bukkit.Statistic.FLY_ONE_CM, org.bukkit.Statistic.MINECART_ONE_CM, org.bukkit.Statistic.HORSE_ONE_CM,
-                            org.bukkit.Statistic.PIG_ONE_CM, org.bukkit.Statistic.BOAT_ONE_CM, org.bukkit.Statistic.AVIATE_ONE_CM,
-                            org.bukkit.Statistic.CLIMB_ONE_CM, org.bukkit.Statistic.FALL_ONE_CM, org.bukkit.Statistic.WALK_ON_WATER_ONE_CM,
-                            org.bukkit.Statistic.WALK_UNDER_WATER_ONE_CM, org.bukkit.Statistic.CROUCH_ONE_CM
-                    };
                     if (isOnline) {
-                        for (org.bukkit.Statistic s : distStats) {
+                        for (org.bukkit.Statistic s : DIST_STATS) {
                             try { distanceCm += onlineP.getStatistic(s); } catch (Exception ignored) {}
                         }
                     } else {
-                        for (org.bukkit.Statistic s : distStats) {
+                        for (org.bukkit.Statistic s : DIST_STATS) {
                             try { distanceCm += offlinePlayer.getStatistic(s); } catch (Exception ignored) {}
                         }
                     }
@@ -522,14 +549,15 @@ public class DiscordCommandListener extends ListenerAdapter {
                     String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(offlinePlayer.getUniqueId()) : null;
                     String name = (offlinePlayer != null && offlinePlayer.getName() != null) ? offlinePlayer.getName() : (cachedName != null ? cachedName : playerName);
 
-                    String currentDiscordId = plugin.getLinkManager().getDiscordId(offlinePlayer.getUniqueId());
+                    java.util.UUID targetUuid = offlinePlayer.getUniqueId();
+                    String currentDiscordId = plugin.getLinkManager().getDiscordId(targetUuid);
                     if (currentDiscordId != null && currentDiscordId.equals(discordUser.getId())) {
                         event.getHook().sendMessage("ℹ️ Акаунт Minecraft **" + name + "** вже прив'язаний до користувача Discord " + discordUser.getAsMention() + "!").queue();
                         return;
                     }
 
                     boolean wasReLinked = currentDiscordId != null;
-                    plugin.getLinkManager().linkAccountDirectly(offlinePlayer.getUniqueId(), discordUser.getId());
+                    plugin.getLinkManager().linkAccountDirectly(targetUuid, discordUser.getId());
 
                     if (wasReLinked) {
                         event.getHook().sendMessage("🔄 Акаунт Minecraft **" + name + "** переприв'язано на нового користувача Discord " + discordUser.getAsMention() + "!").queue();
@@ -537,12 +565,14 @@ public class DiscordCommandListener extends ListenerAdapter {
                         event.getHook().sendMessage("✅ Акаунт Minecraft **" + name + "** успішно прив'язано до Discord " + discordUser.getAsMention() + "!").queue();
                     }
 
-                    if (plugin.getRoleSyncManager() != null) {
-                        Player onlineP = plugin.getServer().getPlayer(offlinePlayer.getUniqueId());
-                        if (onlineP != null && onlineP.isOnline()) {
-                            plugin.getRoleSyncManager().syncPlayer(onlineP);
-                            onlineP.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт прив'язано до Discord адміністратором! Ролі синхронізовано.");
-                        }
+                    if (plugin.isEnabled() && plugin.getRoleSyncManager() != null) {
+                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                            Player onlineP = plugin.getServer().getPlayer(targetUuid);
+                            if (onlineP != null && onlineP.isOnline()) {
+                                plugin.getRoleSyncManager().syncPlayer(onlineP);
+                                onlineP.sendMessage(org.bukkit.ChatColor.GREEN + "✅ Ваш акаунт прив'язано до Discord адміністратором! Ролі синхронізовано.");
+                            }
+                        });
                     }
                 } catch (Throwable t) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE, "[MineCord] Помилка linkadmin: " + t.getMessage(), t);
@@ -650,6 +680,12 @@ public class DiscordCommandListener extends ListenerAdapter {
     public void onButtonInteraction(@NotNull net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
         try {
             if (event.getComponentId().startsWith("report_done_")) {
+                if (event.getMember() == null || !(event.getMember().hasPermission(Permission.ADMINISTRATOR)
+                        || event.getMember().hasPermission(Permission.MODERATE_MEMBERS)
+                        || event.getMember().hasPermission(Permission.MESSAGE_MANAGE))) {
+                    event.reply("❌ Тільки модератори можуть позначати скарги як оброблені.").setEphemeral(true).queue();
+                    return;
+                }
                 if (event.getMessage().getEmbeds().isEmpty()) return;
 
                 net.dv8tion.jda.api.EmbedBuilder eb = new net.dv8tion.jda.api.EmbedBuilder(event.getMessage().getEmbeds().get(0));
@@ -746,7 +782,7 @@ public class DiscordCommandListener extends ListenerAdapter {
     }
 
     private String getCpuUsageFormatted() {
-        double allocatedCores = getAllocatedCpuCores();
+        double allocatedCores = ALLOCATED_CORES;
         int jvmProcs = Math.max(1, Runtime.getRuntime().availableProcessors());
 
         double load = -1.0;
@@ -756,17 +792,6 @@ public class DiscordCommandListener extends ListenerAdapter {
                 load = sunOsBean.getProcessCpuLoad();
                 if (load < 0.0 || Double.isNaN(load)) {
                     load = sunOsBean.getCpuLoad();
-                }
-                if (load <= 0.0 || Double.isNaN(load)) {
-                    try {
-                        Thread.sleep(120L);
-                    } catch (InterruptedException ignored) {
-                        Thread.currentThread().interrupt();
-                    }
-                    load = sunOsBean.getProcessCpuLoad();
-                    if (load < 0.0 || Double.isNaN(load)) {
-                        load = sunOsBean.getCpuLoad();
-                    }
                 }
             }
         } catch (Throwable ignored) {}
@@ -789,7 +814,7 @@ public class DiscordCommandListener extends ListenerAdapter {
         return String.format(java.util.Locale.US, "%.1f%% (%.2f / %s %s)", cpuPercent, usedCores, totalCoresStr, coresUnit);
     }
 
-    private double getAllocatedCpuCores() {
+    private static double detectAllocatedCpuCores() {
         // 1. Check cgroup v2 (/sys/fs/cgroup/cpu.max -> "<quota> <period>")
         try {
             java.nio.file.Path cpuMaxPath = java.nio.file.Paths.get("/sys/fs/cgroup/cpu.max");

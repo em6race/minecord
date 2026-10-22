@@ -132,6 +132,7 @@ public final class MineCord extends JavaPlugin {
         }
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(cmd);
+            getCommand("unmute").setTabCompleter(cmd);
         }
         if (getCommand("afk") != null) {
             getCommand("afk").setExecutor(cmd);
@@ -251,6 +252,12 @@ public final class MineCord extends JavaPlugin {
         if (languageManager != null) {
             languageManager.load();
         }
+        if (linkManager != null) {
+            linkManager.reload();
+        }
+        if (leaderboardManager != null) {
+            leaderboardManager.clearCache();
+        }
         
         if (autoRestartManager != null) {
             autoRestartManager.stop();
@@ -259,8 +266,7 @@ public final class MineCord extends JavaPlugin {
         
         if (tabManager != null) {
             tabManager.stop();
-            this.tabManager = new com.example.minecord.utils.TabManager(this);
-            this.tabManager.start();
+            tabManager.start();
         }
         
         if (roleSyncManager != null) {

@@ -16,10 +16,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MineCordCommand implements CommandExecutor, TabCompleter {
 
     private final MineCord plugin;
+    private final Map<UUID, Long> mailCooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> ticketCooldowns = new ConcurrentHashMap<>();
+    private static final long MAIL_COOLDOWN_MS = 10_000L;
+    private static final long TICKET_COOLDOWN_MS = 30_000L;
 
     public MineCordCommand(MineCord plugin) {
         this.plugin = plugin;
@@ -104,10 +109,14 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         if (args.length > 0 && args[0].equalsIgnoreCase("links")) {
             if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                 Map<UUID, String> allLinks = plugin.getLinkManager().getAllLinks();
-                sender.sendMessage(ChatColor.GOLD + "=== [MineCord] Прив'язані акаунти (" + allLinks.size() + ") ===");
                 if (allLinks.isEmpty()) {
+                    sender.sendMessage(ChatColor.GOLD + "=== [MineCord] Прив'язані акаунти (0) ===");
                     sender.sendMessage(ChatColor.GRAY + "Прив'язаних акаунтів поки немає.");
-                } else {
+                    return true;
+                }
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    List<String> lines = new ArrayList<>();
+                    lines.add(ChatColor.GOLD + "=== [MineCord] Прив'язані акаунти (" + allLinks.size() + ") ===");
                     for (Map.Entry<UUID, String> entry : allLinks.entrySet()) {
                         UUID uuid = entry.getKey();
                         String discordId = entry.getValue();
@@ -117,11 +126,18 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                             pName = op.getName() != null ? op.getName() : uuid.toString().substring(0, 8);
                         }
                         boolean adminLinked = plugin.getLinkManager().isAdminLinked(uuid);
-                        sender.sendMessage(ChatColor.YELLOW + "• " + ChatColor.WHITE + pName + 
+                        lines.add(ChatColor.YELLOW + "• " + ChatColor.WHITE + pName + 
                                 ChatColor.GRAY + " ⮀ Discord ID: " + ChatColor.AQUA + discordId + 
                                 (adminLinked ? ChatColor.GOLD + " [Admin 👑]" : ""));
                     }
-                }
+                    if (plugin.isEnabled()) {
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            for (String line : lines) {
+                                sender.sendMessage(line);
+                            }
+                        });
+                    }
+                });
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "У вас немає прав для цієї команди.");
@@ -221,6 +237,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 } else {
                     sender.sendMessage(ChatColor.GRAY + "Кривавий Місяць наразі не активний.");
                 }
+                return true;
             } else if (args[1].equalsIgnoreCase("cleareffects")) {
                 Player target = null;
                 if (args.length >= 3 && !args[2].equalsIgnoreCase("@a")) {
@@ -269,24 +286,48 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.RED + "Використання: /" + (command.getName().equalsIgnoreCase("unmute") ? "unmute" : "minecord unmute") + " <гравець>");
                 return true;
             }
-            org.bukkit.OfflinePlayer target = plugin.getServer().getOfflinePlayer(targetName);
-            if (plugin.getAntiSpamManager().unmute(target.getUniqueId())) {
-                sender.sendMessage(ChatColor.GREEN + "Гравця " + targetName + " успішно розмучено!");
-                if (target.isOnline() && target.getPlayer() != null) {
-                    target.getPlayer().sendMessage(ChatColor.GREEN + "Вас було розмучено адміністратором.");
+
+            Player onlineTarget = Bukkit.getPlayerExact(targetName);
+            UUID targetUuid = onlineTarget != null ? onlineTarget.getUniqueId() :
+                    (plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().getUuidByName(targetName) : null);
+
+            if (targetUuid != null) {
+                if (plugin.getAntiSpamManager().unmute(targetUuid)) {
+                    sender.sendMessage(ChatColor.GREEN + "Гравця " + targetName + " успішно розмучено!");
+                    if (onlineTarget != null && onlineTarget.isOnline()) {
+                        onlineTarget.sendMessage(ChatColor.GREEN + "Вас було розмучено адміністратором.");
+                    }
+                } else {
+                    sender.sendMessage(ChatColor.YELLOW + "Гравець " + targetName + " не був у муті або його термін уже закінчився.");
                 }
             } else {
-                sender.sendMessage(ChatColor.YELLOW + "Гравець " + targetName + " не був у муті або його термін уже закінчився.");
+                final String finalTargetName = targetName;
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    @SuppressWarnings("deprecation")
+                    OfflinePlayer target = plugin.getServer().getOfflinePlayer(finalTargetName);
+                    boolean unmuted = plugin.getAntiSpamManager().unmute(target.getUniqueId());
+                    if (plugin.isEnabled()) {
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            if (unmuted) {
+                                sender.sendMessage(ChatColor.GREEN + "Гравця " + finalTargetName + " успішно розмучено!");
+                                Player onlineP = Bukkit.getPlayer(target.getUniqueId());
+                                if (onlineP != null && onlineP.isOnline()) {
+                                    onlineP.sendMessage(ChatColor.GREEN + "Вас було розмучено адміністратором.");
+                                }
+                            } else {
+                                sender.sendMessage(ChatColor.YELLOW + "Гравець " + finalTargetName + " не був у муті або його термін уже закінчився.");
+                            }
+                        });
+                    }
+                });
             }
             return true;
         }
 
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("Ця команда доступна лише в грі!");
             return true;
         }
-
-        Player player = (Player) sender;
 
         if (args.length > 0 && args[0].equalsIgnoreCase("appeal")) {
             String blockedMsg = plugin.getOpenAIModerator().getAndClearLastBlockedMessage(player.getUniqueId());
@@ -296,17 +337,18 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             }
 
             String appealChannelId = plugin.getConfig().getString("ai-moderator.appeal-channel-id");
-            if (appealChannelId != null && !appealChannelId.isEmpty()) {
-            if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) {
+            if (appealChannelId != null && !appealChannelId.isEmpty() && !appealChannelId.equals("000000000000000000")) {
+                if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) {
                     player.sendMessage(ChatColor.RED + "Бот ще не підключений. Спробуйте пізніше.");
                     return true;
                 }
-                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(appealChannelId);
+                net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = plugin.getBotManager().getJda().getTextChannelById(appealChannelId.trim());
                 if (channel != null) {
                     net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                     embed.setTitle("⚠️ Апеляція модерації чату");
                     embed.addField("Гравець", player.getName(), true);
-                    embed.addField("Повідомлення", blockedMsg, false);
+                    String safeBlocked = blockedMsg.length() > 1000 ? blockedMsg.substring(0, 1000) + "..." : blockedMsg;
+                    embed.addField("Повідомлення", safeBlocked, false);
                     embed.setColor(0xFFA500);
                     channel.sendMessageEmbeds(embed.build()).queue();
                     
@@ -330,7 +372,7 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(ChatColor.YELLOW + "/map" + ChatColor.WHITE + " - Посилання на веб-мапу");
             player.sendMessage(ChatColor.YELLOW + "/mail <гравець> <текст>" + ChatColor.WHITE + " - Надіслати листа в Discord (потрібна прив'язка /discord link)");
             player.sendMessage(ChatColor.YELLOW + "/ticket create <текст>" + ChatColor.WHITE + " - Зв'язок з адміністрацією");
-            player.sendMessage(ChatColor.YELLOW + "/togglerestart" + ChatColor.WHITE + " - Увімкнути/вимкнути сповіщення авторестарту");
+            player.sendMessage(ChatColor.YELLOW + "/afk [причина]" + ChatColor.WHITE + " - Перейти/вийти з режиму АФК");
             return true;
         }
 
@@ -376,11 +418,15 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         }
 
         if (command.getName().equalsIgnoreCase("mail")) {
-            if (!(sender instanceof Player)) return true;
-
             if (args.length >= 1 && args[0].equalsIgnoreCase("read")) {
                 sender.sendMessage(ChatColor.YELLOW + "📩 Окремої скриньки в грі немає — листи надходять напряму в приватні повідомлення Discord прив'язаного гравця!");
                 sender.sendMessage(ChatColor.GRAY + "Щоб надіслати листа: " + ChatColor.WHITE + "/mail <гравець> <повідомлення>" + ChatColor.GRAY + " (потрібна прив'язка /discord link)");
+                return true;
+            }
+
+            if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
+                String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+                player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
                 return true;
             }
 
@@ -405,19 +451,45 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                 message = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
             }
 
+            if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) {
+                player.sendMessage(ChatColor.RED + "❌ Discord-бот наразі офлайн. Спробуйте пізніше!");
+                return true;
+            }
+
+            long now = System.currentTimeMillis();
+            Long lastMail = mailCooldowns.get(player.getUniqueId());
+            if (lastMail != null && (now - lastMail < MAIL_COOLDOWN_MS)) {
+                long waitSec = Math.max(1L, (MAIL_COOLDOWN_MS - (now - lastMail)) / 1000L);
+                player.sendMessage(ChatColor.RED + "⏳ Зачекайте ще " + waitSec + " сек. перед надсиланням наступного листа.");
+                return true;
+            }
+            mailCooldowns.put(player.getUniqueId(), now);
+
             final String finalTargetName = targetName;
-            final String finalMessage = message;
+            final String finalMessage = message.length() > 1500 ? message.substring(0, 1500) + "..." : message;
+            final String senderName = player.getName();
 
             // Execute asynchronously to avoid blocking on getOfflinePlayer lookup
             org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(finalTargetName);
-                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
-                    sender.sendMessage(ChatColor.RED + "❌ Гравця з ніком " + finalTargetName + " не знайдено на сервері.");
+                UUID targetUuid = plugin.getPlayerCacheManager() != null
+                        ? plugin.getPlayerCacheManager().getUuidByName(finalTargetName)
+                        : null;
+                if (targetUuid == null) {
+                    @SuppressWarnings("deprecation")
+                    org.bukkit.OfflinePlayer target = org.bukkit.Bukkit.getOfflinePlayer(finalTargetName);
+                    if (target != null && (target.hasPlayedBefore() || target.isOnline())) {
+                        targetUuid = target.getUniqueId();
+                    }
+                }
+                if (targetUuid == null) {
+                    mailCooldowns.remove(player.getUniqueId());
+                    sendSyncMessage(player, ChatColor.RED + "❌ Гравця з ніком " + finalTargetName + " не знайдено на сервері.");
                     return;
                 }
-                String discordId = plugin.getLinkManager().getDiscordId(target.getUniqueId());
+                String discordId = plugin.getLinkManager().getDiscordId(targetUuid);
                 if (discordId == null) {
-                    sender.sendMessage(ChatColor.RED + "❌ Гравець " + finalTargetName + " ще не прив'язав свій Discord-акаунт (/discord link).");
+                    mailCooldowns.remove(player.getUniqueId());
+                    sendSyncMessage(player, ChatColor.RED + "❌ Гравець " + finalTargetName + " ще не прив'язав свій Discord-акаунт (/discord link).");
                     return;
                 }
                 
@@ -425,50 +497,81 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     plugin.getBotManager().getJda().openPrivateChannelById(discordId).queue(channel -> {
                         net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
                         embed.setTitle("📩 Новий лист із сервера Minecraft!");
-                        embed.setDescription("**Від:** " + sender.getName() + "\n**Повідомлення:** " + finalMessage);
+                        embed.setDescription("**Від:** " + senderName + "\n**Повідомлення:** " + finalMessage);
                         embed.setColor(0x5865F2);
-                        embed.setFooter("MineCord • Відповісти на сервері: /mail " + sender.getName() + " <текст>");
+                        embed.setFooter("MineCord • Відповісти на сервері: /mail " + senderName + " <текст>");
                         channel.sendMessageEmbeds(embed.build()).queue(
-                            success -> sender.sendMessage(ChatColor.GREEN + "✅ Лист успішно надіслано в Discord гравцю " + finalTargetName + "!"),
-                            error -> sender.sendMessage(ChatColor.RED + "❌ Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
+                            success -> sendSyncMessage(player, ChatColor.GREEN + "✅ Лист успішно надіслано в Discord гравцю " + finalTargetName + "!"),
+                            error -> sendSyncMessage(player, ChatColor.RED + "❌ Не вдалося надіслати повідомлення (можливо в гравця закриті приватні повідомлення).")
                         );
-                    }, error -> sender.sendMessage(ChatColor.RED + "❌ Не вдалося знайти користувача Discord."));
+                    }, error -> sendSyncMessage(player, ChatColor.RED + "❌ Не вдалося знайти користувача Discord."));
+                } else {
+                    sendSyncMessage(player, ChatColor.RED + "❌ Discord-бот наразі офлайн.");
                 }
             });
             return true;
         }
 
         if (command.getName().equalsIgnoreCase("ticket")) {
-            if (!(sender instanceof Player)) return true;
             if (args.length < 2 || !args[0].equalsIgnoreCase("create")) {
                 sender.sendMessage(ChatColor.RED + "Використання: /ticket create <повідомлення>");
                 return true;
             }
+            if (plugin.getAntiSpamManager() != null && plugin.getAntiSpamManager().isMuted(player.getUniqueId())) {
+                String left = plugin.getAntiSpamManager().getRemainingMuteTimeFormatted(player.getUniqueId());
+                player.sendMessage(plugin.getLanguageManager().get(player, "antispam.muted-chat", left));
+                return true;
+            }
+
+            long now = System.currentTimeMillis();
+            Long lastTicket = ticketCooldowns.get(player.getUniqueId());
+            if (lastTicket != null && (now - lastTicket < TICKET_COOLDOWN_MS)) {
+                long waitSec = Math.max(1L, (TICKET_COOLDOWN_MS - (now - lastTicket)) / 1000L);
+                player.sendMessage(ChatColor.RED + "⏳ Зачекайте ще " + waitSec + " сек. перед створенням нового тікета.");
+                return true;
+            }
+
             String message = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+            if (message.length() > 1800) {
+                message = message.substring(0, 1800) + "...";
+            }
             
             String modChannelId = plugin.getConfig().getString("discord.moderator-channel-id");
-            if (modChannelId == null || modChannelId.isEmpty()) {
+            if (modChannelId == null || modChannelId.trim().isEmpty() || modChannelId.trim().equals("000000000000000000")) {
                 sender.sendMessage(ChatColor.RED + "Канал модераторів не налаштовано.");
                 return true;
             }
             
-            if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
-                net.dv8tion.jda.api.entities.channel.concrete.TextChannel modChannel = plugin.getBotManager().getJda().getTextChannelById(modChannelId);
-                if (modChannel != null) {
-                    net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
-                    embed.setTitle("🎫 Новий тікет від " + sender.getName());
-                    embed.setDescription(message);
-                    embed.setFooter("UUID: " + ((Player)sender).getUniqueId().toString());
-                    embed.setColor(0xFF0000);
-                    
-                    modChannel.sendMessageEmbeds(embed.build()).queue(msg -> {
-                        msg.createThreadChannel("Тікет-" + sender.getName()).queue(thread -> {
-                            thread.sendMessage("Модератори скоро вам відповідять. (Щоб відповісти гравцю, пишіть повідомлення прямо сюди)").queue();
-                        });
-                        sender.sendMessage(ChatColor.GREEN + "Ваш тікет успішно створено! Відповідь від адміністрації прийде сюди.");
-                    });
-                }
+            if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) {
+                sender.sendMessage(ChatColor.RED + "❌ Discord-бот наразі офлайн. Спробуйте пізніше!");
+                return true;
             }
+
+            net.dv8tion.jda.api.entities.channel.concrete.TextChannel modChannel = plugin.getBotManager().getJda().getTextChannelById(modChannelId.trim());
+            if (modChannel == null) {
+                sender.sendMessage(ChatColor.RED + "❌ Канал модераторів не знайдено в Discord.");
+                return true;
+            }
+
+            ticketCooldowns.put(player.getUniqueId(), now);
+            String senderName = player.getName();
+            String senderUuidStr = player.getUniqueId().toString();
+
+            net.dv8tion.jda.api.EmbedBuilder embed = new net.dv8tion.jda.api.EmbedBuilder();
+            embed.setTitle("🎫 Новий тікет від " + senderName);
+            embed.setDescription(message);
+            embed.setFooter("UUID: " + senderUuidStr);
+            embed.setColor(0xFF0000);
+            
+            modChannel.sendMessageEmbeds(embed.build()).queue(msg -> {
+                msg.createThreadChannel("Тікет-" + senderName).queue(thread -> {
+                    thread.sendMessage("Модератори скоро вам відповідять. (Щоб відповісти гравцю, пишіть повідомлення прямо сюди)").queue();
+                });
+                sendSyncMessage(player, ChatColor.GREEN + "Ваш тікет успішно створено! Відповідь від адміністрації прийде сюди.");
+            }, error -> {
+                ticketCooldowns.remove(player.getUniqueId());
+                sendSyncMessage(player, ChatColor.RED + "❌ Не вдалося створити тікет у Discord.");
+            });
             return true;
         }
 
@@ -476,8 +579,30 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private void sendSyncMessage(CommandSender sender, String message) {
+        if (!plugin.isEnabled()) return;
+        if (Bukkit.isPrimaryThread()) {
+            sender.sendMessage(message);
+        } else {
+            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(message));
+        }
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("unmute")) {
+            if (args.length == 1 && (sender.hasPermission("minecord.admin") || sender.isOp())) {
+                String prefix = args[0].toLowerCase();
+                List<String> list = new ArrayList<>();
+                for (Player p : plugin.getServer().getOnlinePlayers()) {
+                    if (p.getName().toLowerCase().startsWith(prefix)) {
+                        list.add(p.getName());
+                    }
+                }
+                return list;
+            }
+            return Collections.emptyList();
+        }
         if (command.getName().equalsIgnoreCase("mail")) {
             if (args.length == 1) {
                 String prefix = args[0].toLowerCase();
@@ -502,13 +627,14 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
         } else if (command.getName().equalsIgnoreCase("discord") || command.getName().equalsIgnoreCase("minecord")) {
             if (args.length == 1) {
                 List<String> sub = new ArrayList<>();
-                List<String> available = new ArrayList<>(List.of("link", "unlink", "help"));
+                List<String> available = new ArrayList<>(List.of("link", "unlink", "help", "appeal"));
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     available.add("reload");
                     available.add("update");
                     available.add("links");
                     available.add("bot");
                     available.add("bloodmoon");
+                    available.add("unmute");
                 }
                 for (String s : available) {
                     if (s.startsWith(args[0].toLowerCase())) {
@@ -516,6 +642,17 @@ public class MineCordCommand implements CommandExecutor, TabCompleter {
                     }
                 }
                 return sub;
+            } else if (args.length == 2 && args[0].equalsIgnoreCase("unmute")) {
+                if (sender.hasPermission("minecord.admin") || sender.isOp()) {
+                    String prefix = args[1].toLowerCase();
+                    List<String> sub = new ArrayList<>();
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (p.getName().toLowerCase().startsWith(prefix)) {
+                            sub.add(p.getName());
+                        }
+                    }
+                    return sub;
+                }
             } else if (args.length == 2 && args[0].equalsIgnoreCase("bot")) {
                 if (sender.hasPermission("minecord.admin") || sender.isOp()) {
                     List<String> sub = new ArrayList<>();

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -33,6 +34,14 @@ public class PlayerCacheManager {
         }
     }
 
+    private static final java.net.http.HttpClient HTTP_CLIENT = java.net.http.HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .build();
+    private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[.*]?[a-zA-Z0-9_]{3,16}$");
+    private static final Pattern JSON_OBJ_PATTERN = Pattern.compile("\\{[^{}]*\\}");
+    private static final Pattern JSON_NAME_PATTERN = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern JSON_UUID_PATTERN = Pattern.compile("\"uuid\"\\s*:\\s*\"([^\"]+)\"");
+
     private final MineCord plugin;
     private final Set<String> cachedPlayerNames = ConcurrentHashMap.newKeySet();
     private final Map<String, UUID> playerNameToUuid = new ConcurrentHashMap<>();
@@ -40,9 +49,16 @@ public class PlayerCacheManager {
     private final Map<UUID, PlayerXpData> playerXpCache = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> playerAdvancementsCache = new ConcurrentHashMap<>();
     private final Set<String> visibleAdvancementKeys = ConcurrentHashMap.newKeySet();
-    private int totalAdvancementsCount = -1;
+    private volatile int totalAdvancementsCount = -1;
     private final Map<String, UUID> mojangUuidCache = new ConcurrentHashMap<>();
+    private final Set<UUID> unresolvedUuids = ConcurrentHashMap.newKeySet();
     private static final UUID EMPTY_UUID_SENTINEL = new UUID(0L, 0L);
+
+    // Cached whitelist and world roots to prevent disk I/O on every Tab-Complete or lookup
+    private volatile Set<String> cachedWhitelistSet = Collections.emptySet();
+    private volatile long lastWhitelistReadTime = 0L;
+    private static final long WHITELIST_CACHE_TTL_MS = 10_000L;
+    private volatile List<File> cachedWorldRoots = Collections.emptyList();
 
     public PlayerCacheManager(MineCord plugin) {
         this.plugin = plugin;
@@ -59,44 +75,57 @@ public class PlayerCacheManager {
      * Refreshes cached player names and UUIDs from whitelist, usercache, and online players.
      */
     public void refreshCache() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                // 1. Load from whitelist.json file directly (fast and safe)
-                loadWhitelistFile();
+        Runnable mainThreadSnapshot = () -> {
+            loadBukkitWhitelist();
+            loadOnlinePlayers();
+            refreshAdvancements();
+            snapshotWorldRoots();
 
-                // 2. Load from Bukkit whitelist API
-                loadBukkitWhitelist();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    // 1. Load from whitelist.json file directly
+                    loadWhitelistFile();
 
-                // 3. Load from usercache.json
-                loadUsercacheFile();
+                    // 2. Load from usercache.json
+                    loadUsercacheFile();
 
-                // 4. Load from world playerdata files
-                loadPlayerDataFiles();
+                    // 3. Load from world playerdata files
+                    loadPlayerDataFiles();
 
-                // 5. Add currently online players
-                loadOnlinePlayers();
+                    plugin.getLogger().info("[MineCord] Завантажено " + cachedPlayerNames.size() + " гравців у кеш.");
+                } catch (Throwable t) {
+                    plugin.getLogger().warning("[MineCord] Помилка завантаження кешу гравців: " + t.getMessage());
+                }
+            });
+        };
 
-                // 6. Cache visible server advancements count
-                refreshAdvancements();
+        if (Bukkit.isPrimaryThread()) {
+            mainThreadSnapshot.run();
+        } else if (plugin.isEnabled()) {
+            Bukkit.getScheduler().runTask(plugin, mainThreadSnapshot);
+        }
+    }
 
-                plugin.getLogger().info("[MineCord] Завантажено " + cachedPlayerNames.size() + " гравців у кеш.");
-            } catch (Throwable t) {
-                plugin.getLogger().warning("[MineCord] Помилка завантаження кешу гравців: " + t.getMessage());
+    private void snapshotWorldRoots() {
+        List<File> roots = new ArrayList<>();
+        try {
+            for (org.bukkit.World w : Bukkit.getWorlds()) {
+                if (w != null && w.getWorldFolder() != null) {
+                    roots.add(w.getWorldFolder());
+                }
             }
-        });
+        } catch (Throwable ignored) {}
+        this.cachedWorldRoots = roots;
     }
 
     /**
      * Checks whether a string is a valid Minecraft username.
-     * Java Edition usernames: 3-16 characters [a-zA-Z0-9_].
-     * Geyser/Floodgate Bedrock usernames: can start with prefix '.' or '*' followed by 3-16 chars.
-     * Filters out server hostnames (like play.example.com), slash characters, bot scanners, etc.
      */
     public static boolean isValidMinecraftUsername(String name) {
         if (name == null) return false;
         String trimmed = name.trim();
         if (trimmed.length() < 3 || trimmed.length() > 17) return false;
-        return trimmed.matches("^[.*]?[a-zA-Z0-9_]{3,16}$");
+        return VALID_USERNAME_PATTERN.matcher(trimmed).matches();
     }
 
     /**
@@ -118,6 +147,7 @@ public class PlayerCacheManager {
             if (uuid != null) {
                 playerNameToUuid.put(trimmed.toLowerCase(), uuid);
                 uuidToPlayerName.put(uuid, trimmed);
+                unresolvedUuids.remove(uuid);
             }
         }
     }
@@ -136,6 +166,11 @@ public class PlayerCacheManager {
     public String getPlayerNameByUuid(UUID uuid) {
         if (uuid == null) return null;
         return uuidToPlayerName.get(uuid);
+    }
+
+    public String getRealName(UUID uuid, String fallback) {
+        String resolved = resolvePlayerName(uuid);
+        return resolved != null ? resolved : fallback;
     }
 
     /**
@@ -158,8 +193,6 @@ public class PlayerCacheManager {
 
     /**
      * Queries the official Mojang API to get the official Online UUID for a licensed player.
-     * Returns null if player is not licensed, not found, or on network error.
-     * Caches both hits and misses to prevent redundant lookups.
      * Will NOT perform network I/O if called on the main server thread.
      */
     public UUID fetchMojangUuid(String playerName) {
@@ -179,17 +212,14 @@ public class PlayerCacheManager {
 
         try {
             java.net.URI uri = java.net.URI.create("https://api.mojang.com/users/profiles/minecraft/" + cleanName);
-            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                    .connectTimeout(java.time.Duration.ofSeconds(3))
-                    .build();
             java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
                     .uri(uri)
-                    .timeout(java.time.Duration.ofSeconds(3))
+                    .timeout(Duration.ofSeconds(3))
                     .header("User-Agent", "MineCord-Minecraft-Bot")
                     .GET()
                     .build();
 
-            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
                 JsonObject obj = JsonParser.parseString(response.body()).getAsJsonObject();
                 if (obj.has("id")) {
@@ -211,7 +241,7 @@ public class PlayerCacheManager {
 
     /**
      * Resolves a player nickname for a given UUID across memory cache, online players,
-     * Bukkit OfflinePlayer, disk NBT (lastKnownName), and Mojang Session API (async only).
+     * Bukkit OfflinePlayer, disk NBT (async only), and Mojang Session API (async only).
      */
     public String resolvePlayerName(UUID uuid) {
         if (uuid == null) return null;
@@ -242,7 +272,12 @@ public class PlayerCacheManager {
             }
         } catch (Throwable ignored) {}
 
-        // 4. Check playerdata file NBT lastKnownName
+        // Avoid repeating heavy disk NBT decompression or Mojang HTTP calls for negative hits or on main thread
+        if (Bukkit.isPrimaryThread() || unresolvedUuids.contains(uuid)) {
+            return null;
+        }
+
+        // 4. Check playerdata file NBT lastKnownName (async only)
         try {
             File dat = findExactUserDataFile("playerdata", ".dat", uuid);
             if (dat != null && dat.exists()) {
@@ -258,42 +293,36 @@ public class PlayerCacheManager {
             }
         } catch (Throwable ignored) {}
 
-        // 5. Query Mojang Session API for official player name if on async thread
-        if (!Bukkit.isPrimaryThread()) {
-            try {
-                String noDash = uuid.toString().replace("-", "");
-                java.net.URI uri = java.net.URI.create("https://sessionserver.mojang.com/session/minecraft/profile/" + noDash);
-                java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                        .connectTimeout(java.time.Duration.ofSeconds(3))
-                        .build();
-                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                        .uri(uri)
-                        .timeout(java.time.Duration.ofSeconds(3))
-                        .header("User-Agent", "MineCord-Minecraft-Bot")
-                        .GET()
-                        .build();
-                java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-                if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
-                    JsonObject obj = JsonParser.parseString(response.body()).getAsJsonObject();
-                    if (obj.has("name")) {
-                        String name = obj.get("name").getAsString();
-                        if (name != null && !name.trim().isEmpty()) {
-                            name = name.trim();
-                            addPlayer(name, uuid);
-                            return name;
-                        }
+        // 5. Query Mojang Session API for official player name (async only)
+        try {
+            String noDash = uuid.toString().replace("-", "");
+            java.net.URI uri = java.net.URI.create("https://sessionserver.mojang.com/session/minecraft/profile/" + noDash);
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(3))
+                    .header("User-Agent", "MineCord-Minecraft-Bot")
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
+                JsonObject obj = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (obj.has("name")) {
+                    String name = obj.get("name").getAsString();
+                    if (name != null && !name.trim().isEmpty()) {
+                        name = name.trim();
+                        addPlayer(name, uuid);
+                        return name;
                     }
                 }
-            } catch (Throwable ignored) {}
-        }
+            }
+        } catch (Throwable ignored) {}
 
+        unresolvedUuids.add(uuid);
         return null;
     }
 
     /**
      * Resolves the OfflinePlayer candidate with the most recent actual data on this server.
-     * Evaluates online status, Bukkit statistics, playerdata .dat, stats .json, and advancements .json.
-     * Safely handles differences between online-mode (Mojang UUID) and offline-mode (OfflinePlayer hash).
      */
     public OfflinePlayer resolvePlayerWithData(String targetName, List<UUID> preferredUuids) {
         String cleanName = (targetName != null) ? targetName.trim() : null;
@@ -453,10 +482,6 @@ public class PlayerCacheManager {
         return resolvePlayerWithData(targetName, list);
     }
 
-    /**
-     * Resolves the actual UUID used by this player on the server.
-     * Delegates to resolvePlayerWithData for robust candidate selection.
-     */
     public UUID resolveExistingPlayerUuid(String playerName) {
         if (playerName == null || playerName.trim().isEmpty()) return null;
         OfflinePlayer op = resolvePlayerWithData(playerName, (List<UUID>) null);
@@ -486,6 +511,15 @@ public class PlayerCacheManager {
     }
 
     public Set<String> readWhitelistFile() {
+        long now = System.currentTimeMillis();
+        if (!cachedWhitelistSet.isEmpty() && (now - lastWhitelistReadTime < WHITELIST_CACHE_TTL_MS)) {
+            return cachedWhitelistSet;
+        }
+        if (Bukkit.isPrimaryThread() && lastWhitelistReadTime > 0L) {
+            // Never block the main tick thread re-reading whitelist.json if already cached
+            return cachedWhitelistSet;
+        }
+
         Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (File file : getPossibleWhitelistFiles()) {
             if (file != null && file.exists() && file.canRead()) {
@@ -517,17 +551,18 @@ public class PlayerCacheManager {
                 }
             }
         }
+        cachedWhitelistSet = Collections.unmodifiableSet(names);
+        lastWhitelistReadTime = now;
         return names;
     }
 
     /**
-     * Reads the current live whitelist from whitelist.json and Bukkit whitelist.
-     * Always returns up-to-date names so removed players and invalid entries are omitted from autocomplete.
+     * Reads the current live whitelist from cached whitelist.json and Bukkit whitelist.
      */
     public Set<String> getCurrentWhitelistedPlayers() {
         Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-        // 1. From whitelist.json directly
+        // 1. From whitelist.json (TTL cached)
         names.addAll(readWhitelistFile());
 
         // 2. From Bukkit whitelist API
@@ -535,7 +570,7 @@ public class PlayerCacheManager {
             for (OfflinePlayer op : Bukkit.getWhitelistedPlayers()) {
                 String n = op.getName();
                 if (n == null && op.getUniqueId() != null) {
-                    n = resolvePlayerName(op.getUniqueId());
+                    n = uuidToPlayerName.get(op.getUniqueId());
                 }
                 if (isValidMinecraftUsername(n)) {
                     names.add(n.trim());
@@ -554,11 +589,6 @@ public class PlayerCacheManager {
         return getCurrentWhitelistedPlayers().contains(playerName.trim());
     }
 
-    /**
-     * Returns matching whitelisted player suggestions for Discord /linkadmin autocomplete (max 25).
-     * Only whitelisted players are returned, prioritizing currently online players, then alphabetically.
-     * Non-whitelisted and invalid names (bots, scanners, hostnames) are strictly excluded.
-     */
     public List<String> getMatchingWhitelistedPlayers(String partial) {
         String prefix = (partial == null) ? "" : partial.trim().toLowerCase();
         List<String> results = new ArrayList<>();
@@ -619,11 +649,6 @@ public class PlayerCacheManager {
         return results;
     }
 
-    /**
-     * Returns matching player suggestions for commands like /stats (max 25).
-     * Online players and whitelisted players are prioritized at the top, followed by other valid cached players.
-     * Strictly filters out invalid Minecraft usernames.
-     */
     public List<String> getMatchingPlayers(String partial) {
         String prefix = (partial == null) ? "" : partial.trim().toLowerCase();
         List<String> results = new ArrayList<>();
@@ -684,11 +709,11 @@ public class PlayerCacheManager {
 
     private void parseJsonForPlayers(String content) {
         if (content == null || content.isEmpty()) return;
-        Matcher objMatcher = Pattern.compile("\\{[^{}]*\\}").matcher(content);
+        Matcher objMatcher = JSON_OBJ_PATTERN.matcher(content);
         while (objMatcher.find()) {
             String obj = objMatcher.group();
-            Matcher nameMatcher = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(obj);
-            Matcher uuidMatcher = Pattern.compile("\"uuid\"\\s*:\\s*\"([^\"]+)\"").matcher(obj);
+            Matcher nameMatcher = JSON_NAME_PATTERN.matcher(obj);
+            Matcher uuidMatcher = JSON_UUID_PATTERN.matcher(obj);
             if (nameMatcher.find()) {
                 String name = nameMatcher.group(1).trim();
                 if (isValidMinecraftUsername(name)) {
@@ -705,6 +730,7 @@ public class PlayerCacheManager {
     }
 
     private void loadWhitelistFile() {
+        lastWhitelistReadTime = 0L; // Force fresh read during cache refresh
         Set<String> whitelisted = readWhitelistFile();
         for (String name : whitelisted) {
             if (isValidMinecraftUsername(name)) {
@@ -844,13 +870,7 @@ public class PlayerCacheManager {
         Set<String> seenDirs = new HashSet<>();
         for (File dir : searchDirs) {
             if (dir == null) continue;
-            try {
-                String canonical = dir.getCanonicalPath();
-                if (!seenDirs.add(canonical)) continue;
-            } catch (Exception e) {
-                if (!seenDirs.add(dir.getAbsolutePath())) continue;
-            }
-
+            if (!seenDirs.add(dir.getAbsolutePath())) continue;
             if (!dir.exists() || !dir.isDirectory()) continue;
 
             File f = new File(dir, uuid.toString() + extension);
@@ -891,13 +911,7 @@ public class PlayerCacheManager {
         Set<String> seenDirs = new HashSet<>();
         for (File dir : searchDirs) {
             if (dir == null) continue;
-            try {
-                String canonical = dir.getCanonicalPath();
-                if (!seenDirs.add(canonical)) continue;
-            } catch (Exception e) {
-                if (!seenDirs.add(dir.getAbsolutePath())) continue;
-            }
-
+            if (!seenDirs.add(dir.getAbsolutePath())) continue;
             if (!dir.exists() || !dir.isDirectory()) continue;
 
             for (UUID u : candidateUuids) {
@@ -926,52 +940,21 @@ public class PlayerCacheManager {
     private List<File> getPossibleWorldDirs(String subDirName) {
         List<File> searchDirs = new ArrayList<>();
 
-        // 1. All worlds known to Bukkit
-        try {
-            for (org.bukkit.World w : Bukkit.getWorlds()) {
-                if (w != null && w.getWorldFolder() != null) {
-                    searchDirs.add(new File(w.getWorldFolder(), subDirName));
-                }
-            }
-        } catch (Throwable ignored) {}
+        // 1. All worlds snapshotted from Bukkit
+        for (File worldFolder : cachedWorldRoots) {
+            searchDirs.add(new File(worldFolder, subDirName));
+        }
 
-        // 2. Primary world from server.properties
-        try {
-            File props = new File("server.properties");
-            if (props.exists() && props.canRead()) {
-                try (BufferedReader br = new BufferedReader(new FileReader(props, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        line = line.trim();
-                        if (line.startsWith("level-name=")) {
-                            String levelName = line.substring("level-name=".length()).trim();
-                            if (!levelName.isEmpty()) {
-                                searchDirs.add(new File(levelName, subDirName));
-                                searchDirs.add(new File(Bukkit.getWorldContainer(), levelName + "/" + subDirName));
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (Throwable ignored) {}
-
-        // 3. World container and its direct children
+        // 2. Default world container locations
         try {
             File worldContainer = Bukkit.getWorldContainer();
-            if (worldContainer != null && worldContainer.exists()) {
+            if (worldContainer != null) {
                 searchDirs.add(new File(worldContainer, subDirName));
                 searchDirs.add(new File(worldContainer, "world/" + subDirName));
-                File[] subdirs = worldContainer.listFiles(File::isDirectory);
-                if (subdirs != null) {
-                    for (File sub : subdirs) {
-                        searchDirs.add(new File(sub, subDirName));
-                    }
-                }
             }
         } catch (Throwable ignored) {}
 
-        // 4. Default root locations
+        // 3. Default root locations
         searchDirs.add(new File("world/" + subDirName));
         searchDirs.add(new File(subDirName));
 
@@ -1010,12 +993,7 @@ public class PlayerCacheManager {
             Set<String> seen = new HashSet<>();
             for (File dir : playerdataDirs) {
                 if (dir == null || !dir.isDirectory()) continue;
-                try {
-                    String can = dir.getCanonicalPath();
-                    if (!seen.add(can)) continue;
-                } catch (Exception e) {
-                    if (!seen.add(dir.getAbsolutePath())) continue;
-                }
+                if (!seen.add(dir.getAbsolutePath())) continue;
 
                 File[] files = dir.listFiles((d, name) -> name.endsWith(".dat") && !name.endsWith(".dat_old"));
                 if (files == null) continue;
@@ -1034,7 +1012,12 @@ public class PlayerCacheManager {
 
                     if (uuid == null) continue;
 
-                    String name = null;
+                    // Skip decompressing .dat if already resolved from usercache.json or whitelist.json
+                    String name = uuidToPlayerName.get(uuid);
+                    if (name != null && !name.isEmpty()) {
+                        continue;
+                    }
+
                     try {
                         OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
                         name = op.getName();
@@ -1163,12 +1146,18 @@ public class PlayerCacheManager {
         if (totalAdvancementsCount > 0) {
             return totalAdvancementsCount;
         }
-        refreshAdvancements();
-        return Math.max(totalAdvancementsCount, 1);
+        if (Bukkit.isPrimaryThread()) {
+            refreshAdvancements();
+        }
+        return Math.max(totalAdvancementsCount, 110);
     }
 
     public synchronized void refreshAdvancements() {
+        if (!Bukkit.isPrimaryThread()) {
+            return;
+        }
         int count = 0;
+        Set<String> newKeys = new HashSet<>();
         try {
             Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
             while (it.hasNext()) {
@@ -1185,13 +1174,15 @@ public class PlayerCacheManager {
                     hasDisplay = true;
                 }
                 if (hasDisplay) {
-                    visibleAdvancementKeys.add(key);
+                    newKeys.add(key);
                     count++;
                 }
             }
         } catch (Throwable ignored) {}
 
         if (count > 0) {
+            visibleAdvancementKeys.clear();
+            visibleAdvancementKeys.addAll(newKeys);
             totalAdvancementsCount = count;
         } else if (totalAdvancementsCount <= 0) {
             totalAdvancementsCount = 110;
@@ -1203,7 +1194,7 @@ public class PlayerCacheManager {
         UUID uuid = player.getUniqueId();
         String name = player.getName();
 
-        if (player.isOnline() && player.getPlayer() != null) {
+        if (player.isOnline() && player.getPlayer() != null && Bukkit.isPrimaryThread()) {
             int done = countOnlinePlayerAdvancements(player.getPlayer());
             if (uuid != null) {
                 playerAdvancementsCache.put(uuid, done);
@@ -1227,7 +1218,7 @@ public class PlayerCacheManager {
 
     public int countOnlinePlayerAdvancements(Player player) {
         if (player == null) return 0;
-        if (visibleAdvancementKeys.isEmpty()) {
+        if (visibleAdvancementKeys.isEmpty() && Bukkit.isPrimaryThread()) {
             refreshAdvancements();
         }
 
@@ -1268,10 +1259,6 @@ public class PlayerCacheManager {
 
             String content = Files.readString(advFile.toPath(), StandardCharsets.UTF_8);
             if (content == null || content.isEmpty()) return 0;
-
-            if (visibleAdvancementKeys.isEmpty()) {
-                refreshAdvancements();
-            }
 
             int count = 0;
             JsonObject root = JsonParser.parseString(content).getAsJsonObject();

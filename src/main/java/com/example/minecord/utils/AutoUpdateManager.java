@@ -34,7 +34,7 @@ import java.util.jar.JarFile;
 public class AutoUpdateManager {
 
     private final MineCord plugin;
-    private String currentJarSha256;
+    private volatile String currentJarSha256;
     private final AtomicBoolean checking = new AtomicBoolean(false);
     private volatile Thread activeUpdateThread = null;
 
@@ -47,8 +47,10 @@ public class AutoUpdateManager {
             return;
         }
         File currentJar = plugin.getPluginJarFile();
-        if (currentJar != null && currentJar.exists()) {
-            this.currentJarSha256 = computeSha256(currentJar);
+        if (currentJar != null && currentJar.exists() && plugin.isEnabled()) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                this.currentJarSha256 = computeSha256(currentJar);
+            });
         }
     }
 
@@ -115,11 +117,18 @@ public class AutoUpdateManager {
         return plugin.getConfig().getBoolean("auto-update.enabled", false);
     }
 
+    private void sendSyncMessage(CommandSender sender, String message) {
+        if (sender == null) return;
+        if (Bukkit.isPrimaryThread() || !plugin.isEnabled()) {
+            sender.sendMessage(message);
+        } else {
+            Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(message));
+        }
+    }
+
     private boolean checkAndDownload(boolean isShutdown, CommandSender notifySender) {
         if (!checking.compareAndSet(false, true)) {
-            if (notifySender != null) {
-                notifySender.sendMessage(ChatColor.YELLOW + "[MineCord] Перевірка оновлень вже виконується...");
-            }
+            sendSyncMessage(notifySender, ChatColor.YELLOW + "[MineCord] Перевірка оновлень вже виконується...");
             return false;
         }
 
@@ -155,9 +164,7 @@ public class AutoUpdateManager {
 
             int status = conn.getResponseCode();
             if (status != 200) {
-                if (notifySender != null) {
-                    notifySender.sendMessage(ChatColor.RED + "[MineCord] Не вдалося отримати інформацію з GitHub API (HTTP " + status + ").");
-                }
+                sendSyncMessage(notifySender, ChatColor.RED + "[MineCord] Не вдалося отримати інформацію з GitHub API (HTTP " + status + ").");
                 return false;
             }
 
@@ -202,19 +209,15 @@ public class AutoUpdateManager {
 
             // Compare SHA-256 with currently running JAR
             if (remoteSha256 != null && currentJarSha256 != null && remoteSha256.equalsIgnoreCase(currentJarSha256)) {
-                if (notifySender != null) {
-                    notifySender.sendMessage(ChatColor.GREEN + "[MineCord] ✅ Встановлено найновішу версію плагіна (коміт "
-                            + ChatColor.AQUA + GitVersion.getCommitHash() + ChatColor.GREEN + "). Оновлення не потрібне.");
-                }
+                sendSyncMessage(notifySender, ChatColor.GREEN + "[MineCord] ✅ Встановлено найновішу версію плагіна (коміт "
+                        + ChatColor.AQUA + GitVersion.getCommitHash() + ChatColor.GREEN + "). Оновлення не потрібне.");
                 return false;
             }
 
             // Compare SHA-256 with already staged JAR in plugins/update/
             if (remoteSha256 != null && stagedSha256 != null && remoteSha256.equalsIgnoreCase(stagedSha256)) {
-                if (notifySender != null) {
-                    notifySender.sendMessage(ChatColor.GREEN + "[MineCord] ✅ Найновіша збірка вже завантажена в "
-                            + ChatColor.YELLOW + "plugins/update/" + ChatColor.GREEN + " і очікує перезапуску сервера!");
-                }
+                sendSyncMessage(notifySender, ChatColor.GREEN + "[MineCord] ✅ Найновіша збірка вже завантажена в "
+                        + ChatColor.YELLOW + "plugins/update/" + ChatColor.GREEN + " і очікує перезапуску сервера!");
                 return false;
             }
 
@@ -292,16 +295,11 @@ public class AutoUpdateManager {
                     + " [коміт " + newCommitHash + (newCommitMsg.isEmpty() ? "" : ": " + newCommitMsg) + "]! "
                     + "Воно автоматично застосується під час запуску сервера.";
             plugin.logPink(infoMsg);
-
-            if (notifySender != null) {
-                notifySender.sendMessage(ChatColor.GREEN + "[MineCord] " + infoMsg);
-            }
+            sendSyncMessage(notifySender, ChatColor.GREEN + "[MineCord] " + infoMsg);
 
             return true;
         } catch (Throwable t) {
-            if (notifySender != null) {
-                notifySender.sendMessage(ChatColor.RED + "[MineCord] Помилка під час оновлення: " + t.getMessage());
-            }
+            sendSyncMessage(notifySender, ChatColor.RED + "[MineCord] Помилка під час оновлення: " + t.getMessage());
             return false;
         } finally {
             checking.set(false);

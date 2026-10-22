@@ -47,16 +47,18 @@ public class SkinHelper {
             return "https://mc-heads.net/avatar/steve/256";
         }
 
-        Player player = Bukkit.getPlayerExact(playerName);
-        if (player != null) {
-            return getAvatarUrl(player);
-        }
-
         String lowerName = playerName.toLowerCase();
         String cached = nameCache.get(lowerName);
         Long cachedTime = nameTimeCache.get(lowerName);
         if (cached != null && cachedTime != null && (System.currentTimeMillis() - cachedTime < 300000)) {
             return cached;
+        }
+
+        if (Bukkit.isPrimaryThread()) {
+            Player player = Bukkit.getPlayerExact(playerName);
+            if (player != null) {
+                return getAvatarUrl(player);
+            }
         }
 
         // Attempt to get skin from SkinsRestorer for offline/recently disconnected player (only if plugin is present)
@@ -66,7 +68,7 @@ public class SkinHelper {
                 Object srApi = providerClass.getMethod("get").invoke(null);
                 Object playerStorage = srApi.getClass().getMethod("getPlayerStorage").invoke(srApi);
                 java.lang.reflect.Method getSkinMethod = playerStorage.getClass().getMethod("getSkinForPlayer", UUID.class, String.class);
-                UUID offlineUuid = Bukkit.getOfflinePlayer(playerName).getUniqueId();
+                UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(StandardCharsets.UTF_8));
                 Object optSkin = getSkinMethod.invoke(playerStorage, offlineUuid, playerName);
 
                 if (optSkin instanceof java.util.Optional) {
@@ -89,7 +91,10 @@ public class SkinHelper {
             } catch (Throwable ignored) {}
         }
 
-        return "https://mc-heads.net/avatar/" + playerName + "/256";
+        String fallbackUrl = "https://mc-heads.net/avatar/" + playerName + "/256";
+        nameCache.put(lowerName, fallbackUrl);
+        nameTimeCache.put(lowerName, System.currentTimeMillis());
+        return fallbackUrl;
     }
 
     public static boolean isSkinsRestorerAvailable() {

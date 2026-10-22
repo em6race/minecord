@@ -16,8 +16,12 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RoleSyncManager {
+
+    private static final Pattern HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})");
 
     public static class RoleDefinition {
         public final String key;
@@ -97,6 +101,10 @@ public class RoleSyncManager {
     }
 
     public void start() {
+        if (syncTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(syncTaskId);
+            syncTaskId = -1;
+        }
         reloadConfig();
 
         if (!plugin.getConfig().getBoolean("role-sync.enabled", true)) {
@@ -104,9 +112,7 @@ public class RoleSyncManager {
         }
 
         int intervalSeconds = Math.max(15, plugin.getConfig().getInt("role-sync.sync-interval-seconds", 60));
-        syncTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, this::syncAllOnlinePlayers);
-        }, 100L, intervalSeconds * 20L);
+        syncTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::syncAllOnlinePlayers, 100L, intervalSeconds * 20L);
     }
 
     public void stop() {
@@ -165,8 +171,7 @@ public class RoleSyncManager {
 
     public static String colorize(String text) {
         if (text == null || text.isEmpty()) return "";
-        java.util.regex.Pattern hexPattern = java.util.regex.Pattern.compile("&#([A-Fa-f0-9]{6})");
-        java.util.regex.Matcher matcher = hexPattern.matcher(text);
+        Matcher matcher = HEX_PATTERN.matcher(text);
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
             String hex = matcher.group(1);
@@ -177,9 +182,19 @@ public class RoleSyncManager {
     }
 
     public void syncAllOnlinePlayers() {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            syncPlayerAsync(p);
+        if (!Bukkit.isPrimaryThread()) {
+            if (plugin.isEnabled()) {
+                Bukkit.getScheduler().runTask(plugin, this::syncAllOnlinePlayers);
+            }
+            return;
         }
+        List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
+        if (players.isEmpty()) return;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            for (Player p : players) {
+                syncPlayerAsync(p);
+            }
+        });
     }
 
     /**
@@ -274,6 +289,7 @@ public class RoleSyncManager {
         if (player == null || role == null) return;
         playerRoleCache.put(player.getUniqueId(), role);
 
+        if (!plugin.isEnabled()) return;
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline()) return;
 
@@ -353,8 +369,8 @@ public class RoleSyncManager {
 
     public String formatPlayerListName(Player player, RoleDefinition role, boolean isAfk) {
         String pName = player.getName();
-        boolean nametagPrefix = plugin.getConfig().getBoolean("role-sync.nametag-prefix", true);
-        String pfx = (nametagPrefix || role == null || role.prefix == null) ? "" : role.prefix;
+        boolean tabPrefix = plugin.getConfig().getBoolean("role-sync.tab-prefix", true);
+        String pfx = (!tabPrefix || role == null || role.prefix == null) ? "" : role.prefix;
 
         if (isAfk) {
             return ChatColor.GRAY + "[АФК] " + ChatColor.RESET + pfx + pName;
@@ -454,14 +470,14 @@ public class RoleSyncManager {
         } catch (Throwable ignored) {}
     }
 
-    private static final java.util.regex.Pattern ROLE_TAG_REGEX_1 = java.util.regex.Pattern.compile(
+    private static final Pattern ROLE_TAG_REGEX_1 = Pattern.compile(
             "\\[\\s*(?:[⚔💻🛡👑💵⛏⚡]|\b(?:ст\\.?\\s*модератор|модератор|розробник|спонсор|vip|віп|гравець|admin|moder|player|dev|афк)\b)[^\\]]*\\]\\s*",
-            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
 
-    private static final java.util.regex.Pattern ROLE_TAG_REGEX_2 = java.util.regex.Pattern.compile(
+    private static final Pattern ROLE_TAG_REGEX_2 = Pattern.compile(
             "\\[[^\\]]*(?:модератор|розробник|спонсор|гравець|admin|vip|віп|афк)[^\\]]*\\]\\s*",
-            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
 
     public static String stripRoleTags(String text) {

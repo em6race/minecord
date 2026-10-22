@@ -1,6 +1,8 @@
 package com.example.minecord.commands;
 
 import com.example.minecord.MineCord;
+import com.example.minecord.bot.DiscordCommandListener;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -29,8 +31,8 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            if (sender instanceof Player) {
-                showStats(sender, (OfflinePlayer) sender);
+            if (sender instanceof Player player) {
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> showStats(sender, player));
             } else {
                 sender.sendMessage(ChatColor.RED + "Використання: /stats <гравець>");
             }
@@ -51,7 +53,10 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
             }
 
             if (target == null || (!hasPlayed && !isWhitelisted)) {
-                sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері та у вайтлісті.");
+                if (plugin.isEnabled()) {
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            sender.sendMessage(ChatColor.RED + "Гравця " + targetName + " не знайдено на сервері та у вайтлісті."));
+                }
                 return;
             }
 
@@ -79,27 +84,28 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
     }
 
     private void showStats(CommandSender viewer, OfflinePlayer target) {
+        List<String> lines = new ArrayList<>();
         String cachedName = plugin.getPlayerCacheManager() != null ? plugin.getPlayerCacheManager().resolvePlayerName(target.getUniqueId()) : null;
         String displayName = (target.getName() != null) ? target.getName() : (cachedName != null ? cachedName : "Гравець");
-        viewer.sendMessage(ChatColor.YELLOW + "=== Статистика гравця " + ChatColor.GOLD + displayName + ChatColor.YELLOW + " ===");
+        lines.add(ChatColor.YELLOW + "=== Статистика гравця " + ChatColor.GOLD + displayName + ChatColor.YELLOW + " ===");
 
         // Unified Status & Ping
         if (target.isOnline() && target.getPlayer() != null) {
             Player p = target.getPlayer();
-            viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.GREEN + "Онлайн " + ChatColor.GRAY + "(Пінг: " + p.getPing() + " ms)");
-            viewer.sendMessage(ChatColor.WHITE + "Рівень: " + p.getLevel() + " lvl");
+            lines.add(ChatColor.WHITE + "Статус: " + ChatColor.GREEN + "Онлайн " + ChatColor.GRAY + "(Пінг: " + p.getPing() + " ms)");
+            lines.add(ChatColor.WHITE + "Рівень: " + p.getLevel() + " lvl");
         } else {
             if (!target.hasPlayedBefore() && target.getLastPlayed() <= 0) {
-                viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.GRAY + "У вайтлісті (ще не заходив на сервер)");
+                lines.add(ChatColor.WHITE + "Статус: " + ChatColor.GRAY + "У вайтлісті (ще не заходив на сервер)");
             } else {
-                viewer.sendMessage(ChatColor.WHITE + "Статус: " + ChatColor.RED + "Офлайн");
+                lines.add(ChatColor.WHITE + "Статус: " + ChatColor.RED + "Офлайн");
             }
             if (plugin.getPlayerCacheManager() != null) {
                 com.example.minecord.utils.PlayerCacheManager.PlayerXpData xp = plugin.getPlayerCacheManager().getPlayerXp(target);
                 if (xp.totalExp > 0) {
-                    viewer.sendMessage(ChatColor.WHITE + "Рівень: " + xp.level + " lvl (" + String.format(java.util.Locale.US, "%,d", xp.totalExp) + " XP)");
+                    lines.add(ChatColor.WHITE + "Рівень: " + xp.level + " lvl (" + String.format(java.util.Locale.US, "%,d", xp.totalExp) + " XP)");
                 } else if (xp.level > 0) {
-                    viewer.sendMessage(ChatColor.WHITE + "Рівень: " + xp.level + " lvl");
+                    lines.add(ChatColor.WHITE + "Рівень: " + xp.level + " lvl");
                 }
             }
         }
@@ -108,7 +114,7 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         if (plugin.getPlayerCacheManager() != null) {
             int doneAdv = plugin.getPlayerCacheManager().getPlayerAdvancements(target);
             int totalAdv = plugin.getPlayerCacheManager().getTotalAdvancements();
-            viewer.sendMessage(ChatColor.WHITE + "Досягнення: " + doneAdv + " / " + totalAdv);
+            lines.add(ChatColor.WHITE + "Досягнення: " + doneAdv + " / " + totalAdv);
         }
 
         // First and last login dates
@@ -118,12 +124,12 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         long lastPlayed = target.getLastPlayed();
 
         if (firstPlayed > 0) {
-            viewer.sendMessage(ChatColor.WHITE + "Перший вхід: " + sdf.format(new Date(firstPlayed)));
+            lines.add(ChatColor.WHITE + "Перший вхід: " + sdf.format(new Date(firstPlayed)));
         }
         if (target.isOnline()) {
-            viewer.sendMessage(ChatColor.WHITE + "Останній вхід: " + ChatColor.GREEN + "Зараз у грі");
+            lines.add(ChatColor.WHITE + "Останній вхід: " + ChatColor.GREEN + "Зараз у грі");
         } else if (lastPlayed > 0) {
-            viewer.sendMessage(ChatColor.WHITE + "Останній вхід: " + sdf.format(new Date(lastPlayed)));
+            lines.add(ChatColor.WHITE + "Останній вхід: " + sdf.format(new Date(lastPlayed)));
         }
 
         // Statistics (available for both online and offline players)
@@ -136,45 +142,46 @@ public class StatsCommand implements CommandExecutor, TabCompleter {
         try { playerKills = target.getStatistic(Statistic.PLAYER_KILLS); } catch (Exception ignored) {}
         try { playtimeTicks = target.getStatistic(Statistic.PLAY_ONE_MINUTE); } catch (Exception ignored) {}
 
-        viewer.sendMessage(ChatColor.WHITE + "Вбито мобів/гравців: " + mobKills + " / " + playerKills);
-        viewer.sendMessage(ChatColor.WHITE + "Смертей: " + deaths);
+        lines.add(ChatColor.WHITE + "Вбито мобів/гравців: " + mobKills + " / " + playerKills);
+        lines.add(ChatColor.WHITE + "Смертей: " + deaths);
 
         long playtimeHours = playtimeTicks / (20 * 60 * 60);
         long playtimeMins = (playtimeTicks / (20 * 60)) % 60;
-        viewer.sendMessage(ChatColor.WHITE + "Награний час: " + playtimeHours + " год. " + playtimeMins + " хв.");
+        lines.add(ChatColor.WHITE + "Награний час: " + playtimeHours + " год. " + playtimeMins + " хв.");
 
-        // Calculate blocks and items
+        // Calculate blocks and items using pre-filtered non-legacy Material arrays
         int blocksBroken = 0;
         int blocksPlaced = 0;
         int itemsPickedUp = 0;
 
-        for (Material mat : Material.values()) {
-            if (mat.isBlock()) {
-                try { blocksBroken += target.getStatistic(Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
-                try { blocksPlaced += target.getStatistic(Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
-            }
-            if (mat.isItem()) {
-                try { itemsPickedUp += target.getStatistic(Statistic.PICKUP, mat); } catch (Exception ignored) {}
-            }
+        for (Material mat : DiscordCommandListener.BLOCK_MATERIALS) {
+            try { blocksBroken += target.getStatistic(Statistic.MINE_BLOCK, mat); } catch (Exception ignored) {}
+        }
+        for (Material mat : DiscordCommandListener.PLACEABLE_BLOCK_MATERIALS) {
+            try { blocksPlaced += target.getStatistic(Statistic.USE_ITEM, mat); } catch (Exception ignored) {}
+        }
+        for (Material mat : DiscordCommandListener.ITEM_MATERIALS) {
+            try { itemsPickedUp += target.getStatistic(Statistic.PICKUP, mat); } catch (Exception ignored) {}
         }
 
         long distanceCm = 0;
-        Statistic[] distStats = {
-                Statistic.WALK_ONE_CM, Statistic.SPRINT_ONE_CM, Statistic.SWIM_ONE_CM,
-                Statistic.FLY_ONE_CM, Statistic.MINECART_ONE_CM, Statistic.HORSE_ONE_CM,
-                Statistic.PIG_ONE_CM, Statistic.BOAT_ONE_CM, Statistic.AVIATE_ONE_CM,
-                Statistic.CLIMB_ONE_CM, Statistic.FALL_ONE_CM, Statistic.WALK_ON_WATER_ONE_CM,
-                Statistic.WALK_UNDER_WATER_ONE_CM, Statistic.CROUCH_ONE_CM
-        };
-        for (Statistic s : distStats) {
+        for (Statistic s : DiscordCommandListener.DIST_STATS) {
             try { distanceCm += target.getStatistic(s); } catch (Exception ignored) {}
         }
         long distanceBlocks = distanceCm / 100;
         long distanceKm = distanceBlocks / 1000;
 
-        viewer.sendMessage(ChatColor.WHITE + "Зламано блоків: " + blocksBroken);
-        viewer.sendMessage(ChatColor.WHITE + "Поставлено блоків: " + blocksPlaced);
-        viewer.sendMessage(ChatColor.WHITE + "Підібрано предметів: " + itemsPickedUp);
-        viewer.sendMessage(ChatColor.WHITE + "Подолано відстані: " + distanceKm + " км (" + distanceBlocks + " блоків)");
+        lines.add(ChatColor.WHITE + "Зламано блоків: " + blocksBroken);
+        lines.add(ChatColor.WHITE + "Поставлено блоків: " + blocksPlaced);
+        lines.add(ChatColor.WHITE + "Підібрано предметів: " + itemsPickedUp);
+        lines.add(ChatColor.WHITE + "Подолано відстані: " + distanceKm + " км (" + distanceBlocks + " блоків)");
+
+        if (plugin.isEnabled()) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (String line : lines) {
+                    viewer.sendMessage(line);
+                }
+            });
+        }
     }
 }

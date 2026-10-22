@@ -43,6 +43,7 @@ public class FunManager {
         loadConfig();
         for (FunMode mode : registeredModes.values()) {
             try {
+                mode.onReload();
                 if (funEnabled && mode.isEnabled()) {
                     mode.onEnable();
                     plugin.getLogger().info("[FunManager] Режим '" + mode.getName() + "' активовано.");

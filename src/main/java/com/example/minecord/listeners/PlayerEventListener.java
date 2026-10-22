@@ -1,6 +1,8 @@
 package com.example.minecord.listeners;
 
 import com.example.minecord.MineCord;
+import com.example.minecord.utils.SkinHelper;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -18,7 +20,6 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
-import java.util.List;
 import java.util.UUID;
 
 public class PlayerEventListener implements Listener {
@@ -45,48 +46,61 @@ public class PlayerEventListener implements Listener {
             return;
         }
 
-        // 2. If a required Discord role is configured, verify it
+        // 2. If a required Discord role is configured, verify it (Fail-Closed for security)
         String requiredRoleId = plugin.getConfig().getString("whitelist.require-discord-role", "");
-        if (requiredRoleId != null && !requiredRoleId.isEmpty()) {
+        if (requiredRoleId != null && !requiredRoleId.trim().isEmpty() && !requiredRoleId.equals("000000000000000000")) {
+            requiredRoleId = requiredRoleId.trim();
             String discordId = plugin.getLinkManager().getDiscordId(uuid);
             String guildId = plugin.getConfig().getString("discord.guild-id", "");
-            
-            if (guildId.isEmpty() || guildId.equals("000000000000000000")) {
-                plugin.getLogger().warning("Увімкнено перевірку ролей (require-discord-role), але не вказано guild-id у config.yml!");
+
+            if (plugin.getBotManager() == null || plugin.getBotManager().getJda() == null) {
+                plugin.getLogger().warning("Гравець " + event.getName() + " намагався зайти, але Discord-бот ще не підключений для перевірки ролі вайтліста.");
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST,
+                        "§cDiscord-бот тимчасово недоступний для перевірки вайтліста.\n§7Спробуйте зайти через декілька секунд!");
                 return;
             }
 
-            if (plugin.getBotManager() != null && plugin.getBotManager().getJda() != null) {
-                Guild guild = plugin.getBotManager().getJda().getGuildById(guildId);
-                if (guild != null) {
-                    try {
-                        // Retrieve member (blocking call, but safe inside an async event)
-                        Member member = guild.retrieveMemberById(discordId).complete();
-                        
-                        if (member == null) {
-                            String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
-                            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
-                            return;
-                        }
+            JDA jda = plugin.getBotManager().getJda();
+            Guild guild = null;
+            if (guildId != null && !guildId.trim().isEmpty() && !guildId.trim().equals("000000000000000000")) {
+                guild = jda.getGuildById(guildId.trim());
+            } else if (!jda.getGuilds().isEmpty()) {
+                guild = jda.getGuilds().get(0);
+            }
 
-                        boolean hasRole = false;
-                        for (Role role : member.getRoles()) {
-                            if (role.getId().equals(requiredRoleId)) {
-                                hasRole = true;
-                                break;
-                            }
-                        }
+            if (guild == null) {
+                plugin.getLogger().warning("Увімкнено перевірку ролей (require-discord-role), але не вдалося знайти Discord-сервер (перевірте guild-id у config.yml)!");
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST,
+                        "§cПомилка конфігурації Discord-вайтліста (сервер не знайдено).\n§7Зверніться до адміністратора.");
+                return;
+            }
 
-                        if (!hasRole) {
-                            String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.no-role", "§cУ вас немає ролі!");
-                            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
-                        }
-                    } catch (Throwable e) {
-                        // If user left the guild, JDA throws ErrorResponseException (Unknown Member)
-                        String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
-                        event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
+            try {
+                // Retrieve member (blocking call, safe inside AsyncPlayerPreLoginEvent)
+                Member member = guild.retrieveMemberById(discordId).complete();
+                
+                if (member == null) {
+                    String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
+                    return;
+                }
+
+                boolean hasRole = false;
+                for (Role role : member.getRoles()) {
+                    if (role.getId().equals(requiredRoleId)) {
+                        hasRole = true;
+                        break;
                     }
                 }
+
+                if (!hasRole) {
+                    String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.no-role", "§cУ вас немає ролі!");
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
+                }
+            } catch (Throwable e) {
+                // If user left the guild, JDA throws ErrorResponseException (Unknown Member)
+                String kickMsg = plugin.getConfig().getString("whitelist.kick-messages.not-in-guild", "§cВи не на нашому Discord-сервері!");
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMsg);
             }
         }
     }
@@ -110,6 +124,9 @@ public class PlayerEventListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         try {
             Player player = event.getPlayer();
+
+            // Warm up skin avatar cache on the main thread
+            SkinHelper.getAvatarUrl(player);
 
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().addPlayer(player.getName(), player.getUniqueId());
@@ -157,6 +174,10 @@ public class PlayerEventListener implements Listener {
                 plugin.getRoleSyncManager().clearPlayer(event.getPlayer());
             }
 
+            if (plugin.getOpenAIModerator() != null) {
+                plugin.getOpenAIModerator().clearPlayer(event.getPlayer().getUniqueId());
+            }
+
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().updatePlayerXp(event.getPlayer().getUniqueId(), event.getPlayer().getLevel(), event.getPlayer().getTotalExperience());
                 plugin.getPlayerCacheManager().updatePlayerAdvancements(event.getPlayer());
@@ -191,7 +212,7 @@ public class PlayerEventListener implements Listener {
         try {
             org.bukkit.entity.Player player = event.getEntity();
             org.bukkit.Location loc = player.getLocation();
-            String worldName = loc.getWorld().getName();
+            String worldName = loc.getWorld() != null ? loc.getWorld().getName() : "world";
             
             String dimensionKey = "events.dimensions.overworld";
             if (worldName.endsWith("_nether")) dimensionKey = "events.dimensions.nether";
@@ -276,22 +297,23 @@ public class PlayerEventListener implements Listener {
             // because they are not real player achievements
             if (advKey.endsWith("/root")) return;
 
+            // Safely attempt to get advancement display; ignore hidden technical/datapack advancements
+            String fallbackTitle = advKey;
+            try {
+                org.bukkit.advancement.AdvancementDisplay display = event.getAdvancement().getDisplay();
+                if (display == null) {
+                    return;
+                }
+                fallbackTitle = display.getTitle();
+            } catch (Throwable ignored) {
+                // Fallback if getDisplay() is unsupported on a specific server build
+            }
+
             if (plugin.getPlayerCacheManager() != null) {
                 plugin.getPlayerCacheManager().incrementAdvancements(event.getPlayer().getUniqueId());
             }
 
             if (!plugin.getConfig().getBoolean("events.advancement", true)) return;
-
-            // Safely attempt to get advancement title
-            String fallbackTitle = advKey;
-            try {
-                Object display = event.getAdvancement().getDisplay();
-                if (display != null) {
-                    fallbackTitle = ((org.bukkit.advancement.AdvancementDisplay) display).getTitle();
-                }
-            } catch (Throwable ignored) {
-                // Paper API getDisplay() can throw UnsupportedOperationException
-            }
 
             String lang = plugin.getLanguageManager() != null ? plugin.getLanguageManager().getLanguage() : "en";
             String translatedTitle = fallbackTitle;
@@ -301,8 +323,7 @@ public class PlayerEventListener implements Listener {
                 plugin.getLogger().warning("Could not translate advancement: " + t.getMessage());
             }
             
-            // If this is an unknown technical advancement, it stays as key (e.g. story/deflect_arrow).
-            // But we have translations for all standard ones.
+            // Broadcast achievement to Discord
             if (plugin.getBotManager() != null) {
                 String embedMsg = plugin.getLanguageManager().getRaw("advancement.embed", event.getPlayer().getName(), translatedTitle);
                 plugin.getBotManager().sendSystemEmbed(embedMsg, 0xFFD700, event.getPlayer().getName());
@@ -353,4 +374,4 @@ public class PlayerEventListener implements Listener {
                 || cmd.equals("spigot:stop") || cmd.startsWith("spigot:stop ")
                 || cmd.equals("end") || cmd.startsWith("end ");
     }
-}
+}

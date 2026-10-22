@@ -124,6 +124,12 @@ public class RiptideMode implements FunMode, Listener {
 
         Player player = event.getPlayer();
 
+        // Дозволяємо відкривати скрині, двері, кнопки тощо з тризубцем у руці (якщо гравець не на Shift)
+        if (action == Action.RIGHT_CLICK_BLOCK && !player.isSneaking()
+                && event.getClickedBlock() != null && event.getClickedBlock().getType().isInteractable()) {
+            return;
+        }
+
         // Якщо гравець вже у воді або під дощем — ванільний клієнт та сервер самі виконують механіку
         boolean inWater = player.isInWater();
         boolean inRain = player.getWorld().hasStorm() && player.getLocation().getBlock().getLightFromSky() >= 15;
@@ -219,6 +225,13 @@ public class RiptideMode implements FunMode, Listener {
             public void run() {
                 ticks++;
                 if (!player.isOnline() || ticks > 16 || (ticks > 3 && player.isOnGround())) {
+                    if (player.isOnline() && (player.isOnGround() || player.isInWater())) {
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            if (player.isOnGround() || player.isInWater()) {
+                                fallImmunePlayers.remove(player.getUniqueId());
+                            }
+                        }, 10L);
+                    }
                     cancel();
                     return;
                 }
@@ -232,6 +245,10 @@ public class RiptideMode implements FunMode, Listener {
                 for (Entity entity : player.getNearbyEntities(1.5, 1.5, 1.5)) {
                     if (entity instanceof LivingEntity target && !(entity instanceof ArmorStand)) {
                         if (target.getUniqueId().equals(player.getUniqueId())) continue;
+                        if (target instanceof Player targetPlayer) {
+                            if (!player.getWorld().getPVP()) continue;
+                            if (plugin.getAfkManager() != null && plugin.getAfkManager().isAfk(targetPlayer)) continue;
+                        }
                         // Не завдавати шкоди пасажирам (гравцям на плечах / GSit) або їздовим тваринам
                         if (isMountOrPassenger(player, target)) continue;
                         // Не шкодити прирученим улюбленцям гравця

@@ -1,6 +1,7 @@
 package com.example.minecord.utils;
 
 import com.example.minecord.MineCord;
+import com.example.minecord.bot.DiscordCommandListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -38,6 +39,11 @@ public class LeaderboardManager {
         } catch (Throwable ignored) {}
     }
 
+    public void clearCache() {
+        cachedTops.clear();
+        lastCacheTime.clear();
+    }
+
     public void getTopAsync(String category, int limit, Consumer<List<TopEntry>> callback) {
         String cat = normalizeCategory(category);
         long now = System.currentTimeMillis();
@@ -57,7 +63,9 @@ public class LeaderboardManager {
 
             int subLimit = Math.min(limit, fresh.size());
             List<TopEntry> result = new ArrayList<>(fresh.subList(0, subLimit));
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(result));
+            if (plugin.isEnabled()) {
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(result));
+            }
         });
     }
 
@@ -89,6 +97,19 @@ public class LeaderboardManager {
         };
     }
 
+    private List<TopEntry> getOrComputeCategory(String category) {
+        long now = System.currentTimeMillis();
+        Long cachedTime = lastCacheTime.get(category);
+        List<TopEntry> cached = cachedTops.get(category);
+        if (cached != null && cachedTime != null && (now - cachedTime < CACHE_DURATION_MS)) {
+            return cached;
+        }
+        List<TopEntry> fresh = computeTop(category);
+        cachedTops.put(category, fresh);
+        lastCacheTime.put(category, System.currentTimeMillis());
+        return fresh;
+    }
+
     private List<TopEntry> computeTop(String category) {
         if ("overall".equals(category)) {
             return computeOverallTop();
@@ -117,22 +138,7 @@ public class LeaderboardManager {
                 switch (category) {
                     case "distance" -> {
                         long cm = 0;
-                        Statistic[] distStats = {
-                            Statistic.WALK_ONE_CM,
-                            Statistic.SPRINT_ONE_CM,
-                            Statistic.SWIM_ONE_CM,
-                            Statistic.FALL_ONE_CM,
-                            Statistic.FLY_ONE_CM,
-                            Statistic.AVIATE_ONE_CM,
-                            Statistic.BOAT_ONE_CM,
-                            Statistic.HORSE_ONE_CM,
-                            Statistic.MINECART_ONE_CM,
-                            Statistic.PIG_ONE_CM,
-                            Statistic.STRIDER_ONE_CM,
-                            Statistic.CROUCH_ONE_CM,
-                            Statistic.CLIMB_ONE_CM
-                        };
-                        for (Statistic s : distStats) {
+                        for (Statistic s : DiscordCommandListener.DIST_STATS) {
                             try {
                                 cm += p.getStatistic(s);
                             } catch (Throwable ignored) {}
@@ -180,10 +186,8 @@ public class LeaderboardManager {
                     }
                     case "blocks" -> {
                         int broken = 0;
-                        for (Material mat : Material.values()) {
-                            if (mat.isBlock()) {
-                                try { broken += p.getStatistic(Statistic.MINE_BLOCK, mat); } catch (Throwable ignored) {}
-                            }
+                        for (Material mat : DiscordCommandListener.BLOCK_MATERIALS) {
+                            try { broken += p.getStatistic(Statistic.MINE_BLOCK, mat); } catch (Throwable ignored) {}
                         }
                         val = broken;
                         formatted = String.format("%,d блоків", val);
@@ -207,7 +211,7 @@ public class LeaderboardManager {
         Map<UUID, int[]> podiumCounts = new HashMap<>();
 
         for (String cat : categories) {
-            List<TopEntry> catTop = computeTop(cat);
+            List<TopEntry> catTop = getOrComputeCategory(cat);
             int topCount = Math.min(10, catTop.size());
             for (int i = 0; i < topCount; i++) {
                 TopEntry entry = catTop.get(i);

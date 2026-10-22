@@ -3,7 +3,6 @@ package com.example.minecord.utils;
 import com.example.minecord.MineCord;
 import com.example.minecord.fun.BloodmoonMode;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,8 +31,8 @@ public class SleepManager implements Listener {
     }
     
     public void start() {
+        stop();
         if (!isEnabled()) {
-            restoreVanillaGamerule();
             return;
         }
 
@@ -71,7 +70,10 @@ public class SleepManager implements Listener {
     private void restoreVanillaGamerule() {
         for (World world : Bukkit.getWorlds()) {
             if (world.getEnvironment() == World.Environment.NORMAL) {
-                world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 100);
+                Integer current = world.getGameRuleValue(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE);
+                if (current != null && current > 100) {
+                    world.setGameRule(org.bukkit.GameRule.PLAYERS_SLEEPING_PERCENTAGE, 100);
+                }
             }
         }
     }
@@ -174,7 +176,7 @@ public class SleepManager implements Listener {
 
         long time = world.getTime();
         boolean isNight = time >= 12541 && time <= 23458;
-        if (!isNight && !world.hasStorm()) return;
+        if (!isNight && !world.isThundering()) return;
 
         List<Player> sleepingPlayers = world.getPlayers().stream()
             .filter(p -> p.getGameMode() != org.bukkit.GameMode.SPECTATOR)

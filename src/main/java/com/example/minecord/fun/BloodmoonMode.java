@@ -25,6 +25,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EntityEquipment;
@@ -173,13 +174,15 @@ public class BloodmoonMode implements FunMode, Listener {
         }
 
         startMainCycle();
-        checkAndResumeState();
+        if (!active) {
+            checkAndResumeState();
+        }
     }
 
     @Override
     public void onDisable() {
         if (active) {
-            saveState();
+            saveState(false);
             cleanUpVisuals();
         }
         stopMainCycle();
@@ -360,14 +363,16 @@ public class BloodmoonMode implements FunMode, Listener {
     private BloodmoonTier rollTier() {
         int totalWeight = 0;
         for (BloodmoonTier t : tiers.values()) {
-            totalWeight += Math.max(1, t.getWeight());
+            totalWeight += Math.max(0, t.getWeight());
         }
         if (totalWeight <= 0) return tiers.getOrDefault(2, tiers.get(1));
 
         int rand = ThreadLocalRandom.current().nextInt(totalWeight);
         int current = 0;
         for (BloodmoonTier t : tiers.values()) {
-            current += Math.max(1, t.getWeight());
+            int w = Math.max(0, t.getWeight());
+            if (w <= 0) continue;
+            current += w;
             if (rand < current) {
                 return t;
             }
@@ -601,9 +606,7 @@ public class BloodmoonMode implements FunMode, Listener {
 
     /**
      * Ослаблює залишки монстрів після завершення Кривавого Місяця:
-     * знімає позитивні бафи, накладає Слабкість III та Сповільнення II,
-     * знижує HP (до 1-2 ударів для звичайних мобів та до 30-40 HP для босів),
-     * підсвічує їх контурами та підпалює нежить на сонці, щоб гравцям було легко їх добити.
+     * знімає позитивні бафи, повертає стандартні HP, знімає броню та зброю івенту.
      */
     public int weakenRemainingMobs() {
         int count = 0;
@@ -654,13 +657,11 @@ public class BloodmoonMode implements FunMode, Listener {
                     continue;
                 }
 
-                // 2. Знешкодження фантомів-бомбардувальників
+                // 2. Знешкодження фантомів-бомбардувальників та кріперів-авіабомб
                 if (isBomber || entity instanceof Phantom) {
                     entity.eject();
-                    if (entity instanceof Phantom) {
-                        entity.remove();
-                        continue;
-                    }
+                    entity.remove();
+                    continue;
                 }
 
                 // 3. Зняти мітку кривавого моба (стає звичайним ванільним мобом, без кастомного дропу)
@@ -689,11 +690,17 @@ public class BloodmoonMode implements FunMode, Listener {
                     entity.setHealth(20.0);
                 }
 
-                // 6. Зняти шоломи з нежиті, щоб ранкове сонце спалювало їх на поверхні
-                if (entity instanceof Zombie || entity instanceof Skeleton || entity instanceof AbstractSkeleton) {
-                    EntityEquipment eq = entity.getEquipment();
-                    if (eq != null && eq.getHelmet() != null) {
-                        eq.setHelmet(null);
+                // 6. Зняти івентову броню та зброю з мобів, щоб нежить згорала на сонці і не мала діамантового/незеритового спорядження
+                EntityEquipment eq = entity.getEquipment();
+                if (eq != null) {
+                    eq.setHelmet(null);
+                    eq.setChestplate(null);
+                    eq.setLeggings(null);
+                    eq.setBoots(null);
+                    if (entity instanceof Skeleton) {
+                        eq.setItemInMainHand(new ItemStack(Material.BOW));
+                    } else {
+                        eq.setItemInMainHand(null);
                     }
                 }
 
@@ -722,8 +729,13 @@ public class BloodmoonMode implements FunMode, Listener {
         for (World world : Bukkit.getWorlds()) {
             for (LivingEntity entity : world.getLivingEntities()) {
                 if (!(entity instanceof Player) && entity.isGlowing()) {
-                    entity.setGlowing(false);
-                    count++;
+                    PersistentDataContainer pdc = entity.getPersistentDataContainer();
+                    if (pdc.has(mobKey, PersistentDataType.BYTE)
+                            || pdc.has(bossKey, PersistentDataType.BYTE)
+                            || pdc.has(bomberKey, PersistentDataType.BYTE)) {
+                        entity.setGlowing(false);
+                        count++;
+                    }
                 }
             }
         }
@@ -744,12 +756,12 @@ public class BloodmoonMode implements FunMode, Listener {
     private void applyVisualsToPlayer(Player player) {
         if (!redSkyEffects) return;
 
-        // 1. Червона імла/віньєтка через персональний WorldBorder
+        // 1. Червона імла/віньєтка через персональний WorldBorder (максимальний розмір, щоб гравець не впирався у стіну)
         try {
             WorldBorder border = Bukkit.createWorldBorder();
-            border.setCenter(player.getLocation());
-            border.setSize(1000.0);
-            border.setWarningDistance(1000);
+            border.setCenter(0.0, 0.0);
+            border.setSize(29999984.0);
+            border.setWarningDistance(30000000);
             player.setWorldBorder(border);
             activeBorderPlayers.add(player.getUniqueId());
         } catch (Throwable ignored) {}
@@ -1730,20 +1742,39 @@ public class BloodmoonMode implements FunMode, Listener {
     }
 
     private void saveState() {
-        File file = getStateFile();
-        YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set("active", active);
-        if (active && activeWorld != null && currentTier != null) {
-            yaml.set("world", activeWorld.getName());
-            yaml.set("tier_level", currentTier.getLevel());
-            yaml.set("hordes_spawned", hordesSpawned);
-            yaml.set("mobs_killed", mobsKilled);
-            yaml.set("elapsed_seconds", elapsedSeconds);
-        }
-        try {
-            yaml.save(file);
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Не вдалося зберегти bloodmoon_state.yml", e);
+        saveState(true);
+    }
+
+    private void saveState(boolean async) {
+        final File file = getStateFile();
+        final boolean isActive = active;
+        final String worldName = (active && activeWorld != null) ? activeWorld.getName() : null;
+        final int tierLevel = (active && currentTier != null) ? currentTier.getLevel() : 0;
+        final int hordes = hordesSpawned;
+        final int killed = mobsKilled;
+        final int elapsed = elapsedSeconds;
+
+        Runnable writeTask = () -> {
+            YamlConfiguration yaml = new YamlConfiguration();
+            yaml.set("active", isActive);
+            if (isActive && worldName != null && tierLevel > 0) {
+                yaml.set("world", worldName);
+                yaml.set("tier_level", tierLevel);
+                yaml.set("hordes_spawned", hordes);
+                yaml.set("mobs_killed", killed);
+                yaml.set("elapsed_seconds", elapsed);
+            }
+            try {
+                yaml.save(file);
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.WARNING, "[BloodmoonMode] Не вдалося зберегти bloodmoon_state.yml", e);
+            }
+        };
+
+        if (async && plugin.isEnabled()) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, writeTask);
+        } else {
+            writeTask.run();
         }
     }
 
@@ -2309,6 +2340,23 @@ public class BloodmoonMode implements FunMode, Listener {
                 bossBar.addPlayer(p);
             }
             applyVisualsToPlayer(p);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        if (!active || activeWorld == null) return;
+        Player p = event.getPlayer();
+        if (p.getWorld().equals(activeWorld)) {
+            if (bossBar != null) {
+                bossBar.addPlayer(p);
+            }
+            applyVisualsToPlayer(p);
+        } else {
+            if (bossBar != null) {
+                bossBar.removePlayer(p);
+            }
+            removeVisualsFromPlayer(p);
         }
     }
 

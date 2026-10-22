@@ -1,7 +1,7 @@
 name: MineCord
-version: '1.0'
+version: '${version}'
 main: com.example.minecord.MineCord
-api-version: '1.13'
+api-version: '1.20'
 prefix: MineCord
 authors: [ You ]
 softdepend: [SkinsRestorer, BlueMap, dynmap, squaremap, Pl3xMap]

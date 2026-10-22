@@ -5,6 +5,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -17,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 public class DiscordChatListener extends ListenerAdapter {
 
     private final MineCord plugin;
+    private static final Pattern CYRILLIC_CMD_PATTERN = Pattern.compile("^[а-яА-ЯіІїЇєЄґҐ].*");
+    private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-zA-Z0-9_]{3,16})");
 
     public DiscordChatListener(MineCord plugin) {
         this.plugin = plugin;
@@ -24,6 +28,8 @@ public class DiscordChatListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+        if (!plugin.isEnabled()) return;
+
         // Ignore bot and webhook messages to prevent an infinite echo loop
         if (event.getAuthor().isBot() || event.isWebhookMessage()) {
             return;
@@ -45,30 +51,30 @@ public class DiscordChatListener extends ListenerAdapter {
             }
             
             // If message starts with Cyrillic characters, treat as chat and ignore
-            if (command.matches("^[а-яА-ЯіІїЇєЄґҐ].*")) {
+            if (CYRILLIC_CMD_PATTERN.matcher(command).matches()) {
                 return;
             }
 
             plugin.getLogger().info("[Discord] Користувач " + event.getAuthor().getName() + " виконав команду в консолі: " + command);
-            
-            String cleanCmd = command.toLowerCase().trim();
-            if (cleanCmd.startsWith("/")) cleanCmd = cleanCmd.substring(1).trim();
-            if (cleanCmd.equals("restart") || cleanCmd.startsWith("restart ")
-                    || cleanCmd.equals("spigot:restart") || cleanCmd.startsWith("spigot:restart ")
-                    || cleanCmd.equals("minecraft:restart") || cleanCmd.startsWith("minecraft:restart ")
-                    || cleanCmd.equals("queuerestart") || cleanCmd.startsWith("queuerestart ")) {
-                plugin.setRestarting(true);
-                plugin.recordPlayerPresenceBeforeShutdown();
-            } else if (cleanCmd.equals("stop") || cleanCmd.startsWith("stop ")
-                    || cleanCmd.equals("minecraft:stop") || cleanCmd.startsWith("minecraft:stop ")
-                    || cleanCmd.equals("spigot:stop") || cleanCmd.startsWith("spigot:stop ")
-                    || cleanCmd.equals("end") || cleanCmd.startsWith("end ")) {
-                plugin.recordPlayerPresenceBeforeShutdown();
-            }
 
-            // Execute on the main server thread
+            // Execute on the main server thread (including Bukkit player presence checks)
             final String finalCommand = command;
             plugin.getServer().getScheduler().runTask(plugin, () -> {
+                String cleanCmd = finalCommand.toLowerCase().trim();
+                if (cleanCmd.startsWith("/")) cleanCmd = cleanCmd.substring(1).trim();
+                if (cleanCmd.equals("restart") || cleanCmd.startsWith("restart ")
+                        || cleanCmd.equals("spigot:restart") || cleanCmd.startsWith("spigot:restart ")
+                        || cleanCmd.equals("minecraft:restart") || cleanCmd.startsWith("minecraft:restart ")
+                        || cleanCmd.equals("queuerestart") || cleanCmd.startsWith("queuerestart ")) {
+                    plugin.setRestarting(true);
+                    plugin.recordPlayerPresenceBeforeShutdown();
+                } else if (cleanCmd.equals("stop") || cleanCmd.startsWith("stop ")
+                        || cleanCmd.equals("minecraft:stop") || cleanCmd.startsWith("minecraft:stop ")
+                        || cleanCmd.equals("spigot:stop") || cleanCmd.startsWith("spigot:stop ")
+                        || cleanCmd.equals("end") || cleanCmd.startsWith("end ")) {
+                    plugin.recordPlayerPresenceBeforeShutdown();
+                }
+
                 List<String> outputLines = new ArrayList<>();
                 ConsoleCommandSender wrappedSender = createWrappedConsoleSender(
                         plugin.getServer().getConsoleSender(),
@@ -93,10 +99,11 @@ public class DiscordChatListener extends ListenerAdapter {
                     StringBuilder sb = new StringBuilder("```\n");
                     int messagesSent = 0;
                     for (String line : outputLines) {
+                        String safeLine = line.replace("```", "'''");
                         int i = 0;
-                        while (i < line.length()) {
-                            int end = Math.min(i + 1900, line.length());
-                            String part = line.substring(i, end);
+                        while (i < safeLine.length()) {
+                            int end = Math.min(i + 1900, safeLine.length());
+                            String part = safeLine.substring(i, end);
                             if (sb.length() + part.length() + 5 > 1950) {
                                 sb.append("```");
                                 if (messagesSent < 5) {
@@ -133,23 +140,26 @@ public class DiscordChatListener extends ListenerAdapter {
                             String uuidStr = embed.getFooter().getText().substring(6);
                             try {
                                 java.util.UUID playerUuid = java.util.UUID.fromString(uuidStr);
-                                String authorName = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
-                                String text = event.getMessage().getContentDisplay();
+                                String rawAuthor = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
+                                String authorName = rawAuthor.replace("§", "");
+                                String text = event.getMessage().getContentDisplay().replace("§", "");
                                 
-                                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                                    org.bukkit.entity.Player p = plugin.getServer().getPlayer(playerUuid);
-                                    if (p != null && p.isOnline()) {
-                                        p.sendMessage(ChatColor.RED + "🎫 [Підтримка] " + ChatColor.YELLOW + authorName + ": " + ChatColor.WHITE + text);
-                                        p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
-                                    } else {
-                                        String discordId = plugin.getLinkManager().getDiscordId(playerUuid);
-                                        if (discordId != null) {
-                                            event.getJDA().openPrivateChannelById(discordId).queue(dm -> {
-                                                dm.sendMessage("🎫 **Відповідь на ваш тікет від " + authorName + ":**\n" + text).queue();
-                                            });
+                                if (plugin.isEnabled()) {
+                                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                        org.bukkit.entity.Player p = plugin.getServer().getPlayer(playerUuid);
+                                        if (p != null && p.isOnline()) {
+                                            p.sendMessage(ChatColor.RED + "🎫 [Підтримка] " + ChatColor.YELLOW + authorName + ": " + ChatColor.WHITE + text);
+                                            p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
+                                        } else {
+                                            String discordId = plugin.getLinkManager().getDiscordId(playerUuid);
+                                            if (discordId != null) {
+                                                event.getJDA().openPrivateChannelById(discordId).queue(dm -> {
+                                                    dm.sendMessage("🎫 **Відповідь на ваш тікет від " + authorName + ":**\n" + text).queue();
+                                                });
+                                            }
                                         }
-                                    }
-                                });
+                                    });
+                                }
                             } catch (Exception ignored) {}
                         }
                     }
@@ -183,10 +193,11 @@ public class DiscordChatListener extends ListenerAdapter {
 
     private void processBridgeMessage(@NotNull MessageReceivedEvent event, net.dv8tion.jda.api.entities.Message refMsg) {
         try {
-            // Use effective guild nickname if available, else global username
-            String author = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
-            // Use display text (replaces <@id> mentions with names)
-            String message = event.getMessage().getContentDisplay();
+            // Use effective guild nickname if available, else global username (strip § to prevent formatting exploits)
+            String rawAuthor = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
+            String author = rawAuthor.replace("§", "");
+            // Use display text (replaces <@id> mentions with names) and strip §
+            String message = event.getMessage().getContentDisplay().replace("§", "");
 
             List<String> pingedNames = new ArrayList<>();
             List<String> mentionedDiscordUserIds = new ArrayList<>();
@@ -194,21 +205,30 @@ public class DiscordChatListener extends ListenerAdapter {
             // 1. Process genuine Discord mentions
             for (net.dv8tion.jda.api.entities.Member mentionedMember : event.getMessage().getMentions().getMembers()) {
                 mentionedDiscordUserIds.add(mentionedMember.getId());
-                String effectiveName = mentionedMember.getEffectiveName();
+                String effectiveName = mentionedMember.getEffectiveName().replace("§", "");
                 java.util.UUID uuid = plugin.getLinkManager().getUUIDFromDiscordId(mentionedMember.getId());
                 String mcName = (uuid != null && plugin.getPlayerCacheManager() != null) ? plugin.getPlayerCacheManager().resolvePlayerName(uuid) : null;
                 String replaceWith = (mcName != null) ? mcName : effectiveName;
-                message = message.replace("@" + effectiveName, org.bukkit.ChatColor.YELLOW + "@" + replaceWith + org.bukkit.ChatColor.GRAY);
+                message = message.replace("@" + effectiveName, ChatColor.YELLOW + "@" + replaceWith + ChatColor.GRAY);
             }
 
-            // 2. Process text-based mentions (@PlayerName)
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("@([a-zA-Z0-9_]{3,16})");
-            java.util.regex.Matcher matcher = pattern.matcher(message);
+            // 2. Process text-based mentions (@PlayerName) without double-highlighting already colored mentions
+            Matcher matcher = MENTION_PATTERN.matcher(message);
+            StringBuilder sb = new StringBuilder();
             while (matcher.find()) {
                 String targetName = matcher.group(1);
                 pingedNames.add(targetName);
-                message = message.replace("@" + targetName, org.bukkit.ChatColor.YELLOW + "@" + targetName + org.bukkit.ChatColor.GRAY);
+                int start = matcher.start();
+                boolean alreadyHighlighted = start >= 2 && message.charAt(start - 2) == ChatColor.COLOR_CHAR && message.charAt(start - 1) == 'e';
+                if (alreadyHighlighted) {
+                    matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
+                } else {
+                    String replacement = ChatColor.YELLOW + "@" + targetName + ChatColor.GRAY;
+                    matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+                }
             }
+            matcher.appendTail(sb);
+            message = sb.toString();
 
             // 3. Check if message is a reply to another message
             TextComponent replyComponent = null;
@@ -216,13 +236,13 @@ public class DiscordChatListener extends ListenerAdapter {
             if (refMsg != null) {
                 String refAuthor;
                 if (refMsg.isWebhookMessage()) {
-                    refAuthor = refMsg.getAuthor().getName();
+                    refAuthor = refMsg.getAuthor().getName().replace("§", "");
                     pingedNames.add(refAuthor);
                 } else if (refMsg.getMember() != null) {
-                    refAuthor = refMsg.getMember().getEffectiveName();
+                    refAuthor = refMsg.getMember().getEffectiveName().replace("§", "");
                     mentionedDiscordUserIds.add(refMsg.getAuthor().getId());
                 } else if (refMsg.getAuthor() != null) {
-                    refAuthor = refMsg.getAuthor().getName();
+                    refAuthor = refMsg.getAuthor().getName().replace("§", "");
                     mentionedDiscordUserIds.add(refMsg.getAuthor().getId());
                 } else {
                     refAuthor = "Хтось";
@@ -237,6 +257,8 @@ public class DiscordChatListener extends ListenerAdapter {
                     } else {
                         refContent = "...";
                     }
+                } else {
+                    refContent = refContent.replace("§", "");
                 }
                 if (refContent.length() > 150) {
                     refContent = refContent.substring(0, 147) + "...";
@@ -299,6 +321,7 @@ public class DiscordChatListener extends ListenerAdapter {
             final List<String> finalPingNames = pingedNames;
             final List<String> finalDiscordIds = mentionedDiscordUserIds;
 
+            if (!plugin.isEnabled()) return;
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 try {
                     // Play notification sound for mentioned / replied players

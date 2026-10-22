@@ -20,10 +20,12 @@ public class AutoRestartManager implements CommandExecutor {
     private final MineCord plugin;
     private final List<String> restartTimes = new ArrayList<>();
     private int taskId = -1;
+    private int smartRestartTaskId = -1;
     private int lastAnnouncedSecond = -1;
     private boolean isPaused = false; // Flag to pause auto-restarts
     private final Set<UUID> ignoredPlayers = new HashSet<>(); // Players who opted out of notifications
     private boolean smartRestartPending = false;
+
     public AutoRestartManager(MineCord plugin) {
         this.plugin = plugin;
         loadTimes();
@@ -34,6 +36,7 @@ public class AutoRestartManager implements CommandExecutor {
     }
 
     private void loadTimes() {
+        restartTimes.clear();
         if (plugin.getConfig().contains("autorestart.times")) {
             restartTimes.addAll(plugin.getConfig().getStringList("autorestart.times"));
         }
@@ -45,6 +48,9 @@ public class AutoRestartManager implements CommandExecutor {
     }
 
     public void start() {
+        stop();
+        loadTimes();
+
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (smartRestartPending && plugin.getServer().getOnlinePlayers().isEmpty()) {
                 smartRestartPending = false;
@@ -56,14 +62,15 @@ public class AutoRestartManager implements CommandExecutor {
                     plugin.getAutoUpdateManager().prepareBeforeRestartAsync();
                 }
                 plugin.setHadPlayersBeforeShutdown(false);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                smartRestartTaskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    smartRestartTaskId = -1;
                     plugin.setRestarting(true);
                     List<String> commands = plugin.getConfig().getStringList("autorestart.commands");
                     if (commands.isEmpty()) commands.add("restart");
                     for (String cmd : commands) {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }
-                }, 100L);
+                }, 100L).getTaskId();
                 return;
             }
 
@@ -151,10 +158,15 @@ public class AutoRestartManager implements CommandExecutor {
     }
     
     public void stop() {
-        if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
-        // FIX: reset state so a reload doesn't skip restart second
+        if (taskId != -1) {
+            Bukkit.getScheduler().cancelTask(taskId);
+            taskId = -1;
+        }
+        if (smartRestartTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(smartRestartTaskId);
+            smartRestartTaskId = -1;
+        }
         lastAnnouncedSecond = -1;
-        taskId = -1;
     }
 
     private void broadcast(String message, long secondsLeft) {

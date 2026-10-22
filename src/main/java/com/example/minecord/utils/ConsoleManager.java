@@ -4,18 +4,13 @@ import com.example.minecord.MineCord;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.bukkit.Bukkit;
 
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +18,7 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
 
 public class ConsoleManager {
+    private static final Pattern ANSI_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
     private final MineCord plugin;
     private final List<String> logBuffer = new ArrayList<>();
     private int taskId = -1;
@@ -52,7 +48,9 @@ public class ConsoleManager {
             setupJulHandler();
         }
 
-        taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this::flushLogsAsync, 20L, 20L);
+        if (plugin.isEnabled()) {
+            taskId = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, this::flushLogsAsync, 20L, 20L).getTaskId();
+        }
     }
 
     private void handleLog4jEvent(LogEvent event) {
@@ -109,25 +107,36 @@ public class ConsoleManager {
             }
         }
 
-        if (thrown != null && plugin.getConfig().getBoolean("technical.error-catcher.enabled", true)) {
+        if (thrown != null && plugin.isEnabled() && plugin.getConfig().getBoolean("technical.error-catcher.enabled", true)) {
             StringWriter sw = new StringWriter();
             thrown.printStackTrace(new PrintWriter(sw));
             String stackTrace = sw.toString();
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                String title = level + ": " + (msg != null ? msg : thrown.getMessage());
-                if (title.length() > 200) title = title.substring(0, 197) + "...";
-                sendErrorEmbed(title, stackTrace);
+            try {
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    String title = level + ": " + (msg != null ? msg : thrown.getMessage());
+                    if (title.length() > 200) title = title.substring(0, 197) + "...";
+                    sendErrorEmbed(title, stackTrace);
 
-                if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
-                    try {
-                        io.sentry.Sentry.captureException(thrown);
-                    } catch (Throwable ignored) {
-                        // Sentry library not available or ClassLoader conflict — ignore
+                    if (plugin.getConfig().getBoolean("sentry.enabled", false)) {
+                        try {
+                            io.sentry.Sentry.captureException(thrown);
+                        } catch (Throwable ignored) {
+                            // Sentry library not available or ClassLoader conflict — ignore
+                        }
                     }
-                }
-            });
+                });
+            } catch (Throwable ignored) {}
         }
+    }
+
+    private String sanitizeConsoleLine(String line) {
+        String clean = org.bukkit.ChatColor.stripColor(line);
+        if (clean == null) return " ";
+        clean = ANSI_PATTERN.matcher(clean).replaceAll("");
+        // Prevent code-block breakout and ping injection in Discord console channel
+        clean = clean.replace("```", "'''");
+        return clean.isEmpty() ? " " : clean;
     }
 
     private void flushLogsAsync() {
@@ -147,16 +156,14 @@ public class ConsoleManager {
                 StringBuilder sb = new StringBuilder();
                 sb.append("```\n");
                 for (String line : toSend) {
-                    String clean = org.bukkit.ChatColor.stripColor(line);
-                    clean = clean.replaceAll("\u001B\\[[;\\d]*m", "");
-                    if (clean.isEmpty()) clean = " ";
+                    String clean = sanitizeConsoleLine(line);
                     int i = 0;
                     while (i < clean.length()) {
                         int end = Math.min(i + 1900, clean.length());
                         String part = clean.substring(i, end);
                         if (sb.length() + part.length() > 1900) {
                             sb.append("```");
-                            channel.sendMessage(sb.toString()).queue();
+                            channel.sendMessage(sb.toString()).setAllowedMentions(Collections.emptyList()).queue();
                             sb = new StringBuilder("```\n");
                         }
                         sb.append(part);
@@ -166,7 +173,7 @@ public class ConsoleManager {
                 }
                 if (sb.length() > 4) {
                     sb.append("```");
-                    channel.sendMessage(sb.toString()).queue();
+                    channel.sendMessage(sb.toString()).setAllowedMentions(Collections.emptyList()).queue();
                 }
             }
         }
@@ -189,16 +196,14 @@ public class ConsoleManager {
                 StringBuilder sb = new StringBuilder();
                 sb.append("```\n");
                 for (String line : toSend) {
-                    String clean = org.bukkit.ChatColor.stripColor(line);
-                    clean = clean.replaceAll("\u001B\\[[;\\d]*m", "");
-                    if (clean.isEmpty()) clean = " ";
+                    String clean = sanitizeConsoleLine(line);
                     int i = 0;
                     while (i < clean.length()) {
                         int end = Math.min(i + 1900, clean.length());
                         String part = clean.substring(i, end);
                         if (sb.length() + part.length() > 1900) {
                             sb.append("```");
-                            channel.sendMessage(sb.toString()).complete();
+                            channel.sendMessage(sb.toString()).setAllowedMentions(Collections.emptyList()).queue();
                             sb = new StringBuilder("```\n");
                         }
                         sb.append(part);
@@ -208,7 +213,7 @@ public class ConsoleManager {
                 }
                 if (sb.length() > 4) {
                     sb.append("```");
-                    channel.sendMessage(sb.toString()).complete();
+                    channel.sendMessage(sb.toString()).setAllowedMentions(Collections.emptyList()).queue();
                 }
             }
         }
@@ -234,6 +239,7 @@ public class ConsoleManager {
                     
                     if (stackTrace != null && !stackTrace.isEmpty()) {
                         String cleanTrace = org.bukkit.ChatColor.stripColor(stackTrace);
+                        cleanTrace = cleanTrace.replace("```", "'''");
                         if (cleanTrace.length() > 3900) {
                             cleanTrace = cleanTrace.substring(0, 3900) + "\n... (зрізано)";
                         }
@@ -241,7 +247,7 @@ public class ConsoleManager {
                     }
                     
                     channel.sendMessageEmbeds(embed.build()).queue(null, (err) -> {
-                        channel.sendMessage("⚠️ **Помилка:** " + safeTitle).queue(null, (e) -> {});
+                        channel.sendMessage("⚠️ **Помилка:** " + safeTitle).setAllowedMentions(Collections.emptyList()).queue(null, (e) -> {});
                     });
                 }
             }
@@ -253,10 +259,11 @@ public class ConsoleManager {
     public void stop() {
         if (taskId != -1) {
             Bukkit.getScheduler().cancelTask(taskId);
+            taskId = -1;
         }
         try {
             flushLogsSync();
-        } catch (Exception e) {}
+        } catch (Exception ignored) {}
 
         if (usingLog4j && log4jAppender != null) {
             try {

@@ -30,15 +30,20 @@ public class DiscordRoleListener extends ListenerAdapter {
     }
 
     private void handleRoleChange(String discordId) {
-        if (discordId == null || plugin.getRoleSyncManager() == null) return;
-        if (!plugin.getConfig().getBoolean("role-sync.enabled", true)) return;
+        if (discordId == null || !plugin.isEnabled() || plugin.getRoleSyncManager() == null) return;
+        if (!plugin.getConfig().getBoolean("role-sync.enabled", false)) return;
 
         List<UUID> uuids = plugin.getLinkManager().getAllUUIDsFromDiscordId(discordId);
-        for (UUID uuid : uuids) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                plugin.getRoleSyncManager().syncPlayer(player);
+        if (uuids.isEmpty()) return;
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (plugin.getRoleSyncManager() == null) return;
+            for (UUID uuid : uuids) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null && player.isOnline()) {
+                    plugin.getRoleSyncManager().syncPlayer(player);
+                }
             }
-        }
+        });
     }
 }

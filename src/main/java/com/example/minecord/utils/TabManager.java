@@ -14,6 +14,7 @@ public class TabManager {
     }
 
     public void start() {
+        stop();
         if (!plugin.getConfig().getBoolean("tablist.enabled", true)) return;
 
         taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {

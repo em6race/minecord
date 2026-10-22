@@ -47,20 +47,32 @@ public class LanguageManager {
         langConfigs.clear();
         for (String lang : SUPPORTED_LANGUAGES) {
             File langFile = new File(plugin.getDataFolder(), "languages/" + lang + ".yml");
-            InputStream bundledStream = plugin.getResource("languages/" + lang + ".yml");
-            FileConfiguration bundledConfig = bundledStream != null
-                    ? YamlConfiguration.loadConfiguration(new InputStreamReader(bundledStream, StandardCharsets.UTF_8))
-                    : null;
+            FileConfiguration bundledConfig = null;
+            try (InputStream bundledStream = plugin.getResource("languages/" + lang + ".yml")) {
+                if (bundledStream != null) {
+                    try (InputStreamReader reader = new InputStreamReader(bundledStream, StandardCharsets.UTF_8)) {
+                        bundledConfig = YamlConfiguration.loadConfiguration(reader);
+                    }
+                }
+            } catch (Throwable ignored) {}
 
             FileConfiguration cfg;
             if (langFile.exists()) {
                 cfg = YamlConfiguration.loadConfiguration(langFile);
                 if (bundledConfig != null) {
                     cfg.setDefaults(bundledConfig);
-                    cfg.options().copyDefaults(true);
-                    try {
-                        cfg.save(langFile);
-                    } catch (Throwable ignored) {}
+                    boolean addedKeys = false;
+                    for (String key : bundledConfig.getKeys(true)) {
+                        if (!bundledConfig.isConfigurationSection(key) && !cfg.contains(key, true)) {
+                            cfg.set(key, bundledConfig.get(key));
+                            addedKeys = true;
+                        }
+                    }
+                    if (addedKeys) {
+                        try {
+                            cfg.save(langFile);
+                        } catch (Throwable ignored) {}
+                    }
                 }
             } else if (bundledConfig != null) {
                 cfg = bundledConfig;
@@ -105,7 +117,7 @@ public class LanguageManager {
     /**
      * Resolves the language code ("en", "uk", "sk") for a specific player or sender.
      * If per-player-language is enabled and sender is a Player, reads player.getLocale() (e.g. "uk_ua" -> "uk").
-     * If the player's client language is not in the supported list, defaults to "en" (English).
+     * If the player's client language is not in the supported list, defaults to currentLang.
      */
     public String resolvePlayerLang(CommandSender sender) {
         if (perPlayerLanguage && sender instanceof Player player) {
@@ -116,10 +128,10 @@ public class LanguageManager {
                     String prefix = lower.contains("_") ? lower.substring(0, lower.indexOf('_')) : lower;
                     if (prefix.equals("uk")) return "uk";
                     if (prefix.equals("sk") || prefix.equals("cs")) return "sk";
-                    return "en";
+                    if (prefix.equals("en")) return "en";
                 }
             } catch (Throwable ignored) {}
-            return "en";
+            return currentLang;
         }
         return currentLang;
     }

@@ -55,6 +55,7 @@ events:
   join-leave: true
   first-join: true
   death: true
+  advancement: true
   night-skip: true
   dragon: false
 
