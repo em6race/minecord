@@ -39,6 +39,7 @@
 | **Списи без голоду (Spear No Hunger)** | ⚙️ *Вимкнено* | `fun.modes.spear_no_hunger.enabled: false` | Усі види списів не витрачають очки голоду та виснаження |
 | **Розумне ковадло (Smart Anvil)** | ⚙️ *Вимкнено* | `fun.modes.smart_anvil.enabled: false` | Зняття штучного ванільного ліміту 40 рівнів («Занадто дорого!») |
 | **Розумний пропуск ночі (Sleep Voting)**| ⚙️ *Вимкнено* | `sleep.enabled: false` | Динамічний поріг 50% гравців у ліжках, ігнорування AFK |
+| **Action Bar HUD (Координати та День)** | ⚙️ *Вимкнено* | `hud.enabled: false` | Координати X Y Z, сторона світу, ігровий день та автоконверсія Незер ➔ Верхній світ (`/hud`) |
 | **AFK-система та захист від мобів** | ⚙️ *Вимкнено* | `afk.enabled: false` | Автоперехід через 60с, 3D-таймер, повна невразливість до мобів |
 | **Синхронізація ролей (Role Sync)** | ⚙️ *Вимкнено* | `role-sync.enabled: false` | Префікси у табі й чаті, кольори ніків та сортування за рангом |
 | **Захист від спаму (AntiSpam)** | ⚙️ *Вимкнено* | `antispam.enabled: false` | Захист від флуду, однакових повідомлень та автомут порушників |
@@ -158,6 +159,12 @@ MineCord має гнучку багатомовну систему з можли
   * Стильне Embed-повідомлення в Discord ("☀️ Гравець пропустив ніч. Доброго ранку!").
   * Автоматичне скидання шторму та дощу.
 
+#### 🧭 Action Bar HUD (Координати, Компас та Ігровий день)
+*Налаштування: `hud.enabled: false`*
+* **Інформативний рядок над хотбаром**: Відображає поточні координати `X Y Z`, сторону світу за компасом (`[N]`, `[S]`, `[E]`, `[W]`, `[NE]` тощо) та поточний ігровий день світу (`Day 1819`), синхронізований з екраном F3.
+* **Автоконверсія координат у Незері (1:8)**: Перебуваючи в Незері, гравець бачить одночасно координати Незеру та автоматично перераховані відповідні координати Верхнього світу (`Nether: -62 70 -37 (Overworld: -496 -296) | Day 1819`), що дозволяє будувати та лінкувати портали без ручних підрахунків.
+* **Індивідуальне перемикання (`/hud`)**: Кожен гравець може в будь-який момент увімкнути або вимкнути панель для себе командою `/hud` (вибір зберігається між перезаходами).
+
 #### 💤 AFK-система та захист від мобів
 *Налаштування: `afk.enabled: false`*
 * **Автоматичний перехід**: Фіксація неактивності гравця через 60 секунд (налаштовується) або вручну командою `/afk [причина]`.
@@ -232,6 +239,7 @@ MineCord має гнучку багатомовну систему з можли
 | `/mail read` | Прочитати отримані вхідні повідомлення | Усі |
 | `/togglerestart` | Увімкнути/вимкнути для себе сповіщення про авторестарт | Усі |
 | `/afk [причина]` | Ввійти або вийти з режиму AFK (захист від мобів, не блокує сон іншим) | Усі |
+| `/hud` | Увімкнути/вимкнути для себе панель координат і дня над хотбаром (Action Bar HUD) | Усі |
 
 ### Slash-команди в Discord:
 | Команда | Опис | Доступ |
@@ -279,6 +287,7 @@ MineCord features a modular architecture designed for maximum flexibility. All c
 | **Spear No Hunger** | ⚙️ *Disabled* | `fun.modes.spear_no_hunger.enabled: false`| All spear types consume zero hunger/exhaustion points |
 | **Smart Anvil** | ⚙️ *Disabled* | `fun.modes.smart_anvil.enabled: false` | Removes the vanilla 40-level limit ("Too Expensive!") |
 | **Smart Sleep Voting** | ⚙️ *Disabled* | `sleep.enabled: false` | 50% dynamic sleeper threshold, ignores AFK players |
+| **Action Bar HUD (Coords & Day)** | ⚙️ *Disabled* | `hud.enabled: false` | Real-time X Y Z, cardinal compass, world day & Nether ➔ Overworld 1:8 conversion (`/hud`) |
 | **AFK System & Mob Invulnerability** | ⚙️ *Disabled* | `afk.enabled: false` | Auto-AFK timer (60s), 3D overhead countdown, mob damage immunity |
 | **Discord Role Synchronization** | ⚙️ *Disabled* | `role-sync.enabled: false` | Tab/chat prefixes, nametag colors, hierarchy sorting |
 | **AntiSpam Engine** | ⚙️ *Disabled* | `antispam.enabled: false` | Flood protection, repeat blocking, automated mute ladder |
@@ -397,6 +406,12 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
   * Discord embed notification ("☀️ Player skipped the night. Good morning!").
   * Automatically resets bad weather (rain & thunder).
 
+#### 🧭 Action Bar HUD (Coordinates, Compass & World Day)
+*Configuration: `hud.enabled: false`*
+* **Clean HUD Above Hotbar**: Displays real-time `X Y Z` coordinates, 8-direction cardinal compass (`[N]`, `[S]`, `[E]`, `[W]`, `[NE]`, etc.), and the current in-game world day (`Day 1819`) matching the F3 debug screen.
+* **Nether ➔ Overworld Coordinate Conversion (1:8)**: While in the Nether, the HUD simultaneously displays both current Nether coordinates and the corresponding Overworld coordinates (`Nether: -62 70 -37 (Overworld: -496 -296) | Day 1819`) for effortless portal linking.
+* **Per-Player Toggle (`/hud`)**: Every player can toggle the HUD on or off individually at any time via `/hud` (persisted across sessions).
+
 #### 💤 AFK System & Mob Invulnerability
 *Configuration: `afk.enabled: false`*
 * **Inactivity Detection**: Automatic transition after 60 seconds (configurable) or manually via `/afk [reason]`.
@@ -471,6 +486,7 @@ A comprehensive nocturnal apocalypse featuring dangerous hordes, aerial bombers,
 | `/mail read` | View received offline mail | Everyone |
 | `/togglerestart` | Toggle auto-restart countdown messages on or off | Everyone |
 | `/afk [reason]` | Toggle AFK status manually (mob invulnerable, never blocks night skip) | Everyone |
+| `/hud` | Toggle the Action Bar coordinates, compass, and day HUD on or off | Everyone |
 
 ### Discord Slash Commands:
 | Command | Description | Permission |
