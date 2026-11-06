@@ -144,7 +144,7 @@ public class AccountLinkManager {
         return pendingCodes.get(code);
     }
 
-    // Link account
+    // Link account (supports multiple Minecraft accounts per Discord user, e.g. Java + Bedrock)
     public boolean linkAccount(String code, String discordId) {
         UUID uuid = getUUIDFromCode(code);
         if (uuid == null || discordId == null) return false;
@@ -153,7 +153,6 @@ public class AccountLinkManager {
         }
         pendingCodes.remove(code);
         codeExpiry.remove(code);
-        linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
         linkedAccounts.put(uuid, discordId);
         saveLinks();
         return true;
@@ -162,7 +161,6 @@ public class AccountLinkManager {
     // Direct account linking
     public void linkAccountDirectly(UUID uuid, String discordId) {
         if (uuid == null || discordId == null) return;
-        linkedAccounts.entrySet().removeIf(entry -> discordId.equals(entry.getValue()) && !entry.getKey().equals(uuid));
         linkedAccounts.put(uuid, discordId);
         adminLinkedAccounts.add(uuid);
         saveLinks();
@@ -211,6 +209,14 @@ public class AccountLinkManager {
 
     public UUID getUUIDFromDiscordId(String discordId) {
         if (discordId == null) return null;
+        for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
+            if (discordId.equals(entry.getValue())) {
+                org.bukkit.entity.Player online = org.bukkit.Bukkit.getPlayer(entry.getKey());
+                if (online != null && online.isOnline()) {
+                    return entry.getKey();
+                }
+            }
+        }
         for (Map.Entry<UUID, String> entry : linkedAccounts.entrySet()) {
             if (discordId.equals(entry.getValue())) {
                 return entry.getKey();
